@@ -1,0 +1,104 @@
+import org.apache.tools.ant.taskdefs.condition.Os
+
+subprojects {
+	apply plugin: 'maven'
+	apply plugin: 'eclipse'
+	apply plugin: 'idea'
+	
+	group = 'org.mini2Dx'
+	version = '1.0.0-SNAPSHOT'
+
+	repositories {
+		mavenLocal()
+		mavenCentral()
+		maven { url "https://mini2dx.org/maven/content/repositories/thirdparty" }
+	}
+	
+	ext {
+		jythonVersion='2.5.3'
+		groovyVersion='2.4.6'
+		
+		junitVersion='4.11'
+		jmockVersion='2.5.1'
+	}
+}
+
+def docProjects() {
+	subprojects.findAll { !it.name.contains('uat') }
+}
+
+configure(docProjects()) {
+	apply plugin: "java"
+	apply plugin: "maven-publish"
+	
+	sourceCompatibility = 1.7
+	targetCompatibility = 1.7
+	
+	task sourceJar(type: Jar) {
+		from sourceSets.main.allJava
+	}
+	
+	publishing {
+		repositories {
+			maven {
+				url "https://mini2dx.org/maven/content/repositories/releases"
+				if(project.hasProperty('mini2DxMavenUser')) {
+					credentials {
+						username = project.property('mini2DxMavenUser')
+						password = project.property('mini2DxMavenPassword')
+					}
+				}
+			}
+		}
+		publications {
+			maven(MavenPublication) {
+				from components.java
+				
+				artifact sourceJar {
+					classifier "sources"
+				}
+			}
+		}
+	}
+}
+
+project(":" + rootProject.name + "-core") {
+	dependencies {
+		testCompile "junit:junit:$junitVersion"
+		testCompile "org.jmock:jmock-junit4:$jmockVersion"
+		testCompile "org.jmock:jmock-legacy:$jmockVersion"
+	}
+	
+	task docs(type: Javadoc) {
+		source docProjects().collect {p -> p.sourceSets.main.allJava }
+		classpath = files(docProjects().collect {p -> p.sourceSets.main.compileClasspath})
+		destinationDir = new File(project.parent.projectDir, 'docs')
+	}
+	docs.dependsOn docProjects().build
+}
+
+project(":" + rootProject.name + "-groovy") {
+	dependencies {
+		compile project(":" + rootProject.name + "-core")
+		compile "org.codehaus.groovy:groovy-all:$groovyVersion"
+	
+		testCompile "junit:junit:$junitVersion"
+		testCompile "org.jmock:jmock-junit4:$jmockVersion"
+		testCompile "org.jmock:jmock-legacy:$jmockVersion"
+	}
+}
+
+project(":" + rootProject.name + "-python") {
+	dependencies {
+		compile project(":" + rootProject.name + "-core")
+		compile "org.python:jython-standalone:$jythonVersion"
+	
+		testCompile "junit:junit:$junitVersion"
+		testCompile "org.jmock:jmock-junit4:$jmockVersion"
+		testCompile "org.jmock:jmock-legacy:$jmockVersion"
+	}
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.12'
+}
