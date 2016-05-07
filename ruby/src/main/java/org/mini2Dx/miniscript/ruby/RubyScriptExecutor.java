@@ -21,73 +21,69 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.mini2Dx.miniscript.python;
+package org.mini2Dx.miniscript.ruby;
 
+import org.jruby.embed.EmbedEvalUnit;
+import org.jruby.embed.ScriptingContainer;
 import org.mini2Dx.miniscript.core.GameScript;
-import org.mini2Dx.miniscript.core.GlobalGameScript;
+import org.mini2Dx.miniscript.core.PerThreadGameScript;
 import org.mini2Dx.miniscript.core.ScriptBindings;
 import org.mini2Dx.miniscript.core.ScriptExecutionResult;
 import org.mini2Dx.miniscript.core.ScriptExecutor;
 import org.mini2Dx.miniscript.core.ScriptInvocationListener;
 import org.mini2Dx.miniscript.core.exception.ScriptSkippedException;
-import org.python.core.PyCode;
-import org.python.core.PyException;
-import org.python.util.InteractiveInterpreter;
 
 /**
- * An implementation of {@link ScriptExecutor} for Python-based scripts
+ * An implementation of {@link ScriptExecutor} for Ruby-based scripts
  */
-public class PythonScriptExecutor implements ScriptExecutor<PyCode> {
-	private final PythonScriptExecutorPool executorPool;
-	private final InteractiveInterpreter pythonInterpreter;
+public class RubyScriptExecutor implements ScriptExecutor<EmbedEvalUnit> {
+	private final RubyScriptExecutorPool executorPool;
 
-	public PythonScriptExecutor(PythonScriptExecutorPool executorPool) {
+	public RubyScriptExecutor(RubyScriptExecutorPool executorPool) {
 		this.executorPool = executorPool;
-
-		pythonInterpreter = new InteractiveInterpreter();
-		pythonInterpreter.setErr(System.err);
-		pythonInterpreter.setOut(System.out);
 	}
 
 	@Override
-	public GameScript<PyCode> compile(String script) {
-		return new GlobalGameScript<PyCode>(pythonInterpreter.compile(script));
+	public GameScript<EmbedEvalUnit> compile(String script) {
+		return new PerThreadGameScript<EmbedEvalUnit>(script);
 	}
 
 	@Override
-	public void execute(GameScript<PyCode> script, ScriptBindings bindings, ScriptInvocationListener invocationListener) throws Exception {
-		PyCode pythonScript = script.getScript();
+	public void execute(GameScript<EmbedEvalUnit> s, ScriptBindings bindings,
+			ScriptInvocationListener invocationListener) throws Exception {
+		PerThreadGameScript<EmbedEvalUnit> script = (PerThreadGameScript<EmbedEvalUnit>) s;
+
+		ScriptingContainer scriptingContainer = executorPool.getLocalScriptingContainer();
+		
 		for (String variableName : bindings.keySet()) {
-			pythonInterpreter.set(variableName, bindings.get(variableName));
+			scriptingContainer.put(variableName, bindings.get(variableName));
 		}
+		if (!script.hasLocalScript()) {
+			script.putLocalScript(scriptingContainer.parse(script.getContent()));
+		}
+		
 		try {
-			pythonInterpreter.exec(pythonScript);
-		} catch (PyException e) {
+			EmbedEvalUnit embedEvalUnit = script.getScript();
+			embedEvalUnit.run();
+		} catch (Exception e) {
 			if(e.getCause() instanceof ScriptSkippedException) {
 				throw new ScriptSkippedException();
 			} else {
 				throw e;
 			}
 		}
-		
-		if(invocationListener == null) {
+
+		if (invocationListener == null) {
+			scriptingContainer.clear();
 			return;
-		}
-		//TODO: Find way to extract all variables
-		ScriptExecutionResult executionResult = new ScriptExecutionResult(null);
-		for(String variableName : bindings.keySet()) {
-			executionResult.put(variableName, pythonInterpreter.get(variableName, Object.class));
-		}
-		invocationListener.onScriptSuccess(script.getId(), executionResult);
+		}		
+		invocationListener.onScriptSuccess(script.getId(),
+				new ScriptExecutionResult(scriptingContainer.getVarMap().getMap()));
+		scriptingContainer.clear();
 	}
 
 	@Override
 	public void release() {
-		try {
-			pythonInterpreter.cleanup();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
 		executorPool.release(this);
 	}
 

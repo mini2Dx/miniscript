@@ -23,23 +23,19 @@
  */
 package org.mini2Dx.miniscript.core;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 /**
- * Wraps the native script object with an identifier
+ * An implementation of {@link GameScript} for language runtimes where script
+ * execution is isolated regardless of the thread it is executing on
  */
-public abstract class GameScript<S> {
-	private static final AtomicInteger ID_GENERATOR = new AtomicInteger(0);
-	
-	private final int id;
-	
-	public GameScript() {
-		id = ID_GENERATOR.incrementAndGet();
+public class GlobalGameScript<S> extends GameScript<S> {
+	private final S script;
+
+	public GlobalGameScript(S script) {
+		this.script = script;
 	}
 
-	public int getId() {
-		return id;
+	@Override
+	public S getScript() {
+		return script;
 	}
-
-	public abstract S getScript();
 }

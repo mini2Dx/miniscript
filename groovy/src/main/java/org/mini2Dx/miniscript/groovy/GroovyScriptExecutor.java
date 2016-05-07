@@ -24,6 +24,7 @@
 package org.mini2Dx.miniscript.groovy;
 
 import org.mini2Dx.miniscript.core.GameScript;
+import org.mini2Dx.miniscript.core.GlobalGameScript;
 import org.mini2Dx.miniscript.core.ScriptBindings;
 import org.mini2Dx.miniscript.core.ScriptExecutionResult;
 import org.mini2Dx.miniscript.core.ScriptExecutor;
@@ -46,7 +47,7 @@ public class GroovyScriptExecutor implements ScriptExecutor<Script> {
 
 	@Override
 	public GameScript<Script> compile(String script) {
-		return new GameScript<Script>(groovyShell.parse(script));
+		return new GlobalGameScript<Script>(groovyShell.parse(script));
 	}
 	
 	@Override

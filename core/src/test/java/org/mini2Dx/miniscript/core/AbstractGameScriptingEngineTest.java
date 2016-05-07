@@ -238,21 +238,27 @@ public abstract class AbstractGameScriptingEngineTest {
 	
 	private boolean checkExpectedScriptResults(ScriptExecutionResult executionResult) {
 		if(!executionResult.containsKey("stringValue")) {
+			System.err.println("stringValue not present");
 			return false;
 		}
 		if(!executionResult.containsKey("booleanValue")) {
+			System.err.println("booleanValue not present");
 			return false;
 		}
 		if(!executionResult.containsKey("intValue")) {
+			System.err.println("intValue not present");
 			return false;
 		}
 		if(!"hello123".equals(executionResult.get("stringValue"))) {
+			System.err.println("Expected stringValue to be hello123 but was " + executionResult.get("stringValue"));
 			return false;
 		}
 		if(!((Boolean) executionResult.get("booleanValue"))) {
+			System.err.println("Expected booleanValue to be true but was " + executionResult.get("stringValue"));
 			return false;
 		}
 		if(((Integer) executionResult.get("intValue")) != 101) {
+			System.err.println("Expected intValue to be 101 but was " + executionResult.get("stringValue"));
 			return false;
 		}
 		return true;

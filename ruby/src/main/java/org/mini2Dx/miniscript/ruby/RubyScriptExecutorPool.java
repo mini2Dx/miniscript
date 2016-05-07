@@ -1,0 +1,100 @@
+/**
+ * The MIT License (MIT)
+ * 
+ * Copyright (c) 2016 Thomas Cashman
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+package org.mini2Dx.miniscript.ruby;
+
+import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.jruby.RubyInstanceConfig.CompileMode;
+import org.jruby.embed.EmbedEvalUnit;
+import org.jruby.embed.LocalContextScope;
+import org.jruby.embed.LocalVariableBehavior;
+import org.jruby.embed.ScriptingContainer;
+import org.mini2Dx.miniscript.core.PerThreadGameScript;
+import org.mini2Dx.miniscript.core.ScriptBindings;
+import org.mini2Dx.miniscript.core.ScriptExecutionTask;
+import org.mini2Dx.miniscript.core.ScriptExecutor;
+import org.mini2Dx.miniscript.core.ScriptExecutorPool;
+import org.mini2Dx.miniscript.core.ScriptInvocationListener;
+import org.mini2Dx.miniscript.core.exception.InsufficientCompilersException;
+import org.mini2Dx.miniscript.core.exception.InsufficientExecutorsException;
+
+/**
+ * An implementation of {@link ScriptExecutorPool} for Ruby-based scripts
+ */
+public class RubyScriptExecutorPool implements ScriptExecutorPool<EmbedEvalUnit> {
+	private final Map<Long, ScriptingContainer> threadCompilers = new ConcurrentHashMap<Long, ScriptingContainer>();
+	private final Map<Integer, PerThreadGameScript<EmbedEvalUnit>> scripts = new ConcurrentHashMap<Integer, PerThreadGameScript<EmbedEvalUnit>>();
+	private final BlockingQueue<ScriptExecutor<EmbedEvalUnit>> executors;
+	
+	public RubyScriptExecutorPool(int poolSize) {
+		executors = new ArrayBlockingQueue<ScriptExecutor<EmbedEvalUnit>>(poolSize);
+
+		for (int i = 0; i < poolSize; i++) {
+			executors.offer(new RubyScriptExecutor(this));
+		}
+	}
+	
+	@Override
+	public int preCompileScript(String scriptContent) throws InsufficientCompilersException {
+		PerThreadGameScript<EmbedEvalUnit> script = new PerThreadGameScript<EmbedEvalUnit>(scriptContent);
+		scripts.put(script.getId(), script);
+		return script.getId();
+	}
+
+	@Override
+	public ScriptExecutionTask<?> execute(int scriptId, ScriptBindings scriptBindings,
+			ScriptInvocationListener invocationListener) throws InsufficientExecutorsException {
+		ScriptExecutor<EmbedEvalUnit> executor = allocateExecutor();
+		if (executor == null) {
+			throw new InsufficientExecutorsException(scriptId);
+		}
+		return new ScriptExecutionTask<EmbedEvalUnit>(executor, scripts.get(scriptId), scriptBindings, invocationListener);
+	}
+
+	@Override
+	public void release(ScriptExecutor<EmbedEvalUnit> executor) {
+		try {
+			executors.put(executor);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private ScriptExecutor<EmbedEvalUnit> allocateExecutor() {
+		return executors.poll();
+	}
+	
+	public ScriptingContainer getLocalScriptingContainer() {
+		long threadId = Thread.currentThread().getId();
+		if(!threadCompilers.containsKey(threadId)) {
+			ScriptingContainer scriptingContainer = new ScriptingContainer(LocalContextScope.THREADSAFE, LocalVariableBehavior.PERSISTENT);
+			scriptingContainer.setCompileMode(CompileMode.JIT);
+			threadCompilers.put(threadId, scriptingContainer);
+		}
+		return threadCompilers.get(threadId);
+	}
+}

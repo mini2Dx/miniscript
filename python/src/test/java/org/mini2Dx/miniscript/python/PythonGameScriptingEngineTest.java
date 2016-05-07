@@ -64,7 +64,7 @@ public class PythonGameScriptingEngineTest extends AbstractGameScriptingEngineTe
 		} catch (URISyntaxException e) {
 			e.printStackTrace();
 		}
-		Assert.fail("Could not read default script");
+		Assert.fail("Could not read waitForCompletion script");
 		return null;
 	}
 

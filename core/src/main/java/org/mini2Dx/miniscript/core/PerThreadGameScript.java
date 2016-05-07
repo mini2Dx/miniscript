@@ -23,23 +23,36 @@
  */
 package org.mini2Dx.miniscript.core;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Wraps the native script object with an identifier
+ * An implementation of {@link GameScript} for language runtimes where
+ * a script must be compiled on a per thread basis
  */
-public abstract class GameScript<S> {
-	private static final AtomicInteger ID_GENERATOR = new AtomicInteger(0);
+public class PerThreadGameScript<S> extends GameScript<S> {
+	private final Map<Long, S> threadToScriptMapping = new ConcurrentHashMap<Long, S>();
+	private final String content;
 	
-	private final int id;
+	public PerThreadGameScript(String content) {
+		super();
+		this.content = content;
+	}
 	
-	public GameScript() {
-		id = ID_GENERATOR.incrementAndGet();
+	public boolean hasLocalScript() {
+		return threadToScriptMapping.containsKey(Thread.currentThread().getId());
 	}
 
-	public int getId() {
-		return id;
+	@Override
+	public S getScript() {
+		return threadToScriptMapping.get(Thread.currentThread().getId());
 	}
 
-	public abstract S getScript();
+	public void putLocalScript(S script) {
+		threadToScriptMapping.put(Thread.currentThread().getId(), script);
+	}
+
+	public String getContent() {
+		return content;
+	}
 }

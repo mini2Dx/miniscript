@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.mini2Dx.miniscript.groovy;
+package org.mini2Dx.miniscript.ruby;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -33,19 +33,19 @@ import org.mini2Dx.miniscript.core.AbstractGameScriptingEngineTest;
 import org.mini2Dx.miniscript.core.GameScriptingEngine;
 
 /**
- * UATs for {@link GroovyGameScriptingEngine}
+ * UATs for {@link RubyGameScriptingEngine}
  */
-public class GroovyGameScriptingEngineTest extends AbstractGameScriptingEngineTest {
+public class RubyGameScriptingEngineTest extends AbstractGameScriptingEngineTest {
 
 	@Override
 	protected GameScriptingEngine createScriptingEngine() {
-		return new GroovyGameScriptingEngine();
+		return new RubyGameScriptingEngine();
 	}
 
 	@Override
 	protected String getDefaultScript() {
 		try {
-			return new String(Files.readAllBytes(Paths.get(this.getClass().getResource("/default.groovy").toURI())));
+			return new String(Files.readAllBytes(Paths.get(this.getClass().getResource("/default.rb").toURI())));
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (URISyntaxException e) {
@@ -58,7 +58,7 @@ public class GroovyGameScriptingEngineTest extends AbstractGameScriptingEngineTe
 	@Override
 	protected String getWaitForCompletionScript() {
 		try {
-			return new String(Files.readAllBytes(Paths.get(this.getClass().getResource("/waitForCompletion.groovy").toURI())));
+			return new String(Files.readAllBytes(Paths.get(this.getClass().getResource("/waitForCompletion.rb").toURI())));
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (URISyntaxException e) {

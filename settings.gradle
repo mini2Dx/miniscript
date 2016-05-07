@@ -1,4 +1,4 @@
-include "core", "groovy", "python"
+include "core", "groovy", "ruby", "python"
 
 rootProject.name = 'miniscript'
 rootProject.children.each { it.name = rootProject.name + "-" + it.name }

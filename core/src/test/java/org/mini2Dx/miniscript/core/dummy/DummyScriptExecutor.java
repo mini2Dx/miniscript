@@ -26,6 +26,7 @@ package org.mini2Dx.miniscript.core.dummy;
 import java.util.HashMap;
 
 import org.mini2Dx.miniscript.core.GameScript;
+import org.mini2Dx.miniscript.core.GlobalGameScript;
 import org.mini2Dx.miniscript.core.ScriptBindings;
 import org.mini2Dx.miniscript.core.ScriptExecutionResult;
 import org.mini2Dx.miniscript.core.ScriptExecutor;
@@ -43,7 +44,7 @@ public class DummyScriptExecutor implements ScriptExecutor<DummyScript> {
 
 	@Override
 	public GameScript<DummyScript> compile(String script) {
-		return new GameScript<DummyScript>(new DummyScript(script));
+		return new GlobalGameScript<DummyScript>(new DummyScript(script));
 	}
 
 	@Override

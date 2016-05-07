@@ -17,6 +17,7 @@ subprojects {
 	ext {
 		jythonVersion='2.5.3'
 		groovyVersion='2.4.6'
+		jrubyVersion='9.0.5.0'
 		
 		junitVersion='4.11'
 		jmockVersion='2.5.1'
@@ -94,6 +95,18 @@ project(":" + rootProject.name + "-groovy") {
 	dependencies {
 		compile project(":" + rootProject.name + "-core")
 		compile "org.codehaus.groovy:groovy-all:$groovyVersion"
+	
+		testCompile "junit:junit:$junitVersion"
+		testCompile "org.jmock:jmock-junit4:$jmockVersion"
+		testCompile "org.jmock:jmock-legacy:$jmockVersion"
+		testCompile project(path: ":" + rootProject.name + "-core", configuration: 'testOutput')
+	}
+}
+
+project(":" + rootProject.name + "-ruby") {
+	dependencies {
+		compile project(":" + rootProject.name + "-core")
+		compile "org.jruby:jruby-complete:$jrubyVersion"
 	
 		testCompile "junit:junit:$junitVersion"
 		testCompile "org.jmock:jmock-junit4:$jmockVersion"

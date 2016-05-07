@@ -21,50 +21,38 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.mini2Dx.miniscript.groovy;
+package org.mini2Dx.miniscript.ruby;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-
-import org.junit.Assert;
-import org.mini2Dx.miniscript.core.AbstractGameScriptingEngineTest;
 import org.mini2Dx.miniscript.core.GameScriptingEngine;
+import org.mini2Dx.miniscript.core.ScriptExecutorPool;
 
 /**
- * UATs for {@link GroovyGameScriptingEngine}
+ * An implementation of {@link GameScriptingEngine} for Ruby-based scripts
  */
-public class GroovyGameScriptingEngineTest extends AbstractGameScriptingEngineTest {
+public class RubyGameScriptingEngine extends GameScriptingEngine {
+	/**
+	 * Constructs a scripting engine backed by a thread pool with the maximum
+	 * amount of concurrent scripts set to the amount of processors + 1;
+	 */
+	public RubyGameScriptingEngine() {
+		super();
+	}
 
-	@Override
-	protected GameScriptingEngine createScriptingEngine() {
-		return new GroovyGameScriptingEngine();
+	/**
+	 * Constructs a scripting engine backed by a thread pool.
+	 * 
+	 * @param maxConcurrentScripts
+	 *            The maximum amount of concurrently running scripts. Note this
+	 *            is a 'requested' amount and may be less due to the amount of
+	 *            available processors on the player's machine.
+	 */
+	public RubyGameScriptingEngine(int maxConcurrentScripts) {
+		super(maxConcurrentScripts);
 	}
 
 	@Override
-	protected String getDefaultScript() {
-		try {
-			return new String(Files.readAllBytes(Paths.get(this.getClass().getResource("/default.groovy").toURI())));
-		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (URISyntaxException e) {
-			e.printStackTrace();
-		}
-		Assert.fail("Could not read default script");
-		return null;
+	protected ScriptExecutorPool<?> createScriptExecutorPool(int poolSize) {
+		return new RubyScriptExecutorPool(poolSize);
 	}
 
-	@Override
-	protected String getWaitForCompletionScript() {
-		try {
-			return new String(Files.readAllBytes(Paths.get(this.getClass().getResource("/waitForCompletion.groovy").toURI())));
-		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (URISyntaxException e) {
-			e.printStackTrace();
-		}
-		Assert.fail("Could not read waitForCompletion script");
-		return null;
-	}
 }
