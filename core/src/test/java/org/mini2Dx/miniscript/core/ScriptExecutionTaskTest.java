@@ -23,20 +23,31 @@
  */
 package org.mini2Dx.miniscript.core;
 
-import org.mini2Dx.miniscript.core.exception.InsufficientCompilersException;
-import org.mini2Dx.miniscript.core.exception.InsufficientExecutorsException;
+import org.junit.Assert;
+import org.junit.Test;
+import org.mini2Dx.miniscript.core.dummy.DummyScript;
+import org.mini2Dx.miniscript.core.dummy.DummyScriptExecutor;
 
 /**
- * Common interface for language-specific {@link ScriptExecutor} pools.
- * 
- * Manages resources for compilation and execution of scripts.
+ * Unit tests for {@link ScriptExecutionTask}
  */
-public interface ScriptExecutorPool<S> {
+public class ScriptExecutionTaskTest {
 
-	public int preCompileScript(String scriptContent) throws InsufficientCompilersException;
+	@Test
+	public void testIdGeneration() {
+		ScriptExecutionTask<DummyScript> task1 = new ScriptExecutionTask<DummyScript>(new DummyScriptExecutor(null),
+				new GameScript<DummyScript>(new DummyScript("")), new ScriptBindings(), null);
+		ScriptExecutionTask<DummyScript> task2 = new ScriptExecutionTask<DummyScript>(new DummyScriptExecutor(null),
+				new GameScript<DummyScript>(new DummyScript("")), new ScriptBindings(), null);
+		Assert.assertEquals(true, task1.getTaskId() != task2.getTaskId());
+	}
 
-	public ScriptExecutionTask<?> execute(int scriptId, ScriptBindings scriptBindings,
-			ScriptInvocationListener invocationListener) throws InsufficientExecutorsException;
-
-	public void release(ScriptExecutor<S> executor);
+	@Test
+	public void testRunExecutesScript() {
+		DummyScript script = new DummyScript("");
+		ScriptExecutionTask<DummyScript> task = new ScriptExecutionTask<DummyScript>(new DummyScriptExecutor(null),
+				new GameScript<DummyScript>(script), new ScriptBindings(), null);
+		task.run();
+		Assert.assertEquals(true, script.isExecuted());
+	}
 }

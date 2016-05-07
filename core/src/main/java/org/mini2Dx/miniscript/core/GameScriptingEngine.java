@@ -73,6 +73,13 @@ public abstract class GameScriptingEngine implements Runnable {
 				Math.min(maxConcurrentScripts + 1, Runtime.getRuntime().availableProcessors() * 2));
 		executorService.scheduleAtFixedRate(this, 1, 1, TimeUnit.SECONDS);
 	}
+	
+	/**
+	 * Shuts down the thread pool and cleans up resources
+	 */
+	public void dispose() {
+		executorService.shutdown();
+	}
 
 	protected abstract ScriptExecutorPool<?> createScriptExecutorPool(int poolSize);
 
@@ -179,7 +186,19 @@ public abstract class GameScriptingEngine implements Runnable {
 	 */
 	public void invokeCompiledScript(int scriptId, ScriptBindings scriptBindings)
 			throws InsufficientExecutorsException {
-		ScriptExecutionTask<?> executionTask = scriptExecutorPool.execute(scriptId, scriptBindings);
+		invokeCompiledScript(scriptId, scriptBindings, null);
+	}
+	
+	/**
+	 * Runs a compiled script in the engine's thread pool
+	 * @param scriptId The id of the script to run
+	 * @param scriptBindings The variable bindings for the script
+	 * @param invocationListener A {@link ScriptInvocationListener} to list for invocation results
+	 * @throws InsufficientExecutorsException Thrown if there are no script executors available to the thread pool
+	 */
+	public void invokeCompiledScript(int scriptId, ScriptBindings scriptBindings, ScriptInvocationListener invocationListener)
+			throws InsufficientExecutorsException {
+		ScriptExecutionTask<?> executionTask = scriptExecutorPool.execute(scriptId, scriptBindings, invocationListener);
 		Future<?> taskFuture = executorService.submit(executionTask);
 		executionTask.setTaskFuture(taskFuture);
 		runningScripts.put(executionTask.getTaskId(), executionTask);
@@ -195,8 +214,22 @@ public abstract class GameScriptingEngine implements Runnable {
 	 */
 	public int invokeScript(String scriptContent, ScriptBindings scriptBindings)
 			throws InsufficientCompilersException, InsufficientExecutorsException {
+		return invokeScript(scriptContent, scriptBindings, null);
+	}
+	
+	/**
+	 * Compiles and runs a script in the engine's thread pool
+	 * @param scriptContent The text content of the script
+	 * @param scriptBindings The variable bindings for the script
+	 * @param invocationListener A {@link ScriptInvocationListener} to list for invocation results
+	 * @return The unique id for the script
+	 * @throws InsufficientCompilersException Thrown if there are no script compilers available
+	 * @throws InsufficientExecutorsException Thrown if there are no script executors available to the thread pool
+	 */
+	public int invokeScript(String scriptContent, ScriptBindings scriptBindings, ScriptInvocationListener invocationListener)
+			throws InsufficientCompilersException, InsufficientExecutorsException {
 		int scriptId = compileScript(scriptContent);
-		invokeCompiledScript(scriptId, scriptBindings);
+		invokeCompiledScript(scriptId, scriptBindings, invocationListener);
 		return scriptId;
 	}
 

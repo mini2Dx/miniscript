@@ -21,22 +21,28 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.mini2Dx.miniscript.core;
-
-import org.mini2Dx.miniscript.core.exception.InsufficientCompilersException;
-import org.mini2Dx.miniscript.core.exception.InsufficientExecutorsException;
+package org.mini2Dx.miniscript.core.dummy;
 
 /**
- * Common interface for language-specific {@link ScriptExecutor} pools.
- * 
- * Manages resources for compilation and execution of scripts.
+ * A dummy script class for unit tests
  */
-public interface ScriptExecutorPool<S> {
+public class DummyScript {
+	private final String scriptContent;
+	private boolean executed = false;
+	
+	public DummyScript(String scriptContent) {
+		this.scriptContent = scriptContent;
+	}
 
-	public int preCompileScript(String scriptContent) throws InsufficientCompilersException;
+	public boolean isExecuted() {
+		return executed;
+	}
 
-	public ScriptExecutionTask<?> execute(int scriptId, ScriptBindings scriptBindings,
-			ScriptInvocationListener invocationListener) throws InsufficientExecutorsException;
+	public void setExecuted(boolean executed) {
+		this.executed = executed;
+	}
 
-	public void release(ScriptExecutor<S> executor);
+	public String getScriptContent() {
+		return scriptContent;
+	}
 }

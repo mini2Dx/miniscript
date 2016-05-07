@@ -29,10 +29,12 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.mini2Dx.miniscript.core.GameScript;
 import org.mini2Dx.miniscript.core.ScriptBindings;
 import org.mini2Dx.miniscript.core.ScriptExecutionTask;
 import org.mini2Dx.miniscript.core.ScriptExecutor;
 import org.mini2Dx.miniscript.core.ScriptExecutorPool;
+import org.mini2Dx.miniscript.core.ScriptInvocationListener;
 import org.mini2Dx.miniscript.core.exception.InsufficientCompilersException;
 import org.mini2Dx.miniscript.core.exception.InsufficientExecutorsException;
 
@@ -42,9 +44,7 @@ import groovy.lang.Script;
  * An implementation of {@link ScriptExecutorPool} for Groovy-based scripts
  */
 public class GroovyScriptExecutorPool implements ScriptExecutorPool<Script> {
-	private static final AtomicInteger SCRIPT_ID_GENERATOR = new AtomicInteger(0);
-
-	private final Map<Integer, Script> scripts = new ConcurrentHashMap<Integer, Script>();
+	private final Map<Integer, GameScript<Script>> scripts = new ConcurrentHashMap<Integer, GameScript<Script>>();
 	private final BlockingQueue<ScriptExecutor<Script>> executors;
 
 	public GroovyScriptExecutorPool(int poolSize) {
@@ -70,19 +70,19 @@ public class GroovyScriptExecutorPool implements ScriptExecutorPool<Script> {
 		if(executor == null) {
 			throw new InsufficientCompilersException();
 		}
-		int scriptId = SCRIPT_ID_GENERATOR.incrementAndGet();
-		Script script = executor.compile(scriptContent);
-		scripts.put(scriptId, script);
-		return scriptId;
+		GameScript<Script> script = executor.compile(scriptContent);
+		executor.release();
+		scripts.put(script.getId(), script);
+		return script.getId();
 	}
 
 	@Override
-	public ScriptExecutionTask<?> execute(int scriptId, ScriptBindings scriptBindings) throws InsufficientExecutorsException {
+	public ScriptExecutionTask<?> execute(int scriptId, ScriptBindings scriptBindings, ScriptInvocationListener invocationListener) throws InsufficientExecutorsException {
 		ScriptExecutor<Script> executor = allocateExecutor();
 		if(executor == null) {
 			throw new InsufficientExecutorsException(scriptId);
 		}
-		return new ScriptExecutionTask<Script>(executor, scripts.get(scriptId), scriptBindings);
+		return new ScriptExecutionTask<Script>(executor, scripts.get(scriptId), scriptBindings, invocationListener);
 	}
 
 	private ScriptExecutor<Script> allocateExecutor() {

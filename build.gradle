@@ -63,10 +63,23 @@ configure(docProjects()) {
 }
 
 project(":" + rootProject.name + "-core") {
+	configurations {
+		testOutput.extendsFrom (testCompile)
+	}
+	
 	dependencies {
 		testCompile "junit:junit:$junitVersion"
 		testCompile "org.jmock:jmock-junit4:$jmockVersion"
 		testCompile "org.jmock:jmock-legacy:$jmockVersion"
+	}
+	
+	task testJar(type: Jar, dependsOn: testClasses) {
+		from sourceSets.test.output
+		classifier = 'test'
+	}
+	
+	artifacts {
+		testOutput testJar
 	}
 	
 	task docs(type: Javadoc) {
@@ -85,6 +98,7 @@ project(":" + rootProject.name + "-groovy") {
 		testCompile "junit:junit:$junitVersion"
 		testCompile "org.jmock:jmock-junit4:$jmockVersion"
 		testCompile "org.jmock:jmock-legacy:$jmockVersion"
+		testCompile project(path: ":" + rootProject.name + "-core", configuration: 'testOutput')
 	}
 }
 
@@ -96,6 +110,7 @@ project(":" + rootProject.name + "-python") {
 		testCompile "junit:junit:$junitVersion"
 		testCompile "org.jmock:jmock-junit4:$jmockVersion"
 		testCompile "org.jmock:jmock-legacy:$jmockVersion"
+		testCompile project(path: ":" + rootProject.name + "-core", configuration: 'testOutput')
 	}
 }
 

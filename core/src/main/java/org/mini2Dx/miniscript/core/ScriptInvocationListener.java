@@ -23,20 +23,37 @@
  */
 package org.mini2Dx.miniscript.core;
 
-import org.mini2Dx.miniscript.core.exception.InsufficientCompilersException;
-import org.mini2Dx.miniscript.core.exception.InsufficientExecutorsException;
-
 /**
- * Common interface for language-specific {@link ScriptExecutor} pools.
+ * Interface for script execution listeners.
  * 
- * Manages resources for compilation and execution of scripts.
+ * Note: All callbacks occur on a different thread from the game thread
  */
-public interface ScriptExecutorPool<S> {
+public interface ScriptInvocationListener {
+	/**
+	 * Called when a script successfully completes
+	 * 
+	 * @param scriptId
+	 *            The script id
+	 * @param executionResult
+	 *            The variable bindings after execution
+	 */
+	public void onScriptSuccess(int scriptId, ScriptExecutionResult executionResult);
 
-	public int preCompileScript(String scriptContent) throws InsufficientCompilersException;
+	/**
+	 * Called when a script is skipped
+	 * 
+	 * @param scriptId
+	 *            The script id
+	 */
+	public void onScriptSkipped(int scriptId);
 
-	public ScriptExecutionTask<?> execute(int scriptId, ScriptBindings scriptBindings,
-			ScriptInvocationListener invocationListener) throws InsufficientExecutorsException;
-
-	public void release(ScriptExecutor<S> executor);
+	/**
+	 * Called when an exception occurs during script execution
+	 * 
+	 * @param scriptId
+	 *            The script id
+	 * @param e
+	 *            The exception that occurred
+	 */
+	public void onScriptException(int scriptId, Exception e);
 }

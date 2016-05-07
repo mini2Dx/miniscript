@@ -23,20 +23,27 @@
  */
 package org.mini2Dx.miniscript.core;
 
-import org.mini2Dx.miniscript.core.exception.InsufficientCompilersException;
-import org.mini2Dx.miniscript.core.exception.InsufficientExecutorsException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Common interface for language-specific {@link ScriptExecutor} pools.
- * 
- * Manages resources for compilation and execution of scripts.
+ * Wraps the native script object with an identifier
  */
-public interface ScriptExecutorPool<S> {
+public class GameScript<S> {
+	private static final AtomicInteger ID_GENERATOR = new AtomicInteger(0);
+	
+	private final int id;
+	private final S script;
+	
+	public GameScript(S script) {
+		this.script = script;
+		id = ID_GENERATOR.incrementAndGet();
+	}
 
-	public int preCompileScript(String scriptContent) throws InsufficientCompilersException;
+	public int getId() {
+		return id;
+	}
 
-	public ScriptExecutionTask<?> execute(int scriptId, ScriptBindings scriptBindings,
-			ScriptInvocationListener invocationListener) throws InsufficientExecutorsException;
-
-	public void release(ScriptExecutor<S> executor);
+	public S getScript() {
+		return script;
+	}
 }

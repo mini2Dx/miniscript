@@ -21,7 +21,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.mini2Dx.miniscript.groovy;
+package org.mini2Dx.miniscript.core.dummy;
+
+import java.util.HashMap;
 
 import org.mini2Dx.miniscript.core.GameScript;
 import org.mini2Dx.miniscript.core.ScriptBindings;
@@ -29,41 +31,33 @@ import org.mini2Dx.miniscript.core.ScriptExecutionResult;
 import org.mini2Dx.miniscript.core.ScriptExecutor;
 import org.mini2Dx.miniscript.core.ScriptInvocationListener;
 
-import groovy.lang.Binding;
-import groovy.lang.GroovyShell;
-import groovy.lang.Script;
-
 /**
- * An implementation of {@link ScriptExecutor} for Groovy-based scripts
+ * An implementation of {@link ScriptExecutor} for unit tests
  */
-public class GroovyScriptExecutor implements ScriptExecutor<Script> {
-	private final GroovyScriptExecutorPool executorPool;
-	private final GroovyShell groovyShell = new GroovyShell();
+public class DummyScriptExecutor implements ScriptExecutor<DummyScript> {
+	private final DummyScriptExecutorPool executorPool;
 	
-	public GroovyScriptExecutor(GroovyScriptExecutorPool executorPool) {
+	public DummyScriptExecutor(DummyScriptExecutorPool executorPool) {
 		this.executorPool = executorPool;
 	}
 
 	@Override
-	public GameScript<Script> compile(String script) {
-		return new GameScript<Script>(groovyShell.parse(script));
+	public GameScript<DummyScript> compile(String script) {
+		return new GameScript<DummyScript>(new DummyScript(script));
 	}
-	
+
 	@Override
-	public void execute(GameScript<Script> script, ScriptBindings bindings, ScriptInvocationListener invocationListener) throws Exception {
-		Script groovyScript = script.getScript();
-		groovyScript.setBinding(new Binding(bindings));
-		groovyScript.run();
-		
+	public void execute(GameScript<DummyScript> script, ScriptBindings bindings, ScriptInvocationListener invocationListener) throws Exception {
+		script.getScript().setExecuted(true);
 		if(invocationListener == null) {
 			return;
 		}
-		ScriptExecutionResult executionResult = new ScriptExecutionResult(groovyScript.getBinding().getVariables());
-		invocationListener.onScriptSuccess(script.getId(), executionResult);
+		invocationListener.onScriptSuccess(script.getId(), new ScriptExecutionResult(new HashMap<String, Object>()));
 	}
 
 	@Override
 	public void release() {
 		executorPool.release(this);
 	}
+
 }

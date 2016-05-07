@@ -29,10 +29,11 @@ package org.mini2Dx.miniscript.core;
  * Invokes language-specific compiler/interpreter/runtime for scripts.
  */
 public interface ScriptExecutor<S> {
-	
-	public S compile(String script);
-	
-	public void execute(S script, ScriptBindings bindings) throws Exception;
-	
+
+	public GameScript<S> compile(String script);
+
+	public void execute(GameScript<S> script, ScriptBindings bindings, ScriptInvocationListener invocationListener)
+			throws Exception;
+
 	public void release();
 }

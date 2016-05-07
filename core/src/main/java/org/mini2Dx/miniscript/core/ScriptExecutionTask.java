@@ -26,46 +26,57 @@ package org.mini2Dx.miniscript.core;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.mini2Dx.miniscript.core.exception.ScriptSkippedException;
+
 /**
  * Executes a script
  */
 public class ScriptExecutionTask<S> implements Runnable {
 	private static final AtomicInteger ID_GENERATOR = new AtomicInteger(0);
-	
+
 	private final int id;
 	private final ScriptExecutor<S> executor;
-	private final S script;
+	private final GameScript<S> script;
 	private final ScriptBindings scriptBindings;
-	
+	private final ScriptInvocationListener scriptInvocationListener;
+
 	private Future<?> taskFuture;
-	
-	public ScriptExecutionTask(ScriptExecutor<S> executor, S script, ScriptBindings scriptBindings) {
+
+	public ScriptExecutionTask(ScriptExecutor<S> executor, GameScript<S> script, ScriptBindings scriptBindings,
+			ScriptInvocationListener scriptInvocationListener) {
 		this.executor = executor;
 		this.script = script;
 		this.scriptBindings = scriptBindings;
-		
+		this.scriptInvocationListener = scriptInvocationListener;
+
 		id = ID_GENERATOR.incrementAndGet();
 	}
 
 	@Override
 	public void run() {
 		try {
-			executor.execute(script, scriptBindings);
+			executor.execute(script, scriptBindings, scriptInvocationListener);
+		} catch (InterruptedException | ScriptSkippedException e) {
+			if (scriptInvocationListener != null) {
+				scriptInvocationListener.onScriptSkipped(script.getId());
+			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			if (scriptInvocationListener != null) {
+				scriptInvocationListener.onScriptException(script.getId(), e);
+			} else {
+				e.printStackTrace();
+			}
 		}
-		
-		if(Thread.interrupted()) {
-			
-		}
+		// Clear interrupted bit
+		Thread.interrupted();
 	}
-	
+
 	public void skipScript() {
-		if(!taskFuture.cancel(true)) {
-			
+		if (!taskFuture.cancel(true)) {
+
 		}
 	}
-	
+
 	public boolean isFinished() {
 		return taskFuture != null && taskFuture.isDone();
 	}
@@ -73,7 +84,7 @@ public class ScriptExecutionTask<S> implements Runnable {
 	public void cleanup() {
 		executor.release();
 	}
-	
+
 	public int getTaskId() {
 		return id;
 	}

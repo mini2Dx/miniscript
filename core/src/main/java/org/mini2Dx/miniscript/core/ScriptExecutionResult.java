@@ -23,20 +23,17 @@
  */
 package org.mini2Dx.miniscript.core;
 
-import org.mini2Dx.miniscript.core.exception.InsufficientCompilersException;
-import org.mini2Dx.miniscript.core.exception.InsufficientExecutorsException;
+import java.util.Map;
 
 /**
- * Common interface for language-specific {@link ScriptExecutor} pools.
- * 
- * Manages resources for compilation and execution of scripts.
+ * Stores the variable mappings after a script's execution
  */
-public interface ScriptExecutorPool<S> {
-
-	public int preCompileScript(String scriptContent) throws InsufficientCompilersException;
-
-	public ScriptExecutionTask<?> execute(int scriptId, ScriptBindings scriptBindings,
-			ScriptInvocationListener invocationListener) throws InsufficientExecutorsException;
-
-	public void release(ScriptExecutor<S> executor);
+public class ScriptExecutionResult extends ScriptBindings {
+	
+	public ScriptExecutionResult(Map<String, Object> results) {
+		if(results == null) {
+			return;
+		}
+		super.putAll(results);
+	}
 }

@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.mini2Dx.miniscript.python;
+package org.mini2Dx.miniscript.core.dummy;
 
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -36,30 +36,29 @@ import org.mini2Dx.miniscript.core.ScriptExecutorPool;
 import org.mini2Dx.miniscript.core.ScriptInvocationListener;
 import org.mini2Dx.miniscript.core.exception.InsufficientCompilersException;
 import org.mini2Dx.miniscript.core.exception.InsufficientExecutorsException;
-import org.python.core.PyCode;
 
 /**
- * An implementation of {@link ScriptExecutorPool} for Python-based scripts
+ * An implementation for {@link ScriptExecutorPool} for unit tests
  */
-public class PythonScriptExecutorPool implements ScriptExecutorPool<PyCode> {
-	private final Map<Integer, GameScript<PyCode>> scripts = new ConcurrentHashMap<Integer, GameScript<PyCode>>();
-	private final BlockingQueue<ScriptExecutor<PyCode>> executors;
+public class DummyScriptExecutorPool implements ScriptExecutorPool<DummyScript> {
+	private final Map<Integer, GameScript<DummyScript>> scripts = new ConcurrentHashMap<Integer, GameScript<DummyScript>>();
+	private final BlockingQueue<ScriptExecutor<DummyScript>> executors;
 
-	public PythonScriptExecutorPool(int poolSize) {
-		executors = new ArrayBlockingQueue<ScriptExecutor<PyCode>>(poolSize);
+	public DummyScriptExecutorPool(int poolSize) {
+		executors = new ArrayBlockingQueue<ScriptExecutor<DummyScript>>(poolSize);
 
 		for (int i = 0; i < poolSize; i++) {
-			executors.offer(new PythonScriptExecutor(this));
+			executors.offer(new DummyScriptExecutor(this));
 		}
 	}
 
 	@Override
 	public int preCompileScript(String scriptContent) throws InsufficientCompilersException {
-		ScriptExecutor<PyCode> executor = allocateExecutor();
+		ScriptExecutor<DummyScript> executor = allocateExecutor();
 		if (executor == null) {
 			throw new InsufficientCompilersException();
 		}
-		GameScript<PyCode> script = executor.compile(scriptContent);
+		GameScript<DummyScript> script = executor.compile(scriptContent);
 		executor.release();
 		scripts.put(script.getId(), script);
 		return script.getId();
@@ -68,15 +67,16 @@ public class PythonScriptExecutorPool implements ScriptExecutorPool<PyCode> {
 	@Override
 	public ScriptExecutionTask<?> execute(int scriptId, ScriptBindings scriptBindings,
 			ScriptInvocationListener invocationListener) throws InsufficientExecutorsException {
-		ScriptExecutor<PyCode> executor = allocateExecutor();
+		ScriptExecutor<DummyScript> executor = allocateExecutor();
 		if (executor == null) {
 			throw new InsufficientExecutorsException(scriptId);
 		}
-		return new ScriptExecutionTask<PyCode>(executor, scripts.get(scriptId), scriptBindings, invocationListener);
+		return new ScriptExecutionTask<DummyScript>(executor, scripts.get(scriptId), scriptBindings,
+				invocationListener);
 	}
 
 	@Override
-	public void release(ScriptExecutor<PyCode> executor) {
+	public void release(ScriptExecutor<DummyScript> executor) {
 		try {
 			executors.put(executor);
 		} catch (InterruptedException e) {
@@ -84,7 +84,7 @@ public class PythonScriptExecutorPool implements ScriptExecutorPool<PyCode> {
 		}
 	}
 
-	private ScriptExecutor<PyCode> allocateExecutor() {
+	private ScriptExecutor<DummyScript> allocateExecutor() {
 		return executors.poll();
 	}
 }

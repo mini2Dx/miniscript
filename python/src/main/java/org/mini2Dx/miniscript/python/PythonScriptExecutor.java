@@ -23,9 +23,17 @@
  */
 package org.mini2Dx.miniscript.python;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.mini2Dx.miniscript.core.GameScript;
 import org.mini2Dx.miniscript.core.ScriptBindings;
+import org.mini2Dx.miniscript.core.ScriptExecutionResult;
 import org.mini2Dx.miniscript.core.ScriptExecutor;
+import org.mini2Dx.miniscript.core.ScriptInvocationListener;
+import org.mini2Dx.miniscript.core.exception.ScriptSkippedException;
 import org.python.core.PyCode;
+import org.python.core.PyException;
 import org.python.util.InteractiveInterpreter;
 
 /**
@@ -44,17 +52,35 @@ public class PythonScriptExecutor implements ScriptExecutor<PyCode> {
 	}
 
 	@Override
-	public PyCode compile(String script) {
-		return pythonInterpreter.compile(script);
+	public GameScript<PyCode> compile(String script) {
+		return new GameScript<PyCode>(pythonInterpreter.compile(script));
 	}
 
 	@Override
-	public void execute(PyCode script, ScriptBindings bindings) throws Exception {
+	public void execute(GameScript<PyCode> script, ScriptBindings bindings, ScriptInvocationListener invocationListener) throws Exception {
+		PyCode pythonScript = script.getScript();
 		for (String variableName : bindings.keySet()) {
 			pythonInterpreter.set(variableName, bindings.get(variableName));
 		}
-		pythonInterpreter.exec(script);
-		;
+		try {
+			pythonInterpreter.exec(pythonScript);
+		} catch (PyException e) {
+			if(e.getCause() instanceof ScriptSkippedException) {
+				throw new ScriptSkippedException();
+			} else {
+				throw e;
+			}
+		}
+		
+		if(invocationListener == null) {
+			return;
+		}
+		//TODO: Find way to extract all variables
+		ScriptExecutionResult executionResult = new ScriptExecutionResult(null);
+		for(String variableName : bindings.keySet()) {
+			executionResult.put(variableName, pythonInterpreter.get(variableName, Object.class));
+		}
+		invocationListener.onScriptSuccess(script.getId(), executionResult);
 	}
 
 	@Override
