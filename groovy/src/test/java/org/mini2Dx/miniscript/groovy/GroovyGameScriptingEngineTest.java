@@ -24,6 +24,7 @@
 package org.mini2Dx.miniscript.groovy;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -53,6 +54,11 @@ public class GroovyGameScriptingEngineTest extends AbstractGameScriptingEngineTe
 		}
 		Assert.fail("Could not read default script");
 		return null;
+	}
+	
+	@Override
+	protected InputStream getDefaultScriptInputStream() {
+		return GroovyGameScriptingEngineTest.class.getResourceAsStream("/default.groovy");
 	}
 
 	@Override

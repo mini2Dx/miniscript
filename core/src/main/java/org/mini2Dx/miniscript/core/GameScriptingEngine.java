@@ -23,8 +23,11 @@
  */
 package org.mini2Dx.miniscript.core;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -176,6 +179,22 @@ public abstract class GameScriptingEngine implements Runnable {
 	 */
 	public int compileScript(String scriptContent) throws InsufficientCompilersException {
 		return scriptExecutorPool.preCompileScript(scriptContent);
+	}
+	
+	/**
+	 * Compiles a script for execution
+	 * @param inputStream The {@link InputStream} to read the script contents from
+	 * @return The unique id for the script
+	 * @throws InsufficientCompilersException Thrown if there are no script compilers available
+	 * @throws IOException Throw if the {@link InputStream} could not be read or closed
+	 */
+	public int compileScript(InputStream inputStream) throws InsufficientCompilersException, IOException {
+		Scanner scanner = new Scanner(inputStream);
+		scanner.useDelimiter("\\A");
+		String contents = scanner.hasNext() ? scanner.next() : "";
+		scanner.close();
+		inputStream.close();
+		return compileScript(contents);
 	}
 
 	/**
