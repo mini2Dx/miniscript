@@ -301,6 +301,42 @@ public abstract class GameScriptingEngine implements Runnable {
 		return scriptId;
 	}
 
+	/**
+	 * Executes a compiled script immediately on the thread calling this method.
+	 * 
+	 * Warning: If no {@link ScriptExecutor}s are available this will block
+	 * until one is available
+	 * 
+	 * @param scriptId
+	 *            The script id
+	 * @param scriptBindings
+	 *            The variable bindings for the script
+	 */
+	public void invokeCompiledScriptLocally(int scriptId, ScriptBindings scriptBindings) {
+		invokeCompiledScriptLocally(scriptId, scriptBindings, null);
+	}
+
+	/**
+	 * Executes a compiled script immediately on the thread calling this method.
+	 * 
+	 * Warning: If no {@link ScriptExecutor}s are available this will block
+	 * until one is available
+	 * 
+	 * @param scriptId
+	 *            The script id
+	 * @param scriptBindings
+	 *            The variable bindings for the script
+	 * @param invocationListener
+	 *            A {@link ScriptInvocationListener} to list for invocation
+	 *            results
+	 */
+	public void invokeCompiledScriptLocally(int scriptId, ScriptBindings scriptBindings,
+			ScriptInvocationListener invocationListener) {
+		ScriptExecutionTask<?> executionTask = scriptExecutorPool.execute(scriptId, scriptBindings, invocationListener);
+		runningScripts.put(executionTask.getTaskId(), executionTask);
+		executionTask.run();
+	}
+
 	void submitGameFuture(GameFuture gameFuture) {
 		GameFuture previousFuture = runningFutures.put(gameFuture.getFutureId(), gameFuture);
 		if (previousFuture == null) {

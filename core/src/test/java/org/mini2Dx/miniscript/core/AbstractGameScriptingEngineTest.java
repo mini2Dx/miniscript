@@ -110,6 +110,46 @@ public abstract class AbstractGameScriptingEngineTest {
 	}
 	
 	@Test
+	public void testInvokeScriptLocally() throws Exception {
+		final int expectedScriptId = scriptingEngine.compileScript(getDefaultScript());
+		scriptingEngine.invokeCompiledScriptLocally(expectedScriptId, scriptBindings, new ScriptInvocationListener() {
+			
+			@Override
+			public void onScriptSuccess(int scriptId, ScriptExecutionResult executionResult) {
+				if(scriptId != expectedScriptId) {
+					scriptResult.set(ScriptResult.INCORRECT_SCRIPT_ID);
+					scriptExecuted.set(true);
+				} else if(!checkExpectedScriptResults(executionResult)) {
+					scriptResult.set(ScriptResult.INCORRECT_VARIABLES);
+					scriptExecuted.set(true);
+				} else {
+					scriptResult.set(ScriptResult.SUCCESS);
+					scriptExecuted.set(true);
+				}
+			}
+			
+			@Override
+			public void onScriptSkipped(int scriptId) {
+				scriptResult.set(ScriptResult.SKIPPED);
+				scriptExecuted.set(true);
+			}
+			
+			@Override
+			public void onScriptException(int scriptId, Exception e) {
+				e.printStackTrace();
+				scriptResult.set(ScriptResult.EXCEPTION);
+				scriptExecuted.set(true);
+			}
+		});
+		scriptingEngine.update(1f);
+		Assert.assertEquals(ScriptResult.SUCCESS, scriptResult.get());
+		Assert.assertEquals(true, gameFuture.isUpdated());
+		Assert.assertEquals(false, gameFuture.waitOccurred());
+		Assert.assertEquals(false, gameFuture.isFutureSkipped());
+		Assert.assertEquals(false, gameFuture.isScriptSkipped());
+	}
+	
+	@Test
 	public void testInvokeScriptViaInputStream() throws Exception {
 		final int expectedScriptId = scriptingEngine.compileScript(getDefaultScriptInputStream());
 		scriptingEngine.invokeCompiledScript(expectedScriptId, scriptBindings, new ScriptInvocationListener() {
