@@ -94,4 +94,17 @@ public class ScriptBindings implements Map<String, Object> {
 		return bindings.entrySet();
 	}
 
+	@Override
+	public String toString() {
+		StringBuilder result = new StringBuilder("ScriptBindings [");
+		for(String key : bindings.keySet()) {
+			result.append(key);
+			result.append("=");
+			result.append(bindings.get(key));
+			result.append(", ");
+		}
+		result.delete(result.length() - 2, result.length());
+		result.append("]");
+		return result.toString();
+	}
 }
