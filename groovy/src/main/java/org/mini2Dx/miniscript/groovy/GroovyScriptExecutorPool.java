@@ -27,7 +27,6 @@ import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.mini2Dx.miniscript.core.GameScript;
 import org.mini2Dx.miniscript.core.ScriptBindings;
@@ -36,7 +35,7 @@ import org.mini2Dx.miniscript.core.ScriptExecutor;
 import org.mini2Dx.miniscript.core.ScriptExecutorPool;
 import org.mini2Dx.miniscript.core.ScriptInvocationListener;
 import org.mini2Dx.miniscript.core.exception.InsufficientCompilersException;
-import org.mini2Dx.miniscript.core.exception.InsufficientExecutorsException;
+import org.mini2Dx.miniscript.core.exception.ScriptExecutorUnavailableException;
 
 import groovy.lang.Script;
 
@@ -66,7 +65,7 @@ public class GroovyScriptExecutorPool implements ScriptExecutorPool<Script> {
 
 	@Override
 	public int preCompileScript(String scriptContent) throws InsufficientCompilersException {
-		ScriptExecutor<Script> executor = allocateExecutor();
+		ScriptExecutor<Script> executor = executors.poll();
 		if(executor == null) {
 			throw new InsufficientCompilersException();
 		}
@@ -77,15 +76,20 @@ public class GroovyScriptExecutorPool implements ScriptExecutorPool<Script> {
 	}
 
 	@Override
-	public ScriptExecutionTask<?> execute(int scriptId, ScriptBindings scriptBindings, ScriptInvocationListener invocationListener) throws InsufficientExecutorsException {
+	public ScriptExecutionTask<?> execute(int scriptId, ScriptBindings scriptBindings, ScriptInvocationListener invocationListener) {
 		ScriptExecutor<Script> executor = allocateExecutor();
 		if(executor == null) {
-			throw new InsufficientExecutorsException(scriptId);
+			throw new ScriptExecutorUnavailableException(scriptId);
 		}
 		return new ScriptExecutionTask<Script>(executor, scripts.get(scriptId), scriptBindings, invocationListener);
 	}
 
 	private ScriptExecutor<Script> allocateExecutor() {
-		return executors.poll();
+		try {
+			return executors.take();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 }

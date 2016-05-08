@@ -23,13 +23,16 @@
  */
 package org.mini2Dx.miniscript.core.exception;
 
+import org.mini2Dx.miniscript.core.ScriptExecutor;
+
 /**
- * Thrown when all script executors are currently in use
+ * Called when a script is attempting to execute but a {@link ScriptExecutor} in
+ * unavailable
  */
-public class InsufficientExecutorsException extends Exception {
-	private static final long serialVersionUID = 2947579725300422095L;
-	
-	public InsufficientExecutorsException(int scriptId) {
-		super("There were insufficient executors available to run script id: " + scriptId);
+public class ScriptExecutorUnavailableException extends RuntimeException {
+	private static final long serialVersionUID = -8409957449519524312L;
+
+	public ScriptExecutorUnavailableException(int scriptId) {
+		super("Unable to execute script " + scriptId + " due to no available " + ScriptExecutor.class.getSimpleName());
 	}
 }

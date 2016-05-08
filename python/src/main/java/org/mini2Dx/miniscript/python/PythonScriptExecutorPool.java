@@ -35,7 +35,7 @@ import org.mini2Dx.miniscript.core.ScriptExecutor;
 import org.mini2Dx.miniscript.core.ScriptExecutorPool;
 import org.mini2Dx.miniscript.core.ScriptInvocationListener;
 import org.mini2Dx.miniscript.core.exception.InsufficientCompilersException;
-import org.mini2Dx.miniscript.core.exception.InsufficientExecutorsException;
+import org.mini2Dx.miniscript.core.exception.ScriptExecutorUnavailableException;
 import org.python.core.PyCode;
 
 /**
@@ -55,7 +55,7 @@ public class PythonScriptExecutorPool implements ScriptExecutorPool<PyCode> {
 
 	@Override
 	public int preCompileScript(String scriptContent) throws InsufficientCompilersException {
-		ScriptExecutor<PyCode> executor = allocateExecutor();
+		ScriptExecutor<PyCode> executor = executors.poll();
 		if (executor == null) {
 			throw new InsufficientCompilersException();
 		}
@@ -67,10 +67,10 @@ public class PythonScriptExecutorPool implements ScriptExecutorPool<PyCode> {
 
 	@Override
 	public ScriptExecutionTask<?> execute(int scriptId, ScriptBindings scriptBindings,
-			ScriptInvocationListener invocationListener) throws InsufficientExecutorsException {
+			ScriptInvocationListener invocationListener) {
 		ScriptExecutor<PyCode> executor = allocateExecutor();
 		if (executor == null) {
-			throw new InsufficientExecutorsException(scriptId);
+			throw new ScriptExecutorUnavailableException(scriptId);
 		}
 		return new ScriptExecutionTask<PyCode>(executor, scripts.get(scriptId), scriptBindings, invocationListener);
 	}
@@ -85,6 +85,11 @@ public class PythonScriptExecutorPool implements ScriptExecutorPool<PyCode> {
 	}
 
 	private ScriptExecutor<PyCode> allocateExecutor() {
-		return executors.poll();
+		try {
+			return executors.take();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 }

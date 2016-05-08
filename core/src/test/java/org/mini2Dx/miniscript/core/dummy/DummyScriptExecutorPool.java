@@ -35,7 +35,7 @@ import org.mini2Dx.miniscript.core.ScriptExecutor;
 import org.mini2Dx.miniscript.core.ScriptExecutorPool;
 import org.mini2Dx.miniscript.core.ScriptInvocationListener;
 import org.mini2Dx.miniscript.core.exception.InsufficientCompilersException;
-import org.mini2Dx.miniscript.core.exception.InsufficientExecutorsException;
+import org.mini2Dx.miniscript.core.exception.ScriptExecutorUnavailableException;
 
 /**
  * An implementation for {@link ScriptExecutorPool} for unit tests
@@ -54,7 +54,7 @@ public class DummyScriptExecutorPool implements ScriptExecutorPool<DummyScript> 
 
 	@Override
 	public int preCompileScript(String scriptContent) throws InsufficientCompilersException {
-		ScriptExecutor<DummyScript> executor = allocateExecutor();
+		ScriptExecutor<DummyScript> executor = executors.poll();
 		if (executor == null) {
 			throw new InsufficientCompilersException();
 		}
@@ -66,10 +66,10 @@ public class DummyScriptExecutorPool implements ScriptExecutorPool<DummyScript> 
 
 	@Override
 	public ScriptExecutionTask<?> execute(int scriptId, ScriptBindings scriptBindings,
-			ScriptInvocationListener invocationListener) throws InsufficientExecutorsException {
+			ScriptInvocationListener invocationListener) {
 		ScriptExecutor<DummyScript> executor = allocateExecutor();
-		if (executor == null) {
-			throw new InsufficientExecutorsException(scriptId);
+		if(executor == null) {
+			throw new ScriptExecutorUnavailableException(scriptId);
 		}
 		return new ScriptExecutionTask<DummyScript>(executor, scripts.get(scriptId), scriptBindings,
 				invocationListener);
@@ -85,6 +85,11 @@ public class DummyScriptExecutorPool implements ScriptExecutorPool<DummyScript> 
 	}
 
 	private ScriptExecutor<DummyScript> allocateExecutor() {
-		return executors.poll();
+		try {
+			return executors.take();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 }

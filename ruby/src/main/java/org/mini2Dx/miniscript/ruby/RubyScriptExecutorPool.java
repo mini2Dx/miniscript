@@ -40,7 +40,7 @@ import org.mini2Dx.miniscript.core.ScriptExecutor;
 import org.mini2Dx.miniscript.core.ScriptExecutorPool;
 import org.mini2Dx.miniscript.core.ScriptInvocationListener;
 import org.mini2Dx.miniscript.core.exception.InsufficientCompilersException;
-import org.mini2Dx.miniscript.core.exception.InsufficientExecutorsException;
+import org.mini2Dx.miniscript.core.exception.ScriptExecutorUnavailableException;
 
 /**
  * An implementation of {@link ScriptExecutorPool} for Ruby-based scripts
@@ -49,7 +49,7 @@ public class RubyScriptExecutorPool implements ScriptExecutorPool<EmbedEvalUnit>
 	private final Map<Long, ScriptingContainer> threadCompilers = new ConcurrentHashMap<Long, ScriptingContainer>();
 	private final Map<Integer, PerThreadGameScript<EmbedEvalUnit>> scripts = new ConcurrentHashMap<Integer, PerThreadGameScript<EmbedEvalUnit>>();
 	private final BlockingQueue<ScriptExecutor<EmbedEvalUnit>> executors;
-	
+
 	public RubyScriptExecutorPool(int poolSize) {
 		executors = new ArrayBlockingQueue<ScriptExecutor<EmbedEvalUnit>>(poolSize);
 
@@ -57,7 +57,7 @@ public class RubyScriptExecutorPool implements ScriptExecutorPool<EmbedEvalUnit>
 			executors.offer(new RubyScriptExecutor(this));
 		}
 	}
-	
+
 	@Override
 	public int preCompileScript(String scriptContent) throws InsufficientCompilersException {
 		PerThreadGameScript<EmbedEvalUnit> script = new PerThreadGameScript<EmbedEvalUnit>(scriptContent);
@@ -67,12 +67,13 @@ public class RubyScriptExecutorPool implements ScriptExecutorPool<EmbedEvalUnit>
 
 	@Override
 	public ScriptExecutionTask<?> execute(int scriptId, ScriptBindings scriptBindings,
-			ScriptInvocationListener invocationListener) throws InsufficientExecutorsException {
+			ScriptInvocationListener invocationListener) {
 		ScriptExecutor<EmbedEvalUnit> executor = allocateExecutor();
 		if (executor == null) {
-			throw new InsufficientExecutorsException(scriptId);
+			throw new ScriptExecutorUnavailableException(scriptId);
 		}
-		return new ScriptExecutionTask<EmbedEvalUnit>(executor, scripts.get(scriptId), scriptBindings, invocationListener);
+		return new ScriptExecutionTask<EmbedEvalUnit>(executor, scripts.get(scriptId), scriptBindings,
+				invocationListener);
 	}
 
 	@Override
@@ -83,15 +84,21 @@ public class RubyScriptExecutorPool implements ScriptExecutorPool<EmbedEvalUnit>
 			e.printStackTrace();
 		}
 	}
-	
+
 	private ScriptExecutor<EmbedEvalUnit> allocateExecutor() {
-		return executors.poll();
+		try {
+			return executors.take();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
-	
+
 	public ScriptingContainer getLocalScriptingContainer() {
 		long threadId = Thread.currentThread().getId();
-		if(!threadCompilers.containsKey(threadId)) {
-			ScriptingContainer scriptingContainer = new ScriptingContainer(LocalContextScope.THREADSAFE, LocalVariableBehavior.PERSISTENT);
+		if (!threadCompilers.containsKey(threadId)) {
+			ScriptingContainer scriptingContainer = new ScriptingContainer(LocalContextScope.THREADSAFE,
+					LocalVariableBehavior.PERSISTENT);
 			scriptingContainer.setCompileMode(CompileMode.JIT);
 			threadCompilers.put(threadId, scriptingContainer);
 		}

@@ -23,19 +23,45 @@
  */
 package org.mini2Dx.miniscript.core;
 
-import org.mini2Dx.miniscript.core.exception.InsufficientCompilersException;
-
 /**
- * Common interface for language-specific {@link ScriptExecutor} pools.
- * 
- * Manages resources for compilation and execution of scripts.
+ * Wraps a script invocation so it can be queued concurrently
  */
-public interface ScriptExecutorPool<S> {
+public class ScriptInvocation {
+	private final ScriptInvocationPool invocationPool;
+	
+	private int scriptId;
+	private ScriptBindings scriptBindings;
+	private ScriptInvocationListener invocationListener;
+	
+	public ScriptInvocation(ScriptInvocationPool invocationPool) {
+		this.invocationPool = invocationPool;
+	}
 
-	public int preCompileScript(String scriptContent) throws InsufficientCompilersException;
+	public int getScriptId() {
+		return scriptId;
+	}
+	
+	public void setScriptId(int scriptId) {
+		this.scriptId = scriptId;
+	}
+	
+	public ScriptBindings getScriptBindings() {
+		return scriptBindings;
+	}
 
-	public ScriptExecutionTask<?> execute(int scriptId, ScriptBindings scriptBindings,
-			ScriptInvocationListener invocationListener);
+	public void setScriptBindings(ScriptBindings scriptBindings) {
+		this.scriptBindings = scriptBindings;
+	}
 
-	public void release(ScriptExecutor<S> executor);
+	public ScriptInvocationListener getInvocationListener() {
+		return invocationListener;
+	}
+	
+	public void setInvocationListener(ScriptInvocationListener invocationListener) {
+		this.invocationListener = invocationListener;
+	}
+	
+	public void release() {
+		invocationPool.release(this);
+	}
 }
