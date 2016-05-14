@@ -99,7 +99,7 @@ public abstract class AbstractGameScriptingEngineTest {
 		while(!scriptExecuted.get()) {
 			scriptingEngine.update(1f);
 			try {
-				Thread.sleep(1000);
+				Thread.sleep(2000);
 			} catch (Exception e) {}
 		}
 		Assert.assertEquals(ScriptResult.SUCCESS, scriptResult.get());
@@ -184,7 +184,7 @@ public abstract class AbstractGameScriptingEngineTest {
 		while(!scriptExecuted.get()) {
 			scriptingEngine.update(1f);
 			try {
-				Thread.sleep(1000);
+				Thread.sleep(2000);
 			} catch (Exception e) {}
 		}
 		Assert.assertEquals(ScriptResult.SUCCESS, scriptResult.get());
@@ -229,7 +229,7 @@ public abstract class AbstractGameScriptingEngineTest {
 		while(!scriptExecuted.get()) {
 			scriptingEngine.update(1f);
 			try {
-				Thread.sleep(1000);
+				Thread.sleep(2000);
 			} catch (Exception e) {}
 			gameFuture.setFutureCompleted(true);
 		}
@@ -267,7 +267,7 @@ public abstract class AbstractGameScriptingEngineTest {
 		while(!scriptExecuted.get()) {
 			scriptingEngine.update(1f);
 			try {
-				Thread.sleep(1000);
+				Thread.sleep(2000);
 			} catch (Exception e) {}
 			scriptingEngine.skipAllGameFutures();
 		}
@@ -306,7 +306,7 @@ public abstract class AbstractGameScriptingEngineTest {
 			scriptingEngine.update(1f);
 			scriptingEngine.skipScript(expectedScriptId);
 			try {
-				Thread.sleep(1000);
+				Thread.sleep(2000);
 			} catch (Exception e) {}
 			scriptingEngine.update(1f);
 		}
