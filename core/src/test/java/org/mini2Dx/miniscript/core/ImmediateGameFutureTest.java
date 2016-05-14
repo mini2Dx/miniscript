@@ -23,36 +23,23 @@
  */
 package org.mini2Dx.miniscript.core;
 
+import org.junit.Test;
+import org.mini2Dx.miniscript.core.dummy.DummyGameScriptingEngine;
+
 /**
- * A {@link GameFuture} that completes immediately
+ * Unit tests for {@link ImmediateGameFuture}
  */
-public class ImmediateGameFuture extends GameFuture {
-	/**
-	 * Constructor using {@link GameScriptingEngine#MOST_RECENT_INSTANCE}
-	 */
-	public ImmediateGameFuture() {
-		super();
+public class ImmediateGameFutureTest {
+
+	@Test
+	public void testNoArgConstructor() {
+		GameScriptingEngine dummyEngine = new DummyGameScriptingEngine();
+		new ImmediateGameFuture();
+		dummyEngine.dispose();
 	}
-
-	/**
-	 * Constructor
-	 * 
-	 * @param gameScriptingEngine
-	 *            The {@link GameScriptingEngine} this future belongs to
-	 */
-	public ImmediateGameFuture(GameScriptingEngine gameScriptingEngine) {
-		super(gameScriptingEngine);
+	
+	@Test(expected=RuntimeException.class)
+	public void testNoArgConstructorWithNoEngine() {
+		new ImmediateGameFuture();
 	}
-
-	@Override
-	protected boolean update(float delta) {
-		return true;
-	}
-
-	@Override
-	protected void onFutureSkipped() {}
-
-	@Override
-	protected void onScriptSkipped() {}
-
 }

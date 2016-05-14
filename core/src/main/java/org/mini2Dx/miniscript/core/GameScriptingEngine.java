@@ -45,6 +45,11 @@ import org.mini2Dx.miniscript.core.exception.InsufficientCompilersException;
  * Note that this is a base class for each scripting language implementation.
  */
 public abstract class GameScriptingEngine implements Runnable {
+	/**
+	 * Returns the most recently created {@link GameScriptingEngine}
+	 */
+	public static GameScriptingEngine MOST_RECENT_INSTANCE = null;
+	
 	private final ScriptInvocationPool scriptInvocationPool = new ScriptInvocationPool();
 	private final Queue<ScriptInvocation> scriptInvocations = new ConcurrentLinkedQueue<ScriptInvocation>();
 
@@ -91,6 +96,7 @@ public abstract class GameScriptingEngine implements Runnable {
 				}
 			}
 		}, 1L, 1L, TimeUnit.SECONDS);
+		MOST_RECENT_INSTANCE = this;
 	}
 
 	/**

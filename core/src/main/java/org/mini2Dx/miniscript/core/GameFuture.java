@@ -38,12 +38,22 @@ public abstract class GameFuture {
 	private final AtomicBoolean completed = new AtomicBoolean(false);
 
 	/**
+	 * Constructor using {@link GameScriptingEngine#MOST_RECENT_INSTANCE}
+	 */
+	public GameFuture() {
+		this(GameScriptingEngine.MOST_RECENT_INSTANCE);
+	}
+
+	/**
 	 * Constructor
 	 * 
 	 * @param gameScriptingEngine
 	 *            The {@link GameScriptingEngine} this future belongs to
 	 */
 	public GameFuture(GameScriptingEngine gameScriptingEngine) {
+		if(gameScriptingEngine == null) {
+			throw new RuntimeException("Cannot pass null scripting engine to " + GameFuture.class.getSimpleName());
+		}
 		gameScriptingEngine.submitGameFuture(this);
 	}
 

@@ -21,38 +21,19 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.mini2Dx.miniscript.core;
+package org.mini2Dx.miniscript.core.dummy;
+
+import org.mini2Dx.miniscript.core.GameScriptingEngine;
+import org.mini2Dx.miniscript.core.ScriptExecutorPool;
 
 /**
- * A {@link GameFuture} that completes immediately
+ * An implementation of {@link GameScriptingEngine} for unit tests
  */
-public class ImmediateGameFuture extends GameFuture {
-	/**
-	 * Constructor using {@link GameScriptingEngine#MOST_RECENT_INSTANCE}
-	 */
-	public ImmediateGameFuture() {
-		super();
-	}
-
-	/**
-	 * Constructor
-	 * 
-	 * @param gameScriptingEngine
-	 *            The {@link GameScriptingEngine} this future belongs to
-	 */
-	public ImmediateGameFuture(GameScriptingEngine gameScriptingEngine) {
-		super(gameScriptingEngine);
-	}
+public class DummyGameScriptingEngine extends GameScriptingEngine {
 
 	@Override
-	protected boolean update(float delta) {
-		return true;
+	protected ScriptExecutorPool<?> createScriptExecutorPool(int poolSize) {
+		return new DummyScriptExecutorPool(poolSize);
 	}
-
-	@Override
-	protected void onFutureSkipped() {}
-
-	@Override
-	protected void onScriptSkipped() {}
 
 }
