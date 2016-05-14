@@ -304,10 +304,11 @@ public abstract class AbstractGameScriptingEngineTest {
 		});
 		while(!scriptExecuted.get()) {
 			scriptingEngine.update(1f);
+			scriptingEngine.skipScript(expectedScriptId);
 			try {
 				Thread.sleep(1000);
 			} catch (Exception e) {}
-			scriptingEngine.skipScript(expectedScriptId);
+			scriptingEngine.update(1f);
 		}
 		Assert.assertEquals(ScriptResult.SKIPPED, scriptResult.get());
 		Assert.assertEquals(true, gameFuture.isUpdated());

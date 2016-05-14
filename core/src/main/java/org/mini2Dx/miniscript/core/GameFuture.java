@@ -36,6 +36,7 @@ public abstract class GameFuture {
 	private final AtomicBoolean futureSkipped = new AtomicBoolean(false);
 	private final AtomicBoolean scriptSkipped = new AtomicBoolean(false);
 	private final AtomicBoolean completed = new AtomicBoolean(false);
+	private final AtomicBoolean readyForGC = new AtomicBoolean(false);
 
 	/**
 	 * Constructor using {@link GameScriptingEngine#MOST_RECENT_INSTANCE}
@@ -77,8 +78,18 @@ public abstract class GameFuture {
 	protected abstract void onScriptSkipped();
 
 	void evaluate(float delta) {
+		if(scriptSkipped.get()) {
+			onScriptSkipped();
+			readyForGC.set(true);
+		}
+		if(futureSkipped.get()) {
+			onFutureSkipped();
+			readyForGC.set(true);
+			return;
+		}
 		if (update(delta)) {
 			complete();
+			readyForGC.set(true);
 		}
 	}
 
@@ -91,7 +102,6 @@ public abstract class GameFuture {
 
 	public void skipFuture() {
 		futureSkipped.set(true);
-		onFutureSkipped();
 		synchronized (this) {
 			notifyAll();
 		}
@@ -109,7 +119,6 @@ public abstract class GameFuture {
 				return;
 			}
 			if (scriptSkipped.get()) {
-				onScriptSkipped();
 				throw new ScriptSkippedException();
 			}
 			try {
@@ -118,7 +127,6 @@ public abstract class GameFuture {
 				}
 			} catch (InterruptedException e) {
 				scriptSkipped.set(true);
-				onScriptSkipped();
 				throw new ScriptSkippedException();
 			}
 		}
@@ -150,6 +158,14 @@ public abstract class GameFuture {
 	 */
 	public boolean isScriptSkipped() {
 		return scriptSkipped.get();
+	}
+	
+	/**
+	 * Returns if the {@link GameFuture} is ready for cleanup
+	 * @return True if ready for cleanup
+	 */
+	public boolean isReadyForGC() {
+		return readyForGC.get();
 	}
 
 	/**

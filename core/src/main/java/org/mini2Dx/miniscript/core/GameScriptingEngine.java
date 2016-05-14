@@ -144,11 +144,7 @@ public abstract class GameScriptingEngine implements Runnable {
 
 	private void cleanupCompletedFutures() {
 		for (GameFuture gameFuture : runningFutures.values()) {
-			if (gameFuture.isCompleted()) {
-				completedFutures.add(gameFuture.getFutureId());
-			} else if (gameFuture.isFutureSkipped()) {
-				completedFutures.add(gameFuture.getFutureId());
-			} else if (gameFuture.isScriptSkipped()) {
+			if (gameFuture.isReadyForGC()) {
 				completedFutures.add(gameFuture.getFutureId());
 			}
 		}
