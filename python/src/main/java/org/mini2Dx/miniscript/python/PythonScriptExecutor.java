@@ -55,7 +55,7 @@ public class PythonScriptExecutor implements ScriptExecutor<PyCode> {
 	}
 
 	@Override
-	public void execute(GameScript<PyCode> script, ScriptBindings bindings, ScriptInvocationListener invocationListener) throws Exception {
+	public ScriptExecutionResult execute(GameScript<PyCode> script, ScriptBindings bindings, boolean returnResult) throws Exception {
 		PyCode pythonScript = script.getScript();
 		for (String variableName : bindings.keySet()) {
 			pythonInterpreter.set(variableName, bindings.get(variableName));
@@ -70,15 +70,15 @@ public class PythonScriptExecutor implements ScriptExecutor<PyCode> {
 			}
 		}
 		
-		if(invocationListener == null) {
-			return;
+		if(!returnResult) {
+			return null;
 		}
 		//TODO: Find way to extract all variables
 		ScriptExecutionResult executionResult = new ScriptExecutionResult(null);
 		for(String variableName : bindings.keySet()) {
 			executionResult.put(variableName, pythonInterpreter.get(variableName, Object.class));
 		}
-		invocationListener.onScriptSuccess(script.getId(), executionResult);
+		return executionResult;
 	}
 
 	@Override

@@ -32,7 +32,7 @@ public interface ScriptExecutor<S> {
 
 	public GameScript<S> compile(String script);
 
-	public void execute(GameScript<S> script, ScriptBindings bindings, ScriptInvocationListener invocationListener)
+	public ScriptExecutionResult execute(GameScript<S> script, ScriptBindings bindings, boolean returnResult)
 			throws Exception;
 
 	public void release();

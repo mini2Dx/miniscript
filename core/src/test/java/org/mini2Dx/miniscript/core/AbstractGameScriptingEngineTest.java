@@ -95,12 +95,14 @@ public abstract class AbstractGameScriptingEngineTest {
 				scriptResult.set(ScriptResult.EXCEPTION);
 				scriptExecuted.set(true);
 			}
+
+			@Override
+			public boolean callOnGameThread() {
+				return true;
+			}
 		});
 		while(!scriptExecuted.get()) {
 			scriptingEngine.update(1f);
-			try {
-				Thread.sleep(2000);
-			} catch (Exception e) {}
 		}
 		Assert.assertEquals(ScriptResult.SUCCESS, scriptResult.get());
 		Assert.assertEquals(true, gameFuture.isUpdated());
@@ -139,6 +141,11 @@ public abstract class AbstractGameScriptingEngineTest {
 				e.printStackTrace();
 				scriptResult.set(ScriptResult.EXCEPTION);
 				scriptExecuted.set(true);
+			}
+			
+			@Override
+			public boolean callOnGameThread() {
+				return true;
 			}
 		});
 		scriptingEngine.update(1f);
@@ -180,12 +187,14 @@ public abstract class AbstractGameScriptingEngineTest {
 				scriptResult.set(ScriptResult.EXCEPTION);
 				scriptExecuted.set(true);
 			}
+			
+			@Override
+			public boolean callOnGameThread() {
+				return true;
+			}
 		});
 		while(!scriptExecuted.get()) {
 			scriptingEngine.update(1f);
-			try {
-				Thread.sleep(2000);
-			} catch (Exception e) {}
 		}
 		Assert.assertEquals(ScriptResult.SUCCESS, scriptResult.get());
 		Assert.assertEquals(true, gameFuture.isUpdated());
@@ -225,12 +234,14 @@ public abstract class AbstractGameScriptingEngineTest {
 				scriptResult.set(ScriptResult.EXCEPTION);
 				scriptExecuted.set(true);
 			}
+			
+			@Override
+			public boolean callOnGameThread() {
+				return true;
+			}
 		});
 		while(!scriptExecuted.get()) {
 			scriptingEngine.update(1f);
-			try {
-				Thread.sleep(2000);
-			} catch (Exception e) {}
 			gameFuture.setFutureCompleted(true);
 		}
 		Assert.assertEquals(ScriptResult.SUCCESS, scriptResult.get());
@@ -263,12 +274,14 @@ public abstract class AbstractGameScriptingEngineTest {
 				scriptResult.set(ScriptResult.EXCEPTION);
 				scriptExecuted.set(true);
 			}
+			
+			@Override
+			public boolean callOnGameThread() {
+				return true;
+			}
 		});
 		while(!scriptExecuted.get()) {
 			scriptingEngine.update(1f);
-			try {
-				Thread.sleep(2000);
-			} catch (Exception e) {}
 			scriptingEngine.skipAllGameFutures();
 		}
 		Assert.assertEquals(ScriptResult.SUCCESS, scriptResult.get());
@@ -301,14 +314,18 @@ public abstract class AbstractGameScriptingEngineTest {
 				scriptResult.set(ScriptResult.EXCEPTION);
 				scriptExecuted.set(true);
 			}
+			
+			@Override
+			public boolean callOnGameThread() {
+				return true;
+			}
 		});
 		while(!scriptExecuted.get()) {
 			scriptingEngine.update(1f);
-			scriptingEngine.skipScript(expectedScriptId);
 			try {
 				Thread.sleep(2000);
 			} catch (Exception e) {}
-			scriptingEngine.update(1f);
+			scriptingEngine.skipScript(expectedScriptId);
 		}
 		Assert.assertEquals(ScriptResult.SKIPPED, scriptResult.get());
 		Assert.assertEquals(true, gameFuture.isUpdated());

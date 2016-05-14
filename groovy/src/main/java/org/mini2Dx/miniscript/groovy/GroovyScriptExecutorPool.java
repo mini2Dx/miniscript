@@ -29,6 +29,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.mini2Dx.miniscript.core.GameScript;
+import org.mini2Dx.miniscript.core.GameScriptingEngine;
 import org.mini2Dx.miniscript.core.ScriptBindings;
 import org.mini2Dx.miniscript.core.ScriptExecutionTask;
 import org.mini2Dx.miniscript.core.ScriptExecutor;
@@ -45,8 +46,10 @@ import groovy.lang.Script;
 public class GroovyScriptExecutorPool implements ScriptExecutorPool<Script> {
 	private final Map<Integer, GameScript<Script>> scripts = new ConcurrentHashMap<Integer, GameScript<Script>>();
 	private final BlockingQueue<ScriptExecutor<Script>> executors;
+	private final GameScriptingEngine gameScriptingEngine;
 
-	public GroovyScriptExecutorPool(int poolSize) {
+	public GroovyScriptExecutorPool(GameScriptingEngine gameScriptingEngine, int poolSize) {
+		this.gameScriptingEngine = gameScriptingEngine;
 		executors = new ArrayBlockingQueue<ScriptExecutor<Script>>(poolSize);
 
 		for (int i = 0; i < poolSize; i++) {
@@ -66,7 +69,7 @@ public class GroovyScriptExecutorPool implements ScriptExecutorPool<Script> {
 	@Override
 	public int preCompileScript(String scriptContent) throws InsufficientCompilersException {
 		ScriptExecutor<Script> executor = executors.poll();
-		if(executor == null) {
+		if (executor == null) {
 			throw new InsufficientCompilersException();
 		}
 		GameScript<Script> script = executor.compile(scriptContent);
@@ -76,12 +79,14 @@ public class GroovyScriptExecutorPool implements ScriptExecutorPool<Script> {
 	}
 
 	@Override
-	public ScriptExecutionTask<?> execute(int scriptId, ScriptBindings scriptBindings, ScriptInvocationListener invocationListener) {
+	public ScriptExecutionTask<?> execute(int scriptId, ScriptBindings scriptBindings,
+			ScriptInvocationListener invocationListener) {
 		ScriptExecutor<Script> executor = allocateExecutor();
-		if(executor == null) {
+		if (executor == null) {
 			throw new ScriptExecutorUnavailableException(scriptId);
 		}
-		return new ScriptExecutionTask<Script>(executor, scripts.get(scriptId), scriptBindings, invocationListener);
+		return new ScriptExecutionTask<Script>(gameScriptingEngine, executor, scripts.get(scriptId), scriptBindings,
+				invocationListener);
 	}
 
 	private ScriptExecutor<Script> allocateExecutor() {
@@ -91,5 +96,10 @@ public class GroovyScriptExecutorPool implements ScriptExecutorPool<Script> {
 			e.printStackTrace();
 		}
 		return null;
+	}
+
+	@Override
+	public GameScriptingEngine getGameScriptingEngine() {
+		return gameScriptingEngine;
 	}
 }

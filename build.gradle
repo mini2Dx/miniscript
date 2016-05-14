@@ -17,7 +17,7 @@ subprojects {
 	ext {
 		jythonVersion='2.5.3'
 		groovyVersion='2.4.6'
-		jrubyVersion='9.0.5.0'
+		jrubyVersion='9.1.0.0'
 		
 		junitVersion='4.11'
 		jmockVersion='2.5.1'

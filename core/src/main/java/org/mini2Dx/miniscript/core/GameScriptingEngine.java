@@ -38,6 +38,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import org.mini2Dx.miniscript.core.exception.InsufficientCompilersException;
+import org.mini2Dx.miniscript.core.notification.ScriptNotification;
 
 /**
  * Provides scripting functionality to your game
@@ -52,7 +53,8 @@ public abstract class GameScriptingEngine implements Runnable {
 	
 	private final ScriptInvocationPool scriptInvocationPool = new ScriptInvocationPool();
 	private final Queue<ScriptInvocation> scriptInvocations = new ConcurrentLinkedQueue<ScriptInvocation>();
-
+	final Queue<ScriptNotification> scriptNotifications = new ConcurrentLinkedQueue<ScriptNotification>();
+	
 	private final Map<Integer, GameFuture> runningFutures = new ConcurrentHashMap<Integer, GameFuture>();
 	private final Map<Integer, ScriptExecutionTask<?>> runningScripts = new ConcurrentHashMap<Integer, ScriptExecutionTask<?>>();
 	private final Set<Integer> completedFutures = new HashSet<Integer>();
@@ -117,6 +119,9 @@ public abstract class GameScriptingEngine implements Runnable {
 	public void update(float delta) {
 		for (GameFuture gameFuture : runningFutures.values()) {
 			gameFuture.evaluate(delta);
+		}
+		while(!scriptNotifications.isEmpty()) {
+			scriptNotifications.poll().process();
 		}
 	}
 

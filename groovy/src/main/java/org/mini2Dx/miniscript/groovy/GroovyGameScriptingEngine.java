@@ -52,7 +52,7 @@ public class GroovyGameScriptingEngine extends GameScriptingEngine {
 
 	@Override
 	protected ScriptExecutorPool<?> createScriptExecutorPool(int poolSize) {
-		return new GroovyScriptExecutorPool(poolSize);
+		return new GroovyScriptExecutorPool(this, poolSize);
 	}
 
 }

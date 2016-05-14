@@ -29,6 +29,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.mini2Dx.miniscript.core.GameScript;
+import org.mini2Dx.miniscript.core.GameScriptingEngine;
 import org.mini2Dx.miniscript.core.ScriptBindings;
 import org.mini2Dx.miniscript.core.ScriptExecutionTask;
 import org.mini2Dx.miniscript.core.ScriptExecutor;
@@ -44,8 +45,10 @@ import org.python.core.PyCode;
 public class PythonScriptExecutorPool implements ScriptExecutorPool<PyCode> {
 	private final Map<Integer, GameScript<PyCode>> scripts = new ConcurrentHashMap<Integer, GameScript<PyCode>>();
 	private final BlockingQueue<ScriptExecutor<PyCode>> executors;
+	private final GameScriptingEngine gameScriptingEngine;
 
-	public PythonScriptExecutorPool(int poolSize) {
+	public PythonScriptExecutorPool(GameScriptingEngine gameScriptingEngine, int poolSize) {
+		this.gameScriptingEngine = gameScriptingEngine;
 		executors = new ArrayBlockingQueue<ScriptExecutor<PyCode>>(poolSize);
 
 		for (int i = 0; i < poolSize; i++) {
@@ -72,7 +75,8 @@ public class PythonScriptExecutorPool implements ScriptExecutorPool<PyCode> {
 		if (executor == null) {
 			throw new ScriptExecutorUnavailableException(scriptId);
 		}
-		return new ScriptExecutionTask<PyCode>(executor, scripts.get(scriptId), scriptBindings, invocationListener);
+		return new ScriptExecutionTask<PyCode>(gameScriptingEngine, executor, scripts.get(scriptId), scriptBindings,
+				invocationListener);
 	}
 
 	@Override
@@ -91,5 +95,10 @@ public class PythonScriptExecutorPool implements ScriptExecutorPool<PyCode> {
 			e.printStackTrace();
 		}
 		return null;
+	}
+
+	@Override
+	public GameScriptingEngine getGameScriptingEngine() {
+		return gameScriptingEngine;
 	}
 }

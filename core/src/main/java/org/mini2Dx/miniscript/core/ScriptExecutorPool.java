@@ -38,4 +38,6 @@ public interface ScriptExecutorPool<S> {
 			ScriptInvocationListener invocationListener);
 
 	public void release(ScriptExecutor<S> executor);
+	
+	public GameScriptingEngine getGameScriptingEngine();
 }

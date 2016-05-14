@@ -33,7 +33,7 @@ public class DummyGameScriptingEngine extends GameScriptingEngine {
 
 	@Override
 	protected ScriptExecutorPool<?> createScriptExecutorPool(int poolSize) {
-		return new DummyScriptExecutorPool(poolSize);
+		return new DummyScriptExecutorPool(this, poolSize);
 	}
 
 }

@@ -56,4 +56,13 @@ public interface ScriptInvocationListener {
 	 *            The exception that occurred
 	 */
 	public void onScriptException(int scriptId, Exception e);
+
+	/**
+	 * Returns if this {@link ScriptInvocationListener} should be notified on
+	 * the game thread
+	 * 
+	 * @return False if this should be notified on the
+	 *         {@link GameScriptingEngine} thread pool
+	 */
+	public boolean callOnGameThread();
 }

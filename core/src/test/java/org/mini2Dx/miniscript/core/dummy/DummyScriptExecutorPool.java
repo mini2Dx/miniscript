@@ -29,6 +29,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.mini2Dx.miniscript.core.GameScript;
+import org.mini2Dx.miniscript.core.GameScriptingEngine;
 import org.mini2Dx.miniscript.core.ScriptBindings;
 import org.mini2Dx.miniscript.core.ScriptExecutionTask;
 import org.mini2Dx.miniscript.core.ScriptExecutor;
@@ -43,8 +44,10 @@ import org.mini2Dx.miniscript.core.exception.ScriptExecutorUnavailableException;
 public class DummyScriptExecutorPool implements ScriptExecutorPool<DummyScript> {
 	private final Map<Integer, GameScript<DummyScript>> scripts = new ConcurrentHashMap<Integer, GameScript<DummyScript>>();
 	private final BlockingQueue<ScriptExecutor<DummyScript>> executors;
+	private final GameScriptingEngine gameScriptingEngine;
 
-	public DummyScriptExecutorPool(int poolSize) {
+	public DummyScriptExecutorPool(GameScriptingEngine gameScriptingEngine, int poolSize) {
+		this.gameScriptingEngine = gameScriptingEngine;
 		executors = new ArrayBlockingQueue<ScriptExecutor<DummyScript>>(poolSize);
 
 		for (int i = 0; i < poolSize; i++) {
@@ -68,11 +71,11 @@ public class DummyScriptExecutorPool implements ScriptExecutorPool<DummyScript> 
 	public ScriptExecutionTask<?> execute(int scriptId, ScriptBindings scriptBindings,
 			ScriptInvocationListener invocationListener) {
 		ScriptExecutor<DummyScript> executor = allocateExecutor();
-		if(executor == null) {
+		if (executor == null) {
 			throw new ScriptExecutorUnavailableException(scriptId);
 		}
-		return new ScriptExecutionTask<DummyScript>(executor, scripts.get(scriptId), scriptBindings,
-				invocationListener);
+		return new ScriptExecutionTask<DummyScript>(gameScriptingEngine, executor, scripts.get(scriptId),
+				scriptBindings, invocationListener);
 	}
 
 	@Override
@@ -91,5 +94,10 @@ public class DummyScriptExecutorPool implements ScriptExecutorPool<DummyScript> 
 			e.printStackTrace();
 		}
 		return null;
+	}
+
+	@Override
+	public GameScriptingEngine getGameScriptingEngine() {
+		return gameScriptingEngine;
 	}
 }

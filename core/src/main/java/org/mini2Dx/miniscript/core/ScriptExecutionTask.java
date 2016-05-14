@@ -27,6 +27,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.mini2Dx.miniscript.core.exception.ScriptSkippedException;
+import org.mini2Dx.miniscript.core.notification.ScriptExceptionNotification;
+import org.mini2Dx.miniscript.core.notification.ScriptSkippedNotification;
+import org.mini2Dx.miniscript.core.notification.ScriptSuccessNotification;
 
 /**
  * Executes a script
@@ -35,6 +38,7 @@ public class ScriptExecutionTask<S> implements Runnable {
 	private static final AtomicInteger ID_GENERATOR = new AtomicInteger(0);
 
 	private final int id;
+	private final GameScriptingEngine scriptingEngine;
 	private final ScriptExecutor<S> executor;
 	private final GameScript<S> script;
 	private final ScriptBindings scriptBindings;
@@ -42,8 +46,9 @@ public class ScriptExecutionTask<S> implements Runnable {
 
 	private Future<?> taskFuture;
 
-	public ScriptExecutionTask(ScriptExecutor<S> executor, GameScript<S> script, ScriptBindings scriptBindings,
-			ScriptInvocationListener scriptInvocationListener) {
+	public ScriptExecutionTask(GameScriptingEngine gameScriptingEngine, ScriptExecutor<S> executor,
+			GameScript<S> script, ScriptBindings scriptBindings, ScriptInvocationListener scriptInvocationListener) {
+		this.scriptingEngine = gameScriptingEngine;
 		this.executor = executor;
 		this.script = script;
 		this.scriptBindings = scriptBindings;
@@ -55,14 +60,33 @@ public class ScriptExecutionTask<S> implements Runnable {
 	@Override
 	public void run() {
 		try {
-			executor.execute(script, scriptBindings, scriptInvocationListener);
+			ScriptExecutionResult executionResult = executor.execute(script, scriptBindings,
+					scriptInvocationListener != null);
+			if (scriptInvocationListener != null) {
+				if (scriptInvocationListener.callOnGameThread()) {
+					scriptingEngine.scriptNotifications.offer(
+							new ScriptSuccessNotification(scriptInvocationListener, script.getId(), executionResult));
+				} else {
+					scriptInvocationListener.onScriptSuccess(script.getId(), executionResult);
+				}
+			}
 		} catch (InterruptedException | ScriptSkippedException e) {
 			if (scriptInvocationListener != null) {
-				scriptInvocationListener.onScriptSkipped(script.getId());
+				if (scriptInvocationListener.callOnGameThread()) {
+					scriptingEngine.scriptNotifications
+							.offer(new ScriptSkippedNotification(scriptInvocationListener, script.getId()));
+				} else {
+					scriptInvocationListener.onScriptSkipped(script.getId());
+				}
 			}
 		} catch (Exception e) {
 			if (scriptInvocationListener != null) {
-				scriptInvocationListener.onScriptException(script.getId(), e);
+				if (scriptInvocationListener.callOnGameThread()) {
+					scriptingEngine.scriptNotifications
+							.offer(new ScriptExceptionNotification(scriptInvocationListener, script.getId(), e));
+				} else {
+					scriptInvocationListener.onScriptException(script.getId(), e);
+				}
 			} else {
 				e.printStackTrace();
 			}
@@ -72,6 +96,9 @@ public class ScriptExecutionTask<S> implements Runnable {
 	}
 
 	public void skipScript() {
+		if (taskFuture.isDone()) {
+			return;
+		}
 		if (!taskFuture.cancel(true)) {
 
 		}

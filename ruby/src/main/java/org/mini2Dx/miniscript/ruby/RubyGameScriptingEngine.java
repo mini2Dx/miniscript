@@ -52,7 +52,7 @@ public class RubyGameScriptingEngine extends GameScriptingEngine {
 
 	@Override
 	protected ScriptExecutorPool<?> createScriptExecutorPool(int poolSize) {
-		return new RubyScriptExecutorPool(poolSize);
+		return new RubyScriptExecutorPool(this, poolSize);
 	}
 
 }

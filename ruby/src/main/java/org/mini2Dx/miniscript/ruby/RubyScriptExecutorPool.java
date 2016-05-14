@@ -33,6 +33,7 @@ import org.jruby.embed.EmbedEvalUnit;
 import org.jruby.embed.LocalContextScope;
 import org.jruby.embed.LocalVariableBehavior;
 import org.jruby.embed.ScriptingContainer;
+import org.mini2Dx.miniscript.core.GameScriptingEngine;
 import org.mini2Dx.miniscript.core.PerThreadGameScript;
 import org.mini2Dx.miniscript.core.ScriptBindings;
 import org.mini2Dx.miniscript.core.ScriptExecutionTask;
@@ -49,8 +50,10 @@ public class RubyScriptExecutorPool implements ScriptExecutorPool<EmbedEvalUnit>
 	private final Map<Long, ScriptingContainer> threadCompilers = new ConcurrentHashMap<Long, ScriptingContainer>();
 	private final Map<Integer, PerThreadGameScript<EmbedEvalUnit>> scripts = new ConcurrentHashMap<Integer, PerThreadGameScript<EmbedEvalUnit>>();
 	private final BlockingQueue<ScriptExecutor<EmbedEvalUnit>> executors;
+	private final GameScriptingEngine gameScriptingEngine;
 
-	public RubyScriptExecutorPool(int poolSize) {
+	public RubyScriptExecutorPool(GameScriptingEngine gameScriptingEngine, int poolSize) {
+		this.gameScriptingEngine = gameScriptingEngine;
 		executors = new ArrayBlockingQueue<ScriptExecutor<EmbedEvalUnit>>(poolSize);
 
 		for (int i = 0; i < poolSize; i++) {
@@ -72,8 +75,8 @@ public class RubyScriptExecutorPool implements ScriptExecutorPool<EmbedEvalUnit>
 		if (executor == null) {
 			throw new ScriptExecutorUnavailableException(scriptId);
 		}
-		return new ScriptExecutionTask<EmbedEvalUnit>(executor, scripts.get(scriptId), scriptBindings,
-				invocationListener);
+		return new ScriptExecutionTask<EmbedEvalUnit>(gameScriptingEngine, executor, scripts.get(scriptId),
+				scriptBindings, invocationListener);
 	}
 
 	@Override
@@ -103,5 +106,10 @@ public class RubyScriptExecutorPool implements ScriptExecutorPool<EmbedEvalUnit>
 			threadCompilers.put(threadId, scriptingContainer);
 		}
 		return threadCompilers.get(threadId);
+	}
+
+	@Override
+	public GameScriptingEngine getGameScriptingEngine() {
+		return gameScriptingEngine;
 	}
 }
