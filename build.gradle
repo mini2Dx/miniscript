@@ -18,6 +18,7 @@ subprojects {
 		jythonVersion='2.5.3'
 		groovyVersion='2.4.6'
 		jrubyVersion='9.1.0.0'
+		luajVersion='3.0.1'
 		
 		junitVersion='4.11'
 		jmockVersion='2.5.1'
@@ -95,6 +96,18 @@ project(":" + rootProject.name + "-groovy") {
 	dependencies {
 		compile project(":" + rootProject.name + "-core")
 		compile "org.codehaus.groovy:groovy-all:$groovyVersion"
+	
+		testCompile "junit:junit:$junitVersion"
+		testCompile "org.jmock:jmock-junit4:$jmockVersion"
+		testCompile "org.jmock:jmock-legacy:$jmockVersion"
+		testCompile project(path: ":" + rootProject.name + "-core", configuration: 'testOutput')
+	}
+}
+
+project(":" + rootProject.name + "-lua") {
+	dependencies {
+		compile project(":" + rootProject.name + "-core")
+		compile "org.luaj:luaj-jse:$luajVersion"
 	
 		testCompile "junit:junit:$junitVersion"
 		testCompile "org.jmock:jmock-junit4:$jmockVersion"
