@@ -144,7 +144,7 @@ public abstract class GameScriptingEngine implements Runnable {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		executorService.submit(this);
+		executorService.schedule(this, 16L, TimeUnit.MILLISECONDS);
 	}
 
 	private void cleanupCompletedFutures() {
