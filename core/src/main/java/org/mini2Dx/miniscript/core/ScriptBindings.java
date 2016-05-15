@@ -34,6 +34,18 @@ import java.util.Set;
 public class ScriptBindings implements Map<String, Object> {
 	private final HashMap<String, Object> bindings = new HashMap<String, Object>();
 
+	/**
+	 * Creates a duplicate instance of this {@link ScriptBindings}
+	 * 
+	 * @return A new {@link ScriptBindings} instance containing all the same
+	 *         bindings as this instance
+	 */
+	public ScriptBindings duplicate() {
+		ScriptBindings result = new ScriptBindings();
+		result.putAll(bindings);
+		return result;
+	}
+
 	@Override
 	public int size() {
 		return bindings.size();
@@ -97,7 +109,7 @@ public class ScriptBindings implements Map<String, Object> {
 	@Override
 	public String toString() {
 		StringBuilder result = new StringBuilder("ScriptBindings [");
-		for(String key : bindings.keySet()) {
+		for (String key : bindings.keySet()) {
 			result.append(key);
 			result.append("=");
 			result.append(bindings.get(key));
