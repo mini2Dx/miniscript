@@ -33,6 +33,8 @@ import org.mini2Dx.miniscript.core.exception.ScriptSkippedException;
  */
 public abstract class GameFuture {
 	private static final AtomicInteger ID_GENERATOR = new AtomicInteger(0);
+	
+	private final int futureId;
 	private final AtomicBoolean futureSkipped = new AtomicBoolean(false);
 	private final AtomicBoolean scriptSkipped = new AtomicBoolean(false);
 	private final AtomicBoolean completed = new AtomicBoolean(false);
@@ -55,6 +57,7 @@ public abstract class GameFuture {
 		if(gameScriptingEngine == null) {
 			throw new RuntimeException("Cannot pass null scripting engine to " + GameFuture.class.getSimpleName());
 		}
+		futureId = ID_GENERATOR.incrementAndGet();
 		gameScriptingEngine.submitGameFuture(this);
 	}
 
@@ -177,6 +180,6 @@ public abstract class GameFuture {
 	 * @return
 	 */
 	public int getFutureId() {
-		return ID_GENERATOR.incrementAndGet();
+		return futureId;
 	}
 }

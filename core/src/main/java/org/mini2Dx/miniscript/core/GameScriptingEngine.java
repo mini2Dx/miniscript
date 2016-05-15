@@ -55,7 +55,7 @@ public abstract class GameScriptingEngine implements Runnable {
 	private final Queue<ScriptInvocation> scriptInvocations = new ConcurrentLinkedQueue<ScriptInvocation>();
 	final Queue<ScriptNotification> scriptNotifications = new ConcurrentLinkedQueue<ScriptNotification>();
 	
-	private final Map<Integer, GameFuture> runningFutures = new ConcurrentHashMap<Integer, GameFuture>();
+	final Map<Integer, GameFuture> runningFutures = new ConcurrentHashMap<Integer, GameFuture>();
 	private final Map<Integer, ScriptExecutionTask<?>> runningScripts = new ConcurrentHashMap<Integer, ScriptExecutionTask<?>>();
 	private final Set<Integer> completedFutures = new HashSet<Integer>();
 	private final Set<Integer> completedScripts = new HashSet<Integer>();
@@ -97,7 +97,7 @@ public abstract class GameScriptingEngine implements Runnable {
 					e.printStackTrace();
 				}
 			}
-		}, 1L, 1L, TimeUnit.SECONDS);
+		}, 0L, 1L, TimeUnit.SECONDS);
 		MOST_RECENT_INSTANCE = this;
 	}
 

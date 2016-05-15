@@ -336,7 +336,55 @@ public abstract class AbstractGameScriptingEngineTest {
 		Assert.assertEquals(true, gameFuture.isScriptSkipped());
 	}
 	
-	
+	@Test
+	public void testGameFutureGarbageCollection() throws Exception {
+		final int expectedScriptId = scriptingEngine.compileScript(getWaitForCompletionScript());
+		scriptingEngine.invokeCompiledScript(expectedScriptId, scriptBindings, new ScriptInvocationListener() {
+			
+			@Override
+			public void onScriptSuccess(int scriptId, ScriptExecutionResult executionResult) {
+				if(scriptId != expectedScriptId) {
+					scriptResult.set(ScriptResult.INCORRECT_SCRIPT_ID);
+					scriptExecuted.set(true);
+				} else if(!checkExpectedScriptResults(executionResult)) {
+					scriptResult.set(ScriptResult.INCORRECT_VARIABLES);
+					scriptExecuted.set(true);
+				} else {
+					scriptResult.set(ScriptResult.SUCCESS);
+					scriptExecuted.set(true);
+				}
+			}
+			
+			@Override
+			public void onScriptSkipped(int scriptId) {
+				scriptResult.set(ScriptResult.SKIPPED);
+				scriptExecuted.set(true);
+			}
+			
+			@Override
+			public void onScriptException(int scriptId, Exception e) {
+				e.printStackTrace();
+				scriptResult.set(ScriptResult.EXCEPTION);
+				scriptExecuted.set(true);
+			}
+			
+			@Override
+			public boolean callOnGameThread() {
+				return true;
+			}
+		});
+		Assert.assertEquals(1, scriptingEngine.runningFutures.size());
+		while(!scriptExecuted.get()) {
+			scriptingEngine.update(1f);
+			gameFuture.setFutureCompleted(true);
+		}
+		try {
+			Thread.sleep(2000);
+		} catch (Exception e) {}
+		scriptingEngine.update(1f);
+		Assert.assertEquals(ScriptResult.SUCCESS, scriptResult.get());
+		Assert.assertEquals(0, scriptingEngine.runningFutures.size());
+	}
 	
 	protected abstract GameScriptingEngine createScriptingEngine();
 	

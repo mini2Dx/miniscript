@@ -23,6 +23,7 @@
  */
 package org.mini2Dx.miniscript.core;
 
+import org.junit.Assert;
 import org.junit.Test;
 import org.mini2Dx.miniscript.core.dummy.DummyGameScriptingEngine;
 
@@ -41,5 +42,16 @@ public class ImmediateGameFutureTest {
 	@Test(expected=RuntimeException.class)
 	public void testNoArgConstructorWithNoEngine() {
 		new ImmediateGameFuture();
+	}
+	
+	public void testIdGeneration() {
+		GameScriptingEngine dummyEngine = new DummyGameScriptingEngine();
+		GameFuture future1 = new ImmediateGameFuture();
+		GameFuture future2 = new ImmediateGameFuture();
+		
+		int future1Id = future1.getFutureId();
+		Assert.assertEquals(true, future1.getFutureId() != future2.getFutureId());
+		//Ensure id if final
+		Assert.assertEquals(future1, future1.getFutureId());
 	}
 }
