@@ -241,14 +241,16 @@ public abstract class AbstractGameScriptingEngineTest {
 			}
 		});
 		while(!scriptExecuted.get()) {
-			scriptingEngine.update(1f);
 			gameFuture.setFutureCompleted(true);
+			scriptingEngine.update(1f);
 		}
+		scriptingEngine.update(1f);
 		Assert.assertEquals(ScriptResult.SUCCESS, scriptResult.get());
 		Assert.assertEquals(true, gameFuture.isUpdated());
 		Assert.assertEquals(true, gameFuture.waitOccurred());
 		Assert.assertEquals(false, gameFuture.isFutureSkipped());
 		Assert.assertEquals(false, gameFuture.isScriptSkipped());
+		Assert.assertEquals(1, gameFuture.getUpdateCount());
 	}
 	
 	@Test
@@ -333,6 +335,8 @@ public abstract class AbstractGameScriptingEngineTest {
 		Assert.assertEquals(false, gameFuture.isFutureSkipped());
 		Assert.assertEquals(true, gameFuture.isScriptSkipped());
 	}
+	
+	
 	
 	protected abstract GameScriptingEngine createScriptingEngine();
 	

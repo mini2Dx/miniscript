@@ -78,9 +78,13 @@ public abstract class GameFuture {
 	protected abstract void onScriptSkipped();
 
 	void evaluate(float delta) {
+		if(readyForGC.get()) {
+			return;
+		}
 		if(scriptSkipped.get()) {
 			onScriptSkipped();
 			readyForGC.set(true);
+			return;
 		}
 		if(futureSkipped.get()) {
 			onFutureSkipped();

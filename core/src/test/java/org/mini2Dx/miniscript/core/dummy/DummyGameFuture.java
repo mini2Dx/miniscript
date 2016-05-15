@@ -36,7 +36,8 @@ public class DummyGameFuture extends GameFuture {
 	private boolean scriptSkipped = false;
 	private boolean futureCompleted = false;
 	private boolean waitOccurred = false;
-
+	private int updateCount = 0;
+	
 	public DummyGameFuture(GameScriptingEngine gameScriptingEngine) {
 		super(gameScriptingEngine);
 	}
@@ -44,6 +45,7 @@ public class DummyGameFuture extends GameFuture {
 	@Override
 	protected boolean update(float delta) {
 		updated = true;
+		updateCount++;
 		return futureCompleted;
 	}
 
@@ -85,5 +87,9 @@ public class DummyGameFuture extends GameFuture {
 	
 	public boolean waitOccurred() {
 		return waitOccurred;
+	}
+
+	public int getUpdateCount() {
+		return updateCount;
 	}
 }
