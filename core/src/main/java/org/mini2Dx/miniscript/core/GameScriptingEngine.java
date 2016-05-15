@@ -131,6 +131,7 @@ public abstract class GameScriptingEngine implements Runnable {
 	 */
 	@Override
 	public void run() {
+		long startTime = System.currentTimeMillis();
 		try {
 			ScriptInvocation scriptInvocation = null;
 			while ((scriptInvocation = scriptInvocations.poll()) != null) {
@@ -144,7 +145,12 @@ public abstract class GameScriptingEngine implements Runnable {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		executorService.schedule(this, 16L, TimeUnit.MILLISECONDS);
+		long duration = System.currentTimeMillis() - startTime;
+		if(duration >= 16L) {
+			executorService.submit(this);
+		} else {
+			executorService.schedule(this, 16L - duration, TimeUnit.MILLISECONDS);
+		}
 	}
 
 	private void cleanupCompletedFutures() {
