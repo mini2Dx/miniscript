@@ -1,5 +1,16 @@
 import org.apache.tools.ant.taskdefs.condition.Os
 
+buildscript {
+	repositories {
+		mavenLocal()
+		mavenCentral()
+		jcenter()
+	}
+	dependencies {
+		classpath 'io.codearte.gradle.nexus:gradle-nexus-staging-plugin:0.5.3'
+	}
+}
+
 if(project.hasProperty('ossrhUser') && project.hasProperty("release")) {
 	apply plugin: "io.codearte.nexus-staging"
 
@@ -18,7 +29,7 @@ subprojects {
 	apply plugin: "maven"
 	
 	group = 'org.mini2Dx'
-	version = '1.0.0-SNAPSHOT'
+	version = '1.0.0-alpha1'
 
 	repositories {
 		mavenLocal()
