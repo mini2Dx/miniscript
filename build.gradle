@@ -1,9 +1,21 @@
 import org.apache.tools.ant.taskdefs.condition.Os
 
+if(project.hasProperty('ossrhUser') && project.hasProperty("release")) {
+	apply plugin: "io.codearte.nexus-staging"
+
+	nexusStaging {
+		packageGroup = 'org.mini2Dx'
+		username = ossrhUser
+		password = ossrhPassword
+	}
+}
+
 subprojects {
-	apply plugin: 'maven'
 	apply plugin: 'eclipse'
 	apply plugin: 'idea'
+	apply plugin: "java"
+	apply plugin: "signing"
+	apply plugin: "maven"
 	
 	group = 'org.mini2Dx'
 	version = '1.0.0-SNAPSHOT'
@@ -23,65 +35,94 @@ subprojects {
 		junitVersion='4.11'
 		jmockVersion='2.5.1'
 	}
-}
-
-def docProjects() {
-	subprojects.findAll { !it.name.contains('uat') }
-}
-
-configure(docProjects()) {
-	apply plugin: "java"
-	apply plugin: "maven-publish"
 	
 	sourceCompatibility = 1.7
 	targetCompatibility = 1.7
 	
-	task sourceJar(type: Jar) {
-		from sourceSets.main.allJava
-	}
-	
-	publishing {
-		repositories {
-			maven {
-				url "https://mini2dx.org/maven/content/repositories/releases"
-				if(project.hasProperty('mini2DxMavenUser')) {
-					credentials {
-						username = project.property('mini2DxMavenUser')
-						password = project.property('mini2DxMavenPassword')
-					}
-				}
-			}
-		}
-		publications {
-			maven(MavenPublication) {
-				from components.java
-				
-				artifact sourceJar {
-					classifier "sources"
-				}
-			}
-		}
-	}
-}
-
-project(":" + rootProject.name + "-core") {
 	configurations {
 		testOutput.extendsFrom (testCompile)
 	}
 	
-	dependencies {
-		testCompile "junit:junit:$junitVersion"
-		testCompile "org.jmock:jmock-junit4:$jmockVersion"
-		testCompile "org.jmock:jmock-legacy:$jmockVersion"
+	task javadocJar(type: Jar) {
+		classifier = 'javadoc'
+		from javadoc
+	}
+
+	task sourcesJar(type: Jar) {
+		classifier = 'sources'
+		from sourceSets.main.allSource
 	}
 	
 	task testJar(type: Jar, dependsOn: testClasses) {
 		from sourceSets.test.output
 		classifier = 'test'
 	}
-	
+
 	artifacts {
+		archives javadocJar, sourcesJar, testJar
 		testOutput testJar
+	}
+	
+	// Maven Central publication
+	if(project.hasProperty('ossrhUser')) {
+		signing {
+			sign configurations.archives
+		}
+		
+		uploadArchives {
+			repositories {
+				mavenDeployer {
+					// POM signature
+					beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+					// Target repository
+					repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+						authentication(userName: ossrhUser, password: ossrhPassword)
+					}
+					pom.project {
+						name project.name
+						description project.description
+						packaging 'jar'
+						url 'https://github.com/mini2Dx/miniscript'
+	
+						scm {
+							connection 'scm:git:https://github.com/mini2Dx/miniscript.git'
+							developerConnection 'scm:git:git@github.com:mini2Dx/miniscript.git'
+							url 'https://github.com/mini2Dx/miniscript.git'
+						}
+	
+						licenses {
+							license {
+								name 'The MIT License (MIT)'
+								url 'https://opensource.org/licenses/MIT'
+								distribution 'repo'
+							}
+						}
+	
+						developers {
+							developer {
+								id = 'tomcashman'
+								name = 'Thomas Cashman'
+								email = 'thomascashman404@gmail.com'
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+def docProjects() {
+	subprojects.findAll { !it.name.contains('uat') }
+}
+
+project(":" + rootProject.name + "-core") {	
+	description = "miniscript core library"
+	
+	dependencies {
+		testCompile "junit:junit:$junitVersion"
+		testCompile "org.jmock:jmock-junit4:$jmockVersion"
+		testCompile "org.jmock:jmock-legacy:$jmockVersion"
 	}
 	
 	task docs(type: Javadoc) {
@@ -93,6 +134,8 @@ project(":" + rootProject.name + "-core") {
 }
 
 project(":" + rootProject.name + "-groovy") {
+	description = "miniscript Groovy-based scripting"
+	
 	dependencies {
 		compile project(":" + rootProject.name + "-core")
 		compile "org.codehaus.groovy:groovy-all:$groovyVersion"
@@ -105,6 +148,8 @@ project(":" + rootProject.name + "-groovy") {
 }
 
 project(":" + rootProject.name + "-lua") {
+	description = "miniscript Lua-based scripting"
+	
 	dependencies {
 		compile project(":" + rootProject.name + "-core")
 		compile "org.luaj:luaj-jse:$luajVersion"
@@ -117,6 +162,8 @@ project(":" + rootProject.name + "-lua") {
 }
 
 project(":" + rootProject.name + "-ruby") {
+	description = "miniscript Ruby-based scripting"
+	
 	dependencies {
 		compile project(":" + rootProject.name + "-core")
 		compile "org.jruby:jruby-complete:$jrubyVersion"
@@ -129,6 +176,8 @@ project(":" + rootProject.name + "-ruby") {
 }
 
 project(":" + rootProject.name + "-python") {
+	description = "miniscript Python-based scripting"
+	
 	dependencies {
 		compile project(":" + rootProject.name + "-core")
 		compile "org.python:jython-standalone:$jythonVersion"
