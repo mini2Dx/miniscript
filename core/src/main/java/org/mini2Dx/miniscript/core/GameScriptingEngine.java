@@ -254,9 +254,6 @@ public abstract class GameScriptingEngine implements Runnable {
 	 *            The id of the script to run
 	 * @param scriptBindings
 	 *            The variable bindings for the script
-	 * @throws InsufficientExecutorsException
-	 *             Thrown if there are no script executors available to the
-	 *             thread pool
 	 */
 	public void invokeCompiledScript(int scriptId, ScriptBindings scriptBindings) {
 		invokeCompiledScript(scriptId, scriptBindings, null);
