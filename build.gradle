@@ -65,8 +65,8 @@ subprojects {
 	}
 	
 	task testJar(type: Jar, dependsOn: testClasses) {
-		from sourceSets.test.output
 		classifier = 'test'
+		from sourceSets.test.output
 	}
 
 	artifacts {
@@ -116,6 +116,15 @@ subprojects {
 								email = 'thomascashman404@gmail.com'
 							}
 						}
+					}
+					pom.whenConfigured {
+						p ->
+							def dependencies = p.dependencies;
+							for(int i = 0; i < dependencies.size(); i++) {
+								if(dependencies[i].scope == 'test' && dependencies[i].artifactId == 'miniscript-core') {
+									dependencies[i].classifier = 'test'
+								}
+							}
 					}
 				}
 			}
@@ -201,5 +210,5 @@ project(":" + rootProject.name + "-python") {
 }
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '2.13'
+    gradleVersion = '2.14'
 }
