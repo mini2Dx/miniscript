@@ -1,0 +1,7 @@
+org.mini2Dx.miniscript.core
+org.mini2Dx.miniscript.core.exception
+org.mini2Dx.miniscript.core.notification
+org.mini2Dx.miniscript.groovy
+org.mini2Dx.miniscript.lua
+org.mini2Dx.miniscript.python
+org.mini2Dx.miniscript.ruby
