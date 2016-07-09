@@ -1,2 +1,5 @@
-[1.0.0]
+[1.0.0-alpha2]
+- Fixed incorrect dependencies in generated maven artifacts
+
+[1.0.0-alpha1]
 - Initial release
