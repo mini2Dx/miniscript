@@ -11,3 +11,15 @@ A library for adding scripting to Java-based games
 *   [Issue Tracker](https://github.com/mini2Dx/miniscript/issues)
 *   [Changelog](https://github.com/mini2Dx/miniscript/blob/master/CHANGES)
 *   [License](https://github.com/mini2Dx/miniscript/blob/master/LICENSE)
+
+## Goals
+
+The main objective of miniscript is to provide a framework for adding scripting to Java-based games independent for the scripting language used.
+
+## License
+
+The project is licensed under the MIT License.
+
+## Contributing
+
+See the [Contributing Page](https://github.com/mini2Dx/miniscript/blob/master/CONTRIBUTING.md)
