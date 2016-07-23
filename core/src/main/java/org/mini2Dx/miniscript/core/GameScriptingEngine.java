@@ -50,11 +50,11 @@ public abstract class GameScriptingEngine implements Runnable {
 	 * Returns the most recently created {@link GameScriptingEngine}
 	 */
 	public static GameScriptingEngine MOST_RECENT_INSTANCE = null;
-	
+
 	private final ScriptInvocationPool scriptInvocationPool = new ScriptInvocationPool();
 	private final Queue<ScriptInvocation> scriptInvocations = new ConcurrentLinkedQueue<ScriptInvocation>();
 	final Queue<ScriptNotification> scriptNotifications = new ConcurrentLinkedQueue<ScriptNotification>();
-	
+
 	final Map<Integer, GameFuture> runningFutures = new ConcurrentHashMap<Integer, GameFuture>();
 	private final Map<Integer, ScriptExecutionTask<?>> runningScripts = new ConcurrentHashMap<Integer, ScriptExecutionTask<?>>();
 	private final Set<Integer> completedFutures = new HashSet<Integer>();
@@ -67,25 +67,60 @@ public abstract class GameScriptingEngine implements Runnable {
 
 	/**
 	 * Constructs a scripting engine backed by a thread pool with the maximum
-	 * amount of concurrent scripts set to the amount of processors + 1;
+	 * amount of concurrent scripts set to the amount of processors + 1.
+	 * Sandboxing is enabled if the implementation supports it.
 	 */
 	public GameScriptingEngine() {
-		this(Runtime.getRuntime().availableProcessors());
+		this(Runtime.getRuntime().availableProcessors() + 1);
+	}
+
+	/**
+	 * Constructs a scripting engine backed by a thread pool. Sandboxing is
+	 * enabled if the implementation supports it.
+	 * 
+	 * @param maxConcurrentScripts
+	 *            The maximum amount of concurrently running scripts. WARNING:
+	 *            this is a 'requested' amount and may be less due to the amount
+	 *            of available processors on the player's machine.
+	 */
+	public GameScriptingEngine(int maxConcurrentScripts) {
+		scriptExecutorPool = createScriptExecutorPool(maxConcurrentScripts, isSandboxingSupported());
+
+		executorService = Executors.newScheduledThreadPool(
+				Math.min(maxConcurrentScripts + 1, Runtime.getRuntime().availableProcessors() * 2));
+		init();
+	}
+
+	/**
+	 * Constructs a scripting engine backed by a thread pool with the maximum
+	 * amount of concurrent scripts set to the amount of processors + 1.
+	 * 
+	 * @param sandboxed
+	 *            True if script sandboxing should be enabled
+	 */
+	public GameScriptingEngine(boolean sandboxed) {
+		this(Runtime.getRuntime().availableProcessors() + 1, sandboxed);
 	}
 
 	/**
 	 * Constructs a scripting engine backed by a thread pool.
 	 * 
 	 * @param maxConcurrentScripts
-	 *            The maximum amount of concurrently running scripts. Note this
-	 *            is a 'requested' amount and may be less due to the amount of
-	 *            available processors on the player's machine.
+	 *            The maximum amount of concurrently running scripts. WARNING:
+	 *            this is a 'requested' amount and may be less due to the amount
+	 *            of available processors on the player's machine.
+	 * @param sandboxed
+	 *            True if script sandboxing should be enabled
 	 */
-	public GameScriptingEngine(int maxConcurrentScripts) {
-		scriptExecutorPool = createScriptExecutorPool(maxConcurrentScripts);
+	public GameScriptingEngine(int maxConcurrentScripts, boolean sandboxed) {
+		scriptExecutorPool = createScriptExecutorPool(maxConcurrentScripts, sandboxed);
 
 		executorService = Executors.newScheduledThreadPool(
 				Math.min(maxConcurrentScripts + 1, Runtime.getRuntime().availableProcessors() * 2));
+		init();
+	}
+
+	private void init() {
 		executorService.submit(this);
 		executorService.scheduleAtFixedRate(new Runnable() {
 			@Override
@@ -108,7 +143,15 @@ public abstract class GameScriptingEngine implements Runnable {
 		executorService.shutdown();
 	}
 
-	protected abstract ScriptExecutorPool<?> createScriptExecutorPool(int poolSize);
+	/**
+	 * Checks if sandboxing is supported by the {@link GameScriptingEngine}
+	 * implementation
+	 * 
+	 * @return True if sandboxing is supported
+	 */
+	public abstract boolean isSandboxingSupported();
+
+	protected abstract ScriptExecutorPool<?> createScriptExecutorPool(int poolSize, boolean sandboxing);
 
 	/**
 	 * Updates all {@link GameFuture}s
@@ -120,7 +163,7 @@ public abstract class GameScriptingEngine implements Runnable {
 		for (GameFuture gameFuture : runningFutures.values()) {
 			gameFuture.evaluate(delta);
 		}
-		while(!scriptNotifications.isEmpty()) {
+		while (!scriptNotifications.isEmpty()) {
 			scriptNotifications.poll().process();
 		}
 	}
@@ -146,7 +189,7 @@ public abstract class GameScriptingEngine implements Runnable {
 			e.printStackTrace();
 		}
 		long duration = System.currentTimeMillis() - startTime;
-		if(duration >= 16L) {
+		if (duration >= 16L) {
 			executorService.submit(this);
 		} else {
 			executorService.schedule(this, 16L - duration, TimeUnit.MILLISECONDS);

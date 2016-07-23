@@ -32,17 +32,18 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mini2Dx.miniscript.core.dummy.DummyGameFuture;
+import org.mini2Dx.miniscript.core.dummy.ScriptResult;
 
 /**
  * Base UAT class for {@link GameScriptingEngine} implementations
  */
 public abstract class AbstractGameScriptingEngineTest {
-	private ScriptBindings scriptBindings;
-	private DummyGameFuture gameFuture;
+	protected ScriptBindings scriptBindings;
+	protected DummyGameFuture gameFuture;
 	
-	private GameScriptingEngine scriptingEngine;
-	private AtomicBoolean scriptExecuted;
-	private AtomicReference<ScriptResult> scriptResult;
+	protected GameScriptingEngine scriptingEngine;
+	protected AtomicBoolean scriptExecuted;
+	protected AtomicReference<ScriptResult> scriptResult;
 	
 	@Before
 	public void setUp() {
@@ -394,7 +395,7 @@ public abstract class AbstractGameScriptingEngineTest {
 	
 	protected abstract String getWaitForCompletionScript();
 	
-	private boolean checkExpectedScriptResults(ScriptExecutionResult executionResult) {
+	protected boolean checkExpectedScriptResults(ScriptExecutionResult executionResult) {
 		if(!executionResult.containsKey("stringValue")) {
 			System.err.println("stringValue not present");
 			return false;
@@ -420,14 +421,5 @@ public abstract class AbstractGameScriptingEngineTest {
 			return false;
 		}
 		return true;
-	}
-	
-	private enum ScriptResult {
-		NOT_EXECUTED,
-		INCORRECT_SCRIPT_ID,
-		INCORRECT_VARIABLES,
-		SUCCESS,
-		SKIPPED,
-		EXCEPTION
 	}
 }

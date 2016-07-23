@@ -25,11 +25,14 @@ package org.mini2Dx.miniscript.python;
 
 import org.mini2Dx.miniscript.core.GameScriptingEngine;
 import org.mini2Dx.miniscript.core.ScriptExecutorPool;
+import org.mini2Dx.miniscript.core.exception.SandboxingUnsupportedException;
 
 /**
  * An implementation of {@link GameScriptingEngine} for Python-based scripts
  */
 public class PythonGameScriptingEngine extends GameScriptingEngine {
+	private static final String SCRIPTING_LANGUAGE = "Python";
+	
 	/**
 	 * Constructs a scripting engine backed by a thread pool with the maximum
 	 * amount of concurrent scripts set to the amount of processors + 1;
@@ -51,7 +54,15 @@ public class PythonGameScriptingEngine extends GameScriptingEngine {
 	}
 
 	@Override
-	protected ScriptExecutorPool<?> createScriptExecutorPool(int poolSize) {
+	protected ScriptExecutorPool<?> createScriptExecutorPool(int poolSize, boolean sandboxing) {
+		if(sandboxing) {
+			throw new SandboxingUnsupportedException(SCRIPTING_LANGUAGE);
+		}
 		return new PythonScriptExecutorPool(this, poolSize);
+	}
+
+	@Override
+	public boolean isSandboxingSupported() {
+		return false;
 	}
 }

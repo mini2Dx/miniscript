@@ -21,24 +21,15 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.mini2Dx.miniscript.core.dummy;
-
-import org.mini2Dx.miniscript.core.GameScriptingEngine;
-import org.mini2Dx.miniscript.core.ScriptExecutorPool;
+package org.mini2Dx.miniscript.core.exception;
 
 /**
- * An implementation of {@link GameScriptingEngine} for unit tests
+ * Thrown when miniscript doesn't support sandboxing for the chosen scripting language
  */
-public class DummyGameScriptingEngine extends GameScriptingEngine {
+public class SandboxingUnsupportedException extends RuntimeException {
+	private static final long serialVersionUID = -5643959684564502181L;
 
-	@Override
-	protected ScriptExecutorPool<?> createScriptExecutorPool(int poolSize, boolean sandboxing) {
-		return new DummyScriptExecutorPool(this, poolSize);
+	public SandboxingUnsupportedException(String scriptingLanguage) {
+		super("Sandboxing in " + scriptingLanguage + " is not supported by miniscript");
 	}
-
-	@Override
-	public boolean isSandboxingSupported() {
-		return false;
-	}
-
 }

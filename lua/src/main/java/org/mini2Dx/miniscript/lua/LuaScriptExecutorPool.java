@@ -29,7 +29,16 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.luaj.vm2.Globals;
+import org.luaj.vm2.LoadState;
 import org.luaj.vm2.LuaValue;
+import org.luaj.vm2.compiler.LuaC;
+import org.luaj.vm2.lib.Bit32Lib;
+import org.luaj.vm2.lib.DebugLib;
+import org.luaj.vm2.lib.PackageLib;
+import org.luaj.vm2.lib.StringLib;
+import org.luaj.vm2.lib.TableLib;
+import org.luaj.vm2.lib.jse.JseBaseLib;
+import org.luaj.vm2.lib.jse.JseMathLib;
 import org.luaj.vm2.lib.jse.JsePlatform;
 import org.mini2Dx.miniscript.core.GameScriptingEngine;
 import org.mini2Dx.miniscript.core.PerThreadGameScript;
@@ -49,13 +58,32 @@ public class LuaScriptExecutorPool implements ScriptExecutorPool<LuaValue> {
 	private final Map<Integer, PerThreadGameScript<LuaValue>> scripts = new ConcurrentHashMap<Integer, PerThreadGameScript<LuaValue>>();
 	private final BlockingQueue<ScriptExecutor<LuaValue>> executors;
 	private final GameScriptingEngine gameScriptingEngine;
+	private final boolean sandboxed;
+	
+	private Globals sandboxedGlobals;
 
-	public LuaScriptExecutorPool(GameScriptingEngine gameScriptingEngine, int poolSize) {
+	public LuaScriptExecutorPool(GameScriptingEngine gameScriptingEngine, int poolSize, boolean sandboxed) {
 		this.gameScriptingEngine = gameScriptingEngine;
+		this.sandboxed = sandboxed;
+		
 		executors = new ArrayBlockingQueue<ScriptExecutor<LuaValue>>(poolSize);
 
 		for (int i = 0; i < poolSize; i++) {
 			executors.offer(new LuaScriptExecutor(this));
+		}
+		
+		if(sandboxed) {
+			//Create sandboxed compiler
+			sandboxedGlobals = new Globals();
+			sandboxedGlobals.load(new JseBaseLib());
+			sandboxedGlobals.load(new PackageLib());
+			sandboxedGlobals.load(new StringLib());
+
+			// To load scripts, we occasionally need a math library in addition to compiler support.
+			// To limit scripts using the debug library, they must be closures, so we only install LuaC.
+			sandboxedGlobals.load(new JseMathLib());
+			LoadState.install(sandboxedGlobals);
+			LuaC.install(sandboxedGlobals);
 		}
 	}
 
@@ -103,8 +131,33 @@ public class LuaScriptExecutorPool implements ScriptExecutorPool<LuaValue> {
 	public Globals getLocalGlobals() {
 		long threadId = Thread.currentThread().getId();
 		if (!threadCompilers.containsKey(threadId)) {
-			threadCompilers.put(threadId, JsePlatform.standardGlobals());
+			if(sandboxed) {
+				threadCompilers.put(threadId, createSandboxedGlobals());
+			} else {
+				threadCompilers.put(threadId, JsePlatform.standardGlobals());
+			}
 		}
 		return threadCompilers.get(threadId);
+	}
+	
+	public LuaValue compileWithGlobals(Globals globals, String script) {
+		if(sandboxed) {
+			return sandboxedGlobals.load(script, "main", globals);
+		} else {
+			return globals.load(script);
+		}
+	}
+	
+	private Globals createSandboxedGlobals() {
+		Globals result = new Globals();
+		result.load(new JseBaseLib());
+		result.load(new PackageLib());
+		result.load(new Bit32Lib());
+		result.load(new TableLib());
+		result.load(new StringLib());
+		result.load(new JseMathLib());
+		result.load(new DebugLib());
+		result.set("debug", LuaValue.NIL);
+		return result;
 	}
 }

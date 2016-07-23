@@ -34,15 +34,15 @@ import org.mini2Dx.miniscript.core.AbstractGameScriptingEngineTest;
 import org.mini2Dx.miniscript.core.GameScriptingEngine;
 
 /**
- * UATs for {@link LuaGameScriptingEngine}
+ * UATs for {@link LuaGameScriptingEngine} without sandboxing
  */
 public class LuaGameScriptingEngineTest extends AbstractGameScriptingEngineTest {
 
 	@Override
 	protected GameScriptingEngine createScriptingEngine() {
-		return new LuaGameScriptingEngine();
+		return new LuaGameScriptingEngine(false);
 	}
-
+	
 	@Override
 	protected String getDefaultScript() {
 		try {

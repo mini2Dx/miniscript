@@ -23,22 +23,14 @@
  */
 package org.mini2Dx.miniscript.core.dummy;
 
-import org.mini2Dx.miniscript.core.GameScriptingEngine;
-import org.mini2Dx.miniscript.core.ScriptExecutorPool;
-
 /**
- * An implementation of {@link GameScriptingEngine} for unit tests
+ * An enum for test scripting results
  */
-public class DummyGameScriptingEngine extends GameScriptingEngine {
-
-	@Override
-	protected ScriptExecutorPool<?> createScriptExecutorPool(int poolSize, boolean sandboxing) {
-		return new DummyScriptExecutorPool(this, poolSize);
-	}
-
-	@Override
-	public boolean isSandboxingSupported() {
-		return false;
-	}
-
+public enum ScriptResult {
+	NOT_EXECUTED,
+	INCORRECT_SCRIPT_ID,
+	INCORRECT_VARIABLES,
+	SUCCESS,
+	SKIPPED,
+	EXCEPTION
 }

@@ -25,6 +25,7 @@ package org.mini2Dx.miniscript.lua;
 
 import org.luaj.vm2.Globals;
 import org.luaj.vm2.LuaValue;
+import org.luaj.vm2.Varargs;
 import org.luaj.vm2.lib.jse.CoerceJavaToLua;
 import org.mini2Dx.miniscript.core.GameScript;
 import org.mini2Dx.miniscript.core.PerThreadGameScript;
@@ -59,11 +60,11 @@ public class LuaScriptExecutor implements ScriptExecutor<LuaValue> {
 			globals.set(variableName, CoerceJavaToLua.coerce(bindings.get(variableName)));
 		}
 		if (!script.hasLocalScript()) {
-			script.putLocalScript(globals.load(script.getContent()));
+			script.putLocalScript(executorPool.compileWithGlobals(globals, script.getContent()));
 		}
 		
 		try {
-			script.getScript().call();
+			script.getScript().invoke();
 		} catch (Exception e) {
 			if(e.getCause() instanceof ScriptSkippedException) {
 				throw new ScriptSkippedException();

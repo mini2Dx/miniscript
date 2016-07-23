@@ -25,11 +25,14 @@ package org.mini2Dx.miniscript.groovy;
 
 import org.mini2Dx.miniscript.core.GameScriptingEngine;
 import org.mini2Dx.miniscript.core.ScriptExecutorPool;
+import org.mini2Dx.miniscript.core.exception.SandboxingUnsupportedException;
 
 /**
  * An implementation of {@link GameScriptingEngine} for Groovy-based scripts
  */
 public class GroovyGameScriptingEngine extends GameScriptingEngine {
+	private static final String SCRIPTING_LANGUAGE = "Groovy";
+	
 	/**
 	 * Constructs a scripting engine backed by a thread pool with the maximum
 	 * amount of concurrent scripts set to the amount of processors + 1;
@@ -51,8 +54,15 @@ public class GroovyGameScriptingEngine extends GameScriptingEngine {
 	}
 
 	@Override
-	protected ScriptExecutorPool<?> createScriptExecutorPool(int poolSize) {
+	protected ScriptExecutorPool<?> createScriptExecutorPool(int poolSize, boolean sandboxing) {
+		if(sandboxing) {
+			throw new SandboxingUnsupportedException(SCRIPTING_LANGUAGE);
+		}
 		return new GroovyScriptExecutorPool(this, poolSize);
 	}
 
+	@Override
+	public boolean isSandboxingSupported() {
+		return false;
+	}
 }

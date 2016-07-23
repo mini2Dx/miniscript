@@ -49,9 +49,39 @@ public class LuaGameScriptingEngine extends GameScriptingEngine {
 	public LuaGameScriptingEngine(int maxConcurrentScripts) {
 		super(maxConcurrentScripts);
 	}
+	
+	/**
+	 * Constructs a scripting engine backed by a thread pool with the maximum
+	 * amount of concurrent scripts set to the amount of processors + 1.
+	 * 
+	 * @param sandboxed
+	 *            True if script sandboxing should be enabled
+	 */
+	public LuaGameScriptingEngine(boolean sandboxed) {
+		super(sandboxed);
+	}
+	
+	/**
+	 * Constructs a scripting engine backed by a thread pool.
+	 * 
+	 * @param maxConcurrentScripts
+	 *            The maximum amount of concurrently running scripts. WARNING:
+	 *            this is a 'requested' amount and may be less due to the amount
+	 *            of available processors on the player's machine.
+	 * @param sandboxed
+	 *            True if script sandboxing should be enabled
+	 */
+	public LuaGameScriptingEngine(int maxConcurrentScripts, boolean sandboxed) {
+		super(maxConcurrentScripts, sandboxed);
+	}
 
 	@Override
-	protected ScriptExecutorPool<?> createScriptExecutorPool(int poolSize) {
-		return new LuaScriptExecutorPool(this, poolSize);
+	protected ScriptExecutorPool<?> createScriptExecutorPool(int poolSize, boolean sandboxed) {
+		return new LuaScriptExecutorPool(this, poolSize, sandboxed);
+	}
+
+	@Override
+	public boolean isSandboxingSupported() {
+		return true;
 	}
 }
