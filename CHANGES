@@ -1,3 +1,7 @@
+[1.0.0-beta1]
+- GameScriptingEngine implementations can optionally support sandboxing
+- Added sandboxing support to LuaGameScriptingEngine
+
 [1.0.0-alpha2]
 - Fixed incorrect dependencies in generated maven artifacts
 
