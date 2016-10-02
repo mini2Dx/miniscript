@@ -16,6 +16,15 @@ A library for adding scripting to Java-based games
 
 The main objective of miniscript is to provide a framework for adding scripting to Java-based games independent for the scripting language used.
 
+## Supported Scripting Languages
+
+The following scripting languages are currently supported:
+
+*   Groovy
+*   Lua
+*   Python
+*   Ruby
+
 ## License
 
 The project is licensed under the MIT License.
