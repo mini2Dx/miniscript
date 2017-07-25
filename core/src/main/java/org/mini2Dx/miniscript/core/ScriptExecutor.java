@@ -23,6 +23,8 @@
  */
 package org.mini2Dx.miniscript.core;
 
+import javax.script.ScriptException;
+
 /**
  * Common interface for language-specific script executors.
  * 
@@ -30,7 +32,7 @@ package org.mini2Dx.miniscript.core;
  */
 public interface ScriptExecutor<S> {
 
-	public GameScript<S> compile(String script);
+	public GameScript<S> compile(String script) throws ScriptException;
 
 	public ScriptExecutionResult execute(GameScript<S> script, ScriptBindings bindings, boolean returnResult)
 			throws Exception;

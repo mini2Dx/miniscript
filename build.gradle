@@ -42,6 +42,7 @@ subprojects {
 		groovyVersion='2.4.6'
 		jrubyVersion='9.1.0.0'
 		luajVersion='3.0.1'
+		// kotlinVersion='something' todo find the right one
 		
 		junitVersion='4.11'
 		jmockVersion='2.5.1'
@@ -197,11 +198,25 @@ project(":" + rootProject.name + "-ruby") {
 
 project(":" + rootProject.name + "-python") {
 	description = "miniscript Python-based scripting"
-	
+
 	dependencies {
 		compile project(":" + rootProject.name + "-core")
 		compile "org.python:jython-standalone:$jythonVersion"
-	
+
+		testCompile "junit:junit:$junitVersion"
+		testCompile "org.jmock:jmock-junit4:$jmockVersion"
+		testCompile "org.jmock:jmock-legacy:$jmockVersion"
+		testCompile project(path: ":" + rootProject.name + "-core", configuration: 'testOutput')
+	}
+}
+
+project(":" + rootProject.name + "-kotlin") {
+	description = "miniscript Kotlin-based scripting"
+
+	dependencies {
+		compile project(":" + rootProject.name + "-core")
+		// compile "org.python:jython-standalone:$jythonVersion" todo find the right dependency
+
 		testCompile "junit:junit:$junitVersion"
 		testCompile "org.jmock:jmock-junit4:$jmockVersion"
 		testCompile "org.jmock:jmock-legacy:$jmockVersion"

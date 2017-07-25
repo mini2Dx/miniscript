@@ -40,6 +40,8 @@ import java.util.concurrent.TimeUnit;
 import org.mini2Dx.miniscript.core.exception.InsufficientCompilersException;
 import org.mini2Dx.miniscript.core.notification.ScriptNotification;
 
+import javax.script.ScriptException;
+
 /**
  * Provides scripting functionality to your game
  * 
@@ -263,8 +265,10 @@ public abstract class GameScriptingEngine implements Runnable {
 	 * @return The unique id for the script
 	 * @throws InsufficientCompilersException
 	 *             Thrown if there are no script compilers available
+	 * @throws InsufficientCompilersException
+	 *             Thrown if there are no script compilers available
 	 */
-	public int compileScript(String scriptContent) throws InsufficientCompilersException {
+	public int compileScript(String scriptContent) throws InsufficientCompilersException, ScriptException {
 		return scriptExecutorPool.preCompileScript(scriptContent);
 	}
 
@@ -281,7 +285,7 @@ public abstract class GameScriptingEngine implements Runnable {
 	 * @throws IOException
 	 *             Throw if the {@link InputStream} could not be read or closed
 	 */
-	public int compileScript(InputStream inputStream) throws InsufficientCompilersException, IOException {
+	public int compileScript(InputStream inputStream) throws InsufficientCompilersException, IOException, ScriptException {
 		Scanner scanner = new Scanner(inputStream);
 		scanner.useDelimiter("\\A");
 		String contents = scanner.hasNext() ? scanner.next() : "";
@@ -329,7 +333,7 @@ public abstract class GameScriptingEngine implements Runnable {
 	 * @throws InsufficientCompilersException
 	 *             Thrown if there are no script compilers available
 	 */
-	public int invokeScript(String scriptContent, ScriptBindings scriptBindings) throws InsufficientCompilersException {
+	public int invokeScript(String scriptContent, ScriptBindings scriptBindings) throws InsufficientCompilersException, ScriptException {
 		return invokeScript(scriptContent, scriptBindings, null);
 	}
 
@@ -348,7 +352,7 @@ public abstract class GameScriptingEngine implements Runnable {
 	 *             Thrown if there are no script compilers available
 	 */
 	public int invokeScript(String scriptContent, ScriptBindings scriptBindings,
-			ScriptInvocationListener invocationListener) throws InsufficientCompilersException {
+			ScriptInvocationListener invocationListener) throws InsufficientCompilersException, ScriptException {
 		int scriptId = compileScript(scriptContent);
 		invokeCompiledScript(scriptId, scriptBindings, invocationListener);
 		return scriptId;
