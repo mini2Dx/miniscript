@@ -42,7 +42,7 @@ subprojects {
 		groovyVersion='2.4.6'
 		jrubyVersion='9.1.0.0'
 		luajVersion='3.0.1'
-		// kotlinVersion='something' todo find the right one
+		kotlinVersion='1.1.3'
 		
 		junitVersion='4.11'
 		jmockVersion='2.5.1'
@@ -212,10 +212,15 @@ project(":" + rootProject.name + "-python") {
 
 project(":" + rootProject.name + "-kotlin") {
 	description = "miniscript Kotlin-based scripting"
+	
+	sourceCompatibility = 1.7
+	targetCompatibility = 1.8
 
 	dependencies {
 		compile project(":" + rootProject.name + "-core")
-		// compile "org.python:jython-standalone:$jythonVersion" todo find the right dependency
+		compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+		compile "org.jetbrains.kotlin:kotlin-compiler:$kotlinVersion"
+		compile "org.jetbrains.kotlin:kotlin-script-util:$kotlinVersion"
 
 		testCompile "junit:junit:$junitVersion"
 		testCompile "org.jmock:jmock-junit4:$jmockVersion"

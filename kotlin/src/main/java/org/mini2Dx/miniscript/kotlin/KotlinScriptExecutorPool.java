@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  * 
- * Copyright (c) 2016 Thomas Cashman
+ * Copyright (c) 2017 Thomas Cashman
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,6 +28,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.jetbrains.kotlin.cli.common.repl.KotlinJsr223JvmScriptEngineBase.CompiledKotlinScript;
 import org.mini2Dx.miniscript.core.GameScript;
 import org.mini2Dx.miniscript.core.GameScriptingEngine;
 import org.mini2Dx.miniscript.core.ScriptBindings;
@@ -37,23 +38,18 @@ import org.mini2Dx.miniscript.core.ScriptExecutorPool;
 import org.mini2Dx.miniscript.core.ScriptInvocationListener;
 import org.mini2Dx.miniscript.core.exception.InsufficientCompilersException;
 import org.mini2Dx.miniscript.core.exception.ScriptExecutorUnavailableException;
-import sun.font.Script;
-
-import javax.script.ScriptException;
-
-//import groovy.lang.Script;
 
 /**
  * An implementation of {@link ScriptExecutorPool} for Kotlin-based scripts
  */
-public class KotlinScriptExecutorPool implements ScriptExecutorPool<Object> {
-	private final Map<Integer, GameScript<Object>> scripts = new ConcurrentHashMap<Integer, GameScript<Object>>();
-	private final BlockingQueue<ScriptExecutor<Object>> executors;
+public class KotlinScriptExecutorPool implements ScriptExecutorPool<CompiledKotlinScript> {
+	private final Map<Integer, GameScript<CompiledKotlinScript>> scripts = new ConcurrentHashMap<Integer, GameScript<CompiledKotlinScript>>();
+	private final BlockingQueue<ScriptExecutor<CompiledKotlinScript>> executors;
 	private final GameScriptingEngine gameScriptingEngine;
 
 	public KotlinScriptExecutorPool(GameScriptingEngine gameScriptingEngine, int poolSize) {
 		this.gameScriptingEngine = gameScriptingEngine;
-		executors = new ArrayBlockingQueue<ScriptExecutor<Object>>(poolSize);
+		executors = new ArrayBlockingQueue<ScriptExecutor<CompiledKotlinScript>>(poolSize);
 
 		for (int i = 0; i < poolSize; i++) {
 			executors.offer(new KotlinScriptExecutor(this));
@@ -61,7 +57,7 @@ public class KotlinScriptExecutorPool implements ScriptExecutorPool<Object> {
 	}
 
 	@Override
-	public void release(ScriptExecutor<Object> executor) {
+	public void release(ScriptExecutor<CompiledKotlinScript> executor) {
 		try {
 			executors.put(executor);
 		} catch (InterruptedException e) {
@@ -70,12 +66,12 @@ public class KotlinScriptExecutorPool implements ScriptExecutorPool<Object> {
 	}
 
 	@Override
-	public int preCompileScript(String scriptContent) throws InsufficientCompilersException, ScriptException {
-		ScriptExecutor<Object> executor = executors.poll();
+	public int preCompileScript(String scriptContent) throws InsufficientCompilersException {
+		ScriptExecutor<CompiledKotlinScript> executor = executors.poll();
 		if (executor == null) {
 			throw new InsufficientCompilersException();
 		}
-		GameScript<Object> script = executor.compile(scriptContent);
+		GameScript<CompiledKotlinScript> script = executor.compile(scriptContent);
 		executor.release();
 		scripts.put(script.getId(), script);
 		return script.getId();
@@ -84,15 +80,15 @@ public class KotlinScriptExecutorPool implements ScriptExecutorPool<Object> {
 	@Override
 	public ScriptExecutionTask<?> execute(int scriptId, ScriptBindings scriptBindings,
 			ScriptInvocationListener invocationListener) {
-		ScriptExecutor<Object> executor = allocateExecutor();
+		ScriptExecutor<CompiledKotlinScript> executor = allocateExecutor();
 		if (executor == null) {
 			throw new ScriptExecutorUnavailableException(scriptId);
 		}
-		return new ScriptExecutionTask<Object>(gameScriptingEngine, executor, scripts.get(scriptId), scriptBindings,
+		return new ScriptExecutionTask<CompiledKotlinScript>(gameScriptingEngine, executor, scripts.get(scriptId), scriptBindings,
 				invocationListener);
 	}
 
-	private ScriptExecutor<Object> allocateExecutor() {
+	private ScriptExecutor<CompiledKotlinScript> allocateExecutor() {
 		try {
 			return executors.take();
 		} catch (InterruptedException e) {

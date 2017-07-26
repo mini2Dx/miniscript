@@ -25,8 +25,6 @@ package org.mini2Dx.miniscript.core;
 
 import org.mini2Dx.miniscript.core.exception.InsufficientCompilersException;
 
-import javax.script.ScriptException;
-
 /**
  * Common interface for language-specific {@link ScriptExecutor} pools.
  * 
@@ -34,7 +32,7 @@ import javax.script.ScriptException;
  */
 public interface ScriptExecutorPool<S> {
 
-	public int preCompileScript(String scriptContent) throws InsufficientCompilersException, ScriptException;
+	public int preCompileScript(String scriptContent) throws InsufficientCompilersException;
 
 	public ScriptExecutionTask<?> execute(int scriptId, ScriptBindings scriptBindings,
 			ScriptInvocationListener invocationListener);

@@ -40,8 +40,6 @@ import java.util.concurrent.TimeUnit;
 import org.mini2Dx.miniscript.core.exception.InsufficientCompilersException;
 import org.mini2Dx.miniscript.core.notification.ScriptNotification;
 
-import javax.script.ScriptException;
-
 /**
  * Provides scripting functionality to your game
  * 
@@ -268,7 +266,7 @@ public abstract class GameScriptingEngine implements Runnable {
 	 * @throws InsufficientCompilersException
 	 *             Thrown if there are no script compilers available
 	 */
-	public int compileScript(String scriptContent) throws InsufficientCompilersException, ScriptException {
+	public int compileScript(String scriptContent) throws InsufficientCompilersException {
 		return scriptExecutorPool.preCompileScript(scriptContent);
 	}
 
@@ -285,7 +283,7 @@ public abstract class GameScriptingEngine implements Runnable {
 	 * @throws IOException
 	 *             Throw if the {@link InputStream} could not be read or closed
 	 */
-	public int compileScript(InputStream inputStream) throws InsufficientCompilersException, IOException, ScriptException {
+	public int compileScript(InputStream inputStream) throws InsufficientCompilersException, IOException {
 		Scanner scanner = new Scanner(inputStream);
 		scanner.useDelimiter("\\A");
 		String contents = scanner.hasNext() ? scanner.next() : "";
@@ -333,7 +331,7 @@ public abstract class GameScriptingEngine implements Runnable {
 	 * @throws InsufficientCompilersException
 	 *             Thrown if there are no script compilers available
 	 */
-	public int invokeScript(String scriptContent, ScriptBindings scriptBindings) throws InsufficientCompilersException, ScriptException {
+	public int invokeScript(String scriptContent, ScriptBindings scriptBindings) throws InsufficientCompilersException {
 		return invokeScript(scriptContent, scriptBindings, null);
 	}
 
@@ -352,7 +350,7 @@ public abstract class GameScriptingEngine implements Runnable {
 	 *             Thrown if there are no script compilers available
 	 */
 	public int invokeScript(String scriptContent, ScriptBindings scriptBindings,
-			ScriptInvocationListener invocationListener) throws InsufficientCompilersException, ScriptException {
+			ScriptInvocationListener invocationListener) throws InsufficientCompilersException {
 		int scriptId = compileScript(scriptContent);
 		invokeCompiledScript(scriptId, scriptBindings, invocationListener);
 		return scriptId;
