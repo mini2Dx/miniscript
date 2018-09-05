@@ -55,6 +55,7 @@ public abstract class GameScriptingEngine implements Runnable {
 	private final Queue<ScriptInvocation> scriptInvocations = new ConcurrentLinkedQueue<ScriptInvocation>();
 	final Queue<ScriptNotification> scriptNotifications = new ConcurrentLinkedQueue<ScriptNotification>();
 
+	final Queue<GameFuture> queuedFutures = new ConcurrentLinkedQueue<GameFuture>();
 	final Map<Integer, GameFuture> runningFutures = new ConcurrentHashMap<Integer, GameFuture>();
 	private final Map<Integer, ScriptExecutionTask<?>> runningScripts = new ConcurrentHashMap<Integer, ScriptExecutionTask<?>>();
 	private final Set<Integer> completedFutures = new HashSet<Integer>();
@@ -163,6 +164,23 @@ public abstract class GameScriptingEngine implements Runnable {
 		for (GameFuture gameFuture : runningFutures.values()) {
 			gameFuture.evaluate(delta);
 		}
+
+		while (!queuedFutures.isEmpty()) {
+			GameFuture nextFuture = queuedFutures.poll();
+			GameFuture previousFuture = runningFutures.put(nextFuture.getFutureId(), nextFuture);
+			if (previousFuture == null) {
+				continue;
+			}
+			if (!cancelReallocatedFutures) {
+				continue;
+			}
+			try {
+				previousFuture.skipFuture();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+
 		while (!scriptNotifications.isEmpty()) {
 			scriptNotifications.poll().process();
 		}
@@ -393,18 +411,7 @@ public abstract class GameScriptingEngine implements Runnable {
 	}
 
 	void submitGameFuture(GameFuture gameFuture) {
-		GameFuture previousFuture = runningFutures.put(gameFuture.getFutureId(), gameFuture);
-		if (previousFuture == null) {
-			return;
-		}
-		if (!cancelReallocatedFutures) {
-			return;
-		}
-		try {
-			previousFuture.skipFuture();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+		queuedFutures.offer(gameFuture);
 	}
 
 	/**

@@ -150,6 +150,7 @@ public abstract class AbstractGameScriptingEngineTest {
 			}
 		});
 		scriptingEngine.update(1f);
+		scriptingEngine.update(1f);
 		Assert.assertEquals(ScriptResult.SUCCESS, scriptResult.get());
 		Assert.assertEquals(true, gameFuture.isUpdated());
 		Assert.assertEquals(false, gameFuture.waitOccurred());
@@ -288,7 +289,7 @@ public abstract class AbstractGameScriptingEngineTest {
 			scriptingEngine.skipAllGameFutures();
 		}
 		Assert.assertEquals(ScriptResult.SUCCESS, scriptResult.get());
-		Assert.assertEquals(true, gameFuture.isUpdated());
+		Assert.assertEquals(false, gameFuture.isUpdated());
 		Assert.assertEquals(true, gameFuture.waitOccurred());
 		Assert.assertEquals(true, gameFuture.isFutureSkipped());
 		Assert.assertEquals(false, gameFuture.isScriptSkipped());
@@ -374,9 +375,13 @@ public abstract class AbstractGameScriptingEngineTest {
 				return true;
 			}
 		});
-		Assert.assertEquals(1, scriptingEngine.runningFutures.size());
+		Assert.assertEquals(0, scriptingEngine.runningFutures.size());
 		while(!scriptExecuted.get()) {
+			try {
+				Thread.sleep(100);
+			} catch (Exception e) {}
 			scriptingEngine.update(1f);
+			Assert.assertEquals(1, scriptingEngine.runningFutures.size());
 			gameFuture.setFutureCompleted(true);
 		}
 		try {
@@ -416,7 +421,13 @@ public abstract class AbstractGameScriptingEngineTest {
 			System.err.println("Expected booleanValue to be true but was " + executionResult.get("stringValue"));
 			return false;
 		}
-		if(((Integer) executionResult.get("intValue")) != 101) {
+		//Most languages use Integer
+		if(executionResult.get("intValue") instanceof Integer && ((Integer) executionResult.get("intValue")) != 101) {
+			System.err.println("Expected intValue to be 101 but was " + executionResult.get("stringValue"));
+			return false;
+		}
+		//Ruby uses Long
+		if(executionResult.get("intValue") instanceof Long && ((Long) executionResult.get("intValue")) != 101) {
 			System.err.println("Expected intValue to be 101 but was " + executionResult.get("stringValue"));
 			return false;
 		}

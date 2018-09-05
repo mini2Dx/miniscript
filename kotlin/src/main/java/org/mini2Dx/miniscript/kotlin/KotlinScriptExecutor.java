@@ -33,6 +33,7 @@ import org.mini2Dx.miniscript.core.PerThreadGameScript;
 import org.mini2Dx.miniscript.core.ScriptBindings;
 import org.mini2Dx.miniscript.core.ScriptExecutionResult;
 import org.mini2Dx.miniscript.core.ScriptExecutor;
+import org.mini2Dx.miniscript.core.exception.ScriptSkippedException;
 
 /**
  * An implementation of {@link ScriptExecutor} for Kotlin-based scripts
@@ -60,7 +61,17 @@ public class KotlinScriptExecutor implements ScriptExecutor<CompiledKotlinScript
 			engine.put(variableName, bindings.get(variableName));
 		}
 
-		engine.eval(threadScript.getContent());
+		try {
+			engine.eval(threadScript.getContent());
+		} catch (Exception e) {
+			if(e.getMessage().contains(ScriptSkippedException.class.getName())) {
+				throw new ScriptSkippedException();
+			} else if(e.getCause() instanceof ScriptSkippedException) {
+				throw new ScriptSkippedException();
+			} else {
+				throw e;
+			}
+		}
 
 		if (!returnResult) {
 			return null;
@@ -69,9 +80,13 @@ public class KotlinScriptExecutor implements ScriptExecutor<CompiledKotlinScript
 		ScriptExecutionResult executionResult = new ScriptExecutionResult(null);
 		for (String variableName : bindings.keySet()) {
 			try {
-				executionResult.put(variableName, engine.eval("val result = " + variableName));
+				executionResult.put(variableName, engine.eval(variableName));
 			} catch (Exception e) {
-				e.printStackTrace();
+				if(e.getMessage().contains("unresolved reference")) {
+					executionResult.put(variableName, null);
+				} else {
+					e.printStackTrace();
+				}
 			}
 		}
 		return executionResult;
