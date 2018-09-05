@@ -24,6 +24,7 @@ The following scripting languages are currently supported:
 *   Lua
 *   Python
 *   Ruby
+*   Kotlin
 
 ## License
 

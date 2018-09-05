@@ -377,13 +377,13 @@ public abstract class AbstractGameScriptingEngineTest {
 		});
 		Assert.assertEquals(0, scriptingEngine.runningFutures.size());
 		while(!scriptExecuted.get()) {
-			try {
-				Thread.sleep(100);
-			} catch (Exception e) {}
 			scriptingEngine.update(1f);
-			Assert.assertEquals(1, scriptingEngine.runningFutures.size());
-			gameFuture.setFutureCompleted(true);
+
+			if(scriptingEngine.runningFutures.size() > 0) {
+				gameFuture.setFutureCompleted(true);
+			}
 		}
+
 		try {
 			Thread.sleep(2000);
 		} catch (Exception e) {}
