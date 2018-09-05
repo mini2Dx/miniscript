@@ -7,7 +7,7 @@ buildscript {
 		jcenter()
 	}
 	dependencies {
-		classpath 'io.codearte.gradle.nexus:gradle-nexus-staging-plugin:0.5.3'
+		classpath 'io.codearte.gradle.nexus:gradle-nexus-staging-plugin:0.9.0'
 	}
 }
 
@@ -29,7 +29,7 @@ subprojects {
 	apply plugin: "maven"
 	
 	group = 'org.mini2Dx'
-	version = '1.0.0-SNAPSHOT'
+	version = '1.0.0'
 
 	repositories {
 		mavenLocal()
@@ -38,10 +38,11 @@ subprojects {
 	}
 	
 	ext {
-		jythonVersion='2.5.3'
-		groovyVersion='2.4.6'
-		jrubyVersion='9.1.0.0'
+		jythonVersion='2.7.1'
+		groovyVersion='2.5.2'
+		jrubyVersion='9.2.0.0'
 		luajVersion='3.0.1'
+		kotlinVersion='1.2.61'
 		
 		junitVersion='4.11'
 		jmockVersion='2.5.1'
@@ -197,11 +198,31 @@ project(":" + rootProject.name + "-ruby") {
 
 project(":" + rootProject.name + "-python") {
 	description = "miniscript Python-based scripting"
-	
+
 	dependencies {
 		compile project(":" + rootProject.name + "-core")
 		compile "org.python:jython-standalone:$jythonVersion"
+
+		testCompile "junit:junit:$junitVersion"
+		testCompile "org.jmock:jmock-junit4:$jmockVersion"
+		testCompile "org.jmock:jmock-legacy:$jmockVersion"
+		testCompile project(path: ":" + rootProject.name + "-core", configuration: 'testOutput')
+	}
+}
+
+project(":" + rootProject.name + "-kotlin") {
+	description = "miniscript Kotlin-based scripting"
 	
+	sourceCompatibility = 1.7
+	targetCompatibility = 1.8
+
+	dependencies {
+		compile project(":" + rootProject.name + "-core")
+		compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+		compile "org.jetbrains.kotlin:kotlin-compiler:$kotlinVersion"
+		compile "org.jetbrains.kotlin:kotlin-script-util:$kotlinVersion"
+		compile "org.jetbrains.kotlin:kotlin-script-runtime:$kotlinVersion"
+
 		testCompile "junit:junit:$junitVersion"
 		testCompile "org.jmock:jmock-junit4:$jmockVersion"
 		testCompile "org.jmock:jmock-legacy:$jmockVersion"

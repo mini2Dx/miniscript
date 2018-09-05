@@ -1,3 +1,10 @@
+[1.0.0]
+- Added Kotlin support (Kotlin 1.2.61)
+- Update to Jython 2.7.1
+- Update to Groovy 2.5.2
+- Update to JRuby 9.2.0.0
+- Fixed GameFuture#update being called before constructor is finished
+
 [1.0.0-beta1]
 - GameScriptingEngine implementations can optionally support sandboxing
 - Added sandboxing support to LuaGameScriptingEngine
