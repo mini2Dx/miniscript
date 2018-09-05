@@ -1,3 +1,5 @@
+[1.0.1-SNAPSHOT]
+
 [1.0.0]
 - Added Kotlin support (Kotlin 1.2.61)
 - Update to Jython 2.7.1
