@@ -116,6 +116,10 @@ public class ScriptExecutionTask<S> implements Runnable {
 		return id;
 	}
 
+	public int getScriptId() {
+		return script.getId();
+	}
+
 	public void setTaskFuture(Future<?> taskFuture) {
 		this.taskFuture = taskFuture;
 	}

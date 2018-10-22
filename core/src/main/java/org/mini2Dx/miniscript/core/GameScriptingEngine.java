@@ -255,11 +255,16 @@ public abstract class GameScriptingEngine implements Runnable {
 	 *            The ID of the script to skip
 	 */
 	public void skipScript(int scriptId) {
-		ScriptExecutionTask<?> scriptExecutionTask = runningScripts.get(scriptId);
-		if (scriptExecutionTask == null) {
-			return;
+		for(int taskId : runningScripts.keySet()) {
+			ScriptExecutionTask<?> scriptExecutionTask = runningScripts.get(taskId);
+			if (scriptExecutionTask == null) {
+				continue;
+			}
+			if (scriptExecutionTask.getScriptId() != scriptId) {
+				continue;
+			}
+			scriptExecutionTask.skipScript();
 		}
-		scriptExecutionTask.skipScript();
 	}
 
 	/**

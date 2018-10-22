@@ -298,6 +298,7 @@ public abstract class AbstractGameScriptingEngineTest {
 	@Test
 	public void testSkipScript() throws Exception {
 		final int expectedScriptId = scriptingEngine.compileScript(getWaitForCompletionScript());
+		scriptingEngine.invokeCompiledScript(expectedScriptId, scriptBindings);
 		scriptingEngine.invokeCompiledScript(expectedScriptId, scriptBindings, new ScriptInvocationListener() {
 			
 			@Override
@@ -324,13 +325,21 @@ public abstract class AbstractGameScriptingEngineTest {
 				return true;
 			}
 		});
-		while(!scriptExecuted.get()) {
+		final long timeout = 20000L;
+		long timer = 0L;
+		while(!scriptExecuted.get() && timer < timeout) {
+			long startTime = System.currentTimeMillis();
 			scriptingEngine.update(1f);
 			try {
 				Thread.sleep(2000);
 			} catch (Exception e) {}
 			scriptingEngine.skipScript(expectedScriptId);
+			timer += System.currentTimeMillis() - startTime;
 		}
+		if(timer >= timeout) {
+			Assert.fail("Timed out after " + timeout + "ms wait for script");
+		}
+
 		Assert.assertEquals(ScriptResult.SKIPPED, scriptResult.get());
 		Assert.assertEquals(true, gameFuture.isUpdated());
 		Assert.assertEquals(true, gameFuture.waitOccurred());
