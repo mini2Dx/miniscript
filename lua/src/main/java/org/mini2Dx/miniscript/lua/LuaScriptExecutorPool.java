@@ -40,13 +40,7 @@ import org.luaj.vm2.lib.TableLib;
 import org.luaj.vm2.lib.jse.JseBaseLib;
 import org.luaj.vm2.lib.jse.JseMathLib;
 import org.luaj.vm2.lib.jse.JsePlatform;
-import org.mini2Dx.miniscript.core.GameScriptingEngine;
-import org.mini2Dx.miniscript.core.PerThreadGameScript;
-import org.mini2Dx.miniscript.core.ScriptBindings;
-import org.mini2Dx.miniscript.core.ScriptExecutionTask;
-import org.mini2Dx.miniscript.core.ScriptExecutor;
-import org.mini2Dx.miniscript.core.ScriptExecutorPool;
-import org.mini2Dx.miniscript.core.ScriptInvocationListener;
+import org.mini2Dx.miniscript.core.*;
 import org.mini2Dx.miniscript.core.exception.InsufficientCompilersException;
 import org.mini2Dx.miniscript.core.exception.ScriptExecutorUnavailableException;
 
@@ -58,12 +52,16 @@ public class LuaScriptExecutorPool implements ScriptExecutorPool<LuaValue> {
 	private final Map<Integer, PerThreadGameScript<LuaValue>> scripts = new ConcurrentHashMap<Integer, PerThreadGameScript<LuaValue>>();
 	private final BlockingQueue<ScriptExecutor<LuaValue>> executors;
 	private final GameScriptingEngine gameScriptingEngine;
+	private final ClasspathScriptProvider classpathScriptProvider;
 	private final boolean sandboxed;
 	
 	private Globals sandboxedGlobals;
 
-	public LuaScriptExecutorPool(GameScriptingEngine gameScriptingEngine, int poolSize, boolean sandboxed) {
+	public LuaScriptExecutorPool(GameScriptingEngine gameScriptingEngine,
+	                             ClasspathScriptProvider classpathScriptProvider,
+	                             int poolSize, boolean sandboxed) {
 		this.gameScriptingEngine = gameScriptingEngine;
+		this.classpathScriptProvider = classpathScriptProvider;
 		this.sandboxed = sandboxed;
 		
 		executors = new ArrayBlockingQueue<ScriptExecutor<LuaValue>>(poolSize);

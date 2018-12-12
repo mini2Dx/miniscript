@@ -29,7 +29,7 @@ subprojects {
 	apply plugin: "maven"
 	
 	group = 'org.mini2Dx'
-	version = '1.0.2-SNAPSHOT'
+	version = '1.1.0-SNAPSHOT'
 
 	repositories {
 		mavenLocal()
@@ -43,6 +43,8 @@ subprojects {
 		jrubyVersion='9.2.0.0'
 		luajVersion='3.0.1'
 		kotlinVersion='1.2.61'
+
+		javaPoetVersion='1.11.1'
 		
 		junitVersion='4.11'
 		jmockVersion='2.5.1'
@@ -230,6 +232,26 @@ project(":" + rootProject.name + "-kotlin") {
 	}
 }
 
+project(":" + rootProject.name + "-gradle-plugin") {
+	description = "miniscript Gradle plugin for pre-compiling scripts at build time"
+
+	apply plugin: 'java-gradle-plugin'
+
+	dependencies {
+		compile project(":" + rootProject.name + "-groovy")
+		compile project(":" + rootProject.name + "-kotlin")
+		compile project(":" + rootProject.name + "-lua")
+		compile project(":" + rootProject.name + "-python")
+		compile project(":" + rootProject.name + "-ruby")
+		compile "com.squareup:javapoet:$javaPoetVersion"
+
+		testCompile "junit:junit:$junitVersion"
+		testCompile "org.jmock:jmock-junit4:$jmockVersion"
+		testCompile "org.jmock:jmock-legacy:$jmockVersion"
+		testCompile project(path: ":" + rootProject.name + "-core", configuration: 'testOutput')
+	}
+}
+
 task wrapper(type: Wrapper) {
-    gradleVersion = '2.14'
+    gradleVersion = '4.10.2'
 }

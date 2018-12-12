@@ -23,6 +23,7 @@
  */
 package org.mini2Dx.miniscript.lua;
 
+import org.mini2Dx.miniscript.core.ClasspathScriptProvider;
 import org.mini2Dx.miniscript.core.GameScriptingEngine;
 import org.mini2Dx.miniscript.core.ScriptExecutorPool;
 
@@ -49,7 +50,11 @@ public class LuaGameScriptingEngine extends GameScriptingEngine {
 	public LuaGameScriptingEngine(int maxConcurrentScripts) {
 		super(maxConcurrentScripts);
 	}
-	
+
+	public LuaGameScriptingEngine(ClasspathScriptProvider classpathScriptProvider, int maxConcurrentScripts) {
+		super(classpathScriptProvider, maxConcurrentScripts);
+	}
+
 	/**
 	 * Constructs a scripting engine backed by a thread pool with the maximum
 	 * amount of concurrent scripts set to the amount of processors + 1.
@@ -60,7 +65,11 @@ public class LuaGameScriptingEngine extends GameScriptingEngine {
 	public LuaGameScriptingEngine(boolean sandboxed) {
 		super(sandboxed);
 	}
-	
+
+	public LuaGameScriptingEngine(ClasspathScriptProvider classpathScriptProvider, boolean sandboxed) {
+		super(classpathScriptProvider, sandboxed);
+	}
+
 	/**
 	 * Constructs a scripting engine backed by a thread pool.
 	 * 
@@ -75,8 +84,12 @@ public class LuaGameScriptingEngine extends GameScriptingEngine {
 		super(maxConcurrentScripts, sandboxed);
 	}
 
+	public LuaGameScriptingEngine(ClasspathScriptProvider classpathScriptProvider, int maxConcurrentScripts, boolean sandboxed) {
+		super(classpathScriptProvider, maxConcurrentScripts, sandboxed);
+	}
+
 	@Override
-	protected ScriptExecutorPool<?> createScriptExecutorPool(int poolSize, boolean sandboxed) {
+	protected ScriptExecutorPool<?> createScriptExecutorPool(ClasspathScriptProvider classpathScriptProvider, int poolSize, boolean sandboxed) {
 		return new LuaScriptExecutorPool(this, poolSize, sandboxed);
 	}
 

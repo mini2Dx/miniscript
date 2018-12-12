@@ -1,15 +1,15 @@
 /**
  * The MIT License (MIT)
- * 
- * Copyright (c) 2016 Thomas Cashman
- * 
+ *
+ * Copyright (c) 2018 Thomas Cashman
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
  *
@@ -23,27 +23,23 @@
  */
 package org.mini2Dx.miniscript.core;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 /**
- * Wraps the native script object with an identifier
+ * An implementation of {@link ClasspathScriptProvider} that contains no scripts
  */
-public abstract class GameScript<S> {
-	private static final AtomicInteger ID_GENERATOR = new AtomicInteger(0);
-	
-	private final int id;
-	
-	public GameScript() {
-		id = ID_GENERATOR.incrementAndGet();
+public class NoopClasspathScriptProvider implements ClasspathScriptProvider {
+
+	@Override
+	public <T> T getClasspathScript(int scriptId) {
+		return null;
 	}
 
-	public int getId() {
-		return id;
+	@Override
+	public int getScriptId(String filepath) {
+		return -1;
 	}
 
-	public abstract S getScript();
-
-	public static void offsetIds(int offset) {
-		ID_GENERATOR.addAndGet(offset);
+	@Override
+	public int getTotalScripts() {
+		return 0;
 	}
 }

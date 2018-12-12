@@ -85,7 +85,20 @@ public abstract class GameScriptingEngine implements Runnable {
 	 *            of available processors on the player's machine.
 	 */
 	public GameScriptingEngine(int maxConcurrentScripts) {
-		scriptExecutorPool = createScriptExecutorPool(maxConcurrentScripts, isSandboxingSupported());
+		this(new NoopClasspathScriptProvider(), maxConcurrentScripts);
+	}
+
+	/**
+	 * Constructs a scripting engine backed by a thread pool. Sandboxing is
+	 * enabled if the implementation supports it.
+	 * @param classpathScriptProvider The auto-generated {@link ClasspathScriptProvider} for the game
+	 * @param maxConcurrentScripts The maximum amount of concurrently running scripts. WARNING:
+	 *                                this is a 'requested' amount and may be less due to the amount
+	 *                                of available processors on the player's machine.
+	 */
+	public GameScriptingEngine(ClasspathScriptProvider classpathScriptProvider, int maxConcurrentScripts) {
+		super();
+		scriptExecutorPool = createScriptExecutorPool(classpathScriptProvider, maxConcurrentScripts, isSandboxingSupported());
 
 		executorService = Executors.newScheduledThreadPool(
 				Math.min(maxConcurrentScripts + 1, Runtime.getRuntime().availableProcessors() * 2));
@@ -100,7 +113,17 @@ public abstract class GameScriptingEngine implements Runnable {
 	 *            True if script sandboxing should be enabled
 	 */
 	public GameScriptingEngine(boolean sandboxed) {
-		this(Runtime.getRuntime().availableProcessors() + 1, sandboxed);
+		this(new NoopClasspathScriptProvider(), sandboxed);
+	}
+
+	/**
+	 * Constructs a scripting engine backed by a thread pool with the maximum
+	 * amount of concurrent scripts set to the amount of processors + 1.
+	 * @param classpathScriptProvider The auto-generated {@link ClasspathScriptProvider} for the game
+	 * @param sandboxed True if script sandboxing should be enabled
+	 */
+	public GameScriptingEngine(ClasspathScriptProvider classpathScriptProvider, boolean sandboxed) {
+		this(classpathScriptProvider,Runtime.getRuntime().availableProcessors() + 1, sandboxed);
 	}
 
 	/**
@@ -114,7 +137,21 @@ public abstract class GameScriptingEngine implements Runnable {
 	 *            True if script sandboxing should be enabled
 	 */
 	public GameScriptingEngine(int maxConcurrentScripts, boolean sandboxed) {
-		scriptExecutorPool = createScriptExecutorPool(maxConcurrentScripts, sandboxed);
+		this(new NoopClasspathScriptProvider(), maxConcurrentScripts, sandboxed);
+	}
+
+	/**
+	 * Constructs a scripting engine backed by a thread pool.
+	 * @param classpathScriptProvider The auto-generated {@link ClasspathScriptProvider} for the game
+	 * @param maxConcurrentScripts The maximum amount of concurrently running scripts. WARNING:
+	 *                                this is a 'requested' amount and may be less due to the amount
+	 *                                of available processors on the player's machine.
+	 * @param sandboxed True if script sandboxing should be enabled
+	 */
+	public GameScriptingEngine(ClasspathScriptProvider classpathScriptProvider,
+	                           int maxConcurrentScripts, boolean sandboxed) {
+		super();
+		scriptExecutorPool = createScriptExecutorPool(classpathScriptProvider, maxConcurrentScripts, sandboxed);
 
 		executorService = Executors.newScheduledThreadPool(
 				Math.min(maxConcurrentScripts + 1, Runtime.getRuntime().availableProcessors() * 2));
@@ -152,7 +189,8 @@ public abstract class GameScriptingEngine implements Runnable {
 	 */
 	public abstract boolean isSandboxingSupported();
 
-	protected abstract ScriptExecutorPool<?> createScriptExecutorPool(int poolSize, boolean sandboxing);
+	protected abstract ScriptExecutorPool<?> createScriptExecutorPool(ClasspathScriptProvider classpathScriptProvider,
+	                                                                  int poolSize, boolean sandboxing);
 
 	/**
 	 * Updates all {@link GameFuture}s
