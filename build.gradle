@@ -44,6 +44,7 @@ subprojects {
 		luajVersion='3.0.1'
 		kotlinVersion='1.2.61'
 
+		byteBuddyVersion='1.9.2'
 		javaPoetVersion='1.11.1'
 		
 		junitVersion='4.11'
@@ -244,6 +245,7 @@ project(":" + rootProject.name + "-gradle-plugin") {
 		compile project(":" + rootProject.name + "-python")
 		compile project(":" + rootProject.name + "-ruby")
 		compile "com.squareup:javapoet:$javaPoetVersion"
+		compile "net.bytebuddy:byte-buddy:$byteBuddyVersion"
 
 		testCompile "junit:junit:$junitVersion"
 		testCompile "org.jmock:jmock-junit4:$jmockVersion"

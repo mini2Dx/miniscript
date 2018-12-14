@@ -1,21 +1,37 @@
 package org.mini2Dx.miniscript.gradle;
 
+import net.bytebuddy.ByteBuddy;
+import net.bytebuddy.description.modifier.Visibility;
+import net.bytebuddy.description.type.TypeDefinition;
+import net.bytebuddy.description.type.TypeDescription;
+import net.bytebuddy.dynamic.DynamicType;
+import net.bytebuddy.implementation.FixedValue;
+import net.bytebuddy.matcher.ElementMatchers;
 import org.gradle.api.DefaultTask;
-import org.gradle.api.Project;
+import org.gradle.api.GradleException;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputDirectory;
 import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskAction;
+import org.luaj.vm2.lib.jse.JsePlatform;
 import org.luaj.vm2.luajc.LuaJC;
+import org.mini2Dx.miniscript.core.ClasspathScriptProvider;
+import org.mini2Dx.miniscript.core.GeneratedClasspathScriptProvider;
+import org.mini2Dx.miniscript.gradle.compiler.CompilerConfig;
+import org.mini2Dx.miniscript.gradle.compiler.LuaScriptCompiler;
+import org.mini2Dx.miniscript.gradle.compiler.ScriptCompiler;
 
 import java.io.*;
-import java.util.Enumeration;
-import java.util.Hashtable;
+import java.util.*;
+
+import static net.bytebuddy.matcher.ElementMatchers.isDeclaredBy;
 
 public class MiniscriptCompileTask extends DefaultTask {
 	private final Property<Boolean> recursive;
 	private final Property<String> outputClass;
+
+	private final Map<String, ScriptCompiler> compilers = new HashMap<String, ScriptCompiler>();
 
 	private File scriptsDir;
 	private File outputDir;
@@ -24,32 +40,58 @@ public class MiniscriptCompileTask extends DefaultTask {
 		super();
 		recursive = getProject().getObjects().property(Boolean.class);
 		outputClass = getProject().getObjects().property(String.class);
+
+		compilers.put(".lua", new LuaScriptCompiler());
 	}
 
 	@TaskAction
-	public void compile() {
-
+	public void compile() throws IOException {
+		final String outputPackage = outputClass.get().substring(0, outputClass.get().lastIndexOf('.'));
+		final CompilerConfig compilerConfig = new CompilerConfig(outputPackage, outputDir);
+		final Map<String, Object> outputClasses = compileDirectory(compilerConfig, scriptsDir);
+		generateClassImplementation(outputClasses);
 	}
 
-	private void compileFile(File inputFile, File outputDir) throws IOException {
-		// create the chunk
-		FileInputStream fis = new FileInputStream( inputFile );
-		final Hashtable t = LuaJC.instance.compileAll( fis, inf.luachunkname, inf.srcfilename, globals, genmain);
-		fis.close();
+	private void generateClassImplementation(Map<String, Object> outputClasses) throws IOException {
+		final DynamicType.Builder classBuilder = new ByteBuddy()
+				.subclass(GeneratedClasspathScriptProvider.class)
+				.name(outputClass.get());
 
-		// write out the chunk
-		for (Enumeration e = t.keys(); e.hasMoreElements(); ) {
-			String key = (String) e.nextElement();
-			byte[] bytes = (byte[]) t.get(key);
-			if ( key.indexOf('/')>=0 ) {
-				String d = (destdir!=null? destdir+"/": "")+key.substring(0,key.lastIndexOf('/'));
-				new File(d).mkdirs();
-			}
-			String destpath = (destdir!=null? destdir+"/": "") + key + ".class";
-			FileOutputStream fos = new FileOutputStream( destpath );
-			fos.write( bytes );
-			fos.close();
+		classBuilder.method(isDeclaredBy(GeneratedClasspathScriptProvider.class).
+				and(ElementMatchers.named("getGeneratedScripts"))).
+				intercept(FixedValue.value(outputClasses));
+		final DynamicType.Unloaded<?> result = classBuilder.make();
+		result.saveIn(outputDir);
+	}
+
+	private Map<String, Object> compileDirectory(CompilerConfig compilerConfig, File scriptsDirectory) throws IOException {
+		final Map<String, Object> outputClasses = new HashMap<String, Object> ();
+		if(!compilerConfig.getOutputDirectory().exists()) {
+			compilerConfig.getOutputDirectory().mkdirs();
 		}
+		for(File file : scriptsDirectory.listFiles()) {
+			if(file.isDirectory()) {
+				if(recursive.get()) {
+					final CompilerConfig nestedConfig = new CompilerConfig(
+							compilerConfig.getOutputPackage() + "." + file.getName(), outputDir);
+					outputClasses.putAll(compileDirectory(nestedConfig, new File(scriptsDirectory, file.getName())));
+				}
+				continue;
+			}
+
+			compilerConfig.setInputScriptFile(file);
+			outputClasses.put(compilerConfig.getInputScriptFilename(), compileFile(compilerConfig));
+		}
+		return outputClasses;
+	}
+
+	private Object compileFile(CompilerConfig compilerConfig) throws IOException {
+		final ScriptCompiler compiler = compilers.get(compilerConfig.getInputScriptFileSuffix());
+		if(compiler == null) {
+			throw new GradleException("miniscript does not support build time compilation of "
+					+ compilerConfig.getInputScriptFileSuffix() + " files.");
+		}
+		return compiler.compileFile(compilerConfig);
 	}
 
 	@InputDirectory

@@ -90,7 +90,7 @@ public class LuaGameScriptingEngine extends GameScriptingEngine {
 
 	@Override
 	protected ScriptExecutorPool<?> createScriptExecutorPool(ClasspathScriptProvider classpathScriptProvider, int poolSize, boolean sandboxed) {
-		return new LuaScriptExecutorPool(this, poolSize, sandboxed);
+		return new LuaScriptExecutorPool(this, classpathScriptProvider, poolSize, sandboxed);
 	}
 
 	@Override

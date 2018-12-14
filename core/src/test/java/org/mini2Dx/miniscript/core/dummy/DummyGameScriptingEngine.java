@@ -23,6 +23,7 @@
  */
 package org.mini2Dx.miniscript.core.dummy;
 
+import org.mini2Dx.miniscript.core.ClasspathScriptProvider;
 import org.mini2Dx.miniscript.core.GameScriptingEngine;
 import org.mini2Dx.miniscript.core.ScriptExecutorPool;
 
@@ -32,7 +33,7 @@ import org.mini2Dx.miniscript.core.ScriptExecutorPool;
 public class DummyGameScriptingEngine extends GameScriptingEngine {
 
 	@Override
-	protected ScriptExecutorPool<?> createScriptExecutorPool(int poolSize, boolean sandboxing) {
+	protected ScriptExecutorPool<?> createScriptExecutorPool(ClasspathScriptProvider classpathScriptProvider, int poolSize, boolean sandboxing) {
 		return new DummyScriptExecutorPool(this, poolSize);
 	}
 
@@ -40,5 +41,4 @@ public class DummyGameScriptingEngine extends GameScriptingEngine {
 	public boolean isSandboxingSupported() {
 		return false;
 	}
-
 }
