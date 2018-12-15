@@ -32,7 +32,7 @@ import org.mini2Dx.miniscript.core.dummy.DummyGameScriptingEngine;
  */
 public class ImmediateGameFutureTest {
 
-	@Test
+	@Test()
 	public void testNoArgConstructor() {
 		GameScriptingEngine dummyEngine = new DummyGameScriptingEngine();
 		new ImmediateGameFuture();
@@ -41,6 +41,7 @@ public class ImmediateGameFutureTest {
 	
 	@Test(expected=RuntimeException.class)
 	public void testNoArgConstructorWithNoEngine() {
+		GameScriptingEngine.MOST_RECENT_INSTANCE = null;
 		new ImmediateGameFuture();
 	}
 	
