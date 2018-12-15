@@ -24,6 +24,7 @@
 package org.mini2Dx.miniscript.core;
 
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.mini2Dx.miniscript.core.exception.ScriptSkippedException;
@@ -44,6 +45,7 @@ public class ScriptExecutionTask<S> implements Runnable {
 	private final ScriptBindings scriptBindings;
 	private final ScriptInvocationListener scriptInvocationListener;
 
+	private final AtomicBoolean completed = new AtomicBoolean(false);
 	private Future<?> taskFuture;
 
 	public ScriptExecutionTask(GameScriptingEngine gameScriptingEngine, ScriptExecutor<S> executor,
@@ -93,6 +95,7 @@ public class ScriptExecutionTask<S> implements Runnable {
 		}
 		// Clear interrupted bit
 		Thread.interrupted();
+		completed.set(true);
 	}
 
 	public void skipScript() {
@@ -105,7 +108,7 @@ public class ScriptExecutionTask<S> implements Runnable {
 	}
 
 	public boolean isFinished() {
-		return taskFuture != null && taskFuture.isDone();
+		return completed.get();
 	}
 
 	public void cleanup() {
