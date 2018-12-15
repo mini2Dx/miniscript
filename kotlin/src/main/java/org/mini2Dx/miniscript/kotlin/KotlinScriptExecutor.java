@@ -83,7 +83,7 @@ public class KotlinScriptExecutor implements ScriptExecutor<CompiledKotlinScript
 				executionResult.put(variableName, engine.eval(variableName));
 			} catch (Exception e) {
 				if(e.getMessage().contains("unresolved reference")) {
-					executionResult.put(variableName, null);
+					executionResult.remove(variableName);
 				} else {
 					e.printStackTrace();
 				}

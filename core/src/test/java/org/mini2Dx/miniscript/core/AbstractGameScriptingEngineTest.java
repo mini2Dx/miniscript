@@ -195,9 +195,19 @@ public abstract class AbstractGameScriptingEngineTest {
 				return true;
 			}
 		});
-		while(!scriptExecuted.get()) {
+		final long timeout = 20000L;
+		long timer = 0L;
+
+		while(!scriptExecuted.get() && timer < timeout) {
+			long startTime = System.currentTimeMillis();
 			scriptingEngine.update(1f);
+			timer += System.currentTimeMillis() - startTime;
 		}
+
+		if(timer >= timeout) {
+			Assert.fail("Timed out after " + timeout + "ms wait for script");
+		}
+
 		Assert.assertEquals(ScriptResult.SUCCESS, scriptResult.get());
 		Assert.assertEquals(true, gameFuture.isUpdated());
 		Assert.assertEquals(false, gameFuture.waitOccurred());
@@ -242,11 +252,21 @@ public abstract class AbstractGameScriptingEngineTest {
 				return true;
 			}
 		});
-		while(!scriptExecuted.get()) {
+		final long timeout = 20000L;
+		long timer = 0L;
+
+		while(!scriptExecuted.get() && timer < timeout) {
+			long startTime = System.currentTimeMillis();
 			gameFuture.setFutureCompleted(true);
 			scriptingEngine.update(1f);
+			timer += System.currentTimeMillis() - startTime;
 		}
 		scriptingEngine.update(1f);
+
+		if(timer >= timeout) {
+			Assert.fail("Timed out after " + timeout + "ms wait for script");
+		}
+
 		Assert.assertEquals(ScriptResult.SUCCESS, scriptResult.get());
 		Assert.assertEquals(true, gameFuture.isUpdated());
 		Assert.assertEquals(true, gameFuture.waitOccurred());
@@ -284,10 +304,19 @@ public abstract class AbstractGameScriptingEngineTest {
 				return true;
 			}
 		});
-		while(!scriptExecuted.get()) {
+		final long timeout = 20000L;
+		long timer = 0L;
+
+		while(!scriptExecuted.get() && timer < timeout) {
+			final long startTime = System.currentTimeMillis();
 			scriptingEngine.update(1f);
 			scriptingEngine.skipAllGameFutures();
+			timer += System.currentTimeMillis() - startTime;
 		}
+		if(timer >= timeout) {
+			Assert.fail("Timed out after " + timeout + "ms wait for script");
+		}
+
 		Assert.assertEquals(ScriptResult.SUCCESS, scriptResult.get());
 		Assert.assertEquals(false, gameFuture.isUpdated());
 		Assert.assertEquals(true, gameFuture.waitOccurred());
@@ -331,10 +360,13 @@ public abstract class AbstractGameScriptingEngineTest {
 			long startTime = System.currentTimeMillis();
 			scriptingEngine.update(1f);
 			try {
-				Thread.sleep(2000);
+				Thread.sleep(1000);
 			} catch (Exception e) {}
-			scriptingEngine.skipScript(expectedScriptId);
 			timer += System.currentTimeMillis() - startTime;
+
+			if(timer >= 15000L) {
+				scriptingEngine.skipScript(expectedScriptId);
+			}
 		}
 		if(timer >= timeout) {
 			Assert.fail("Timed out after " + timeout + "ms wait for script");

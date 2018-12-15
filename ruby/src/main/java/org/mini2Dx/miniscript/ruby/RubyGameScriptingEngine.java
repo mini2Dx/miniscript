@@ -54,6 +54,26 @@ public class RubyGameScriptingEngine extends GameScriptingEngine {
 		super(maxConcurrentScripts);
 	}
 
+	public RubyGameScriptingEngine(ClasspathScriptProvider classpathScriptProvider, int maxConcurrentScripts) {
+		super(classpathScriptProvider, maxConcurrentScripts);
+	}
+
+	public RubyGameScriptingEngine(boolean sandboxed) {
+		super(sandboxed);
+	}
+
+	public RubyGameScriptingEngine(ClasspathScriptProvider classpathScriptProvider, boolean sandboxed) {
+		super(classpathScriptProvider, sandboxed);
+	}
+
+	public RubyGameScriptingEngine(int maxConcurrentScripts, boolean sandboxed) {
+		super(maxConcurrentScripts, sandboxed);
+	}
+
+	public RubyGameScriptingEngine(ClasspathScriptProvider classpathScriptProvider, int maxConcurrentScripts, boolean sandboxed) {
+		super(classpathScriptProvider, maxConcurrentScripts, sandboxed);
+	}
+
 	@Override
 	protected ScriptExecutorPool<?> createScriptExecutorPool(ClasspathScriptProvider classpathScriptProvider, int poolSize, boolean sandboxing) {
 		if(sandboxing) {

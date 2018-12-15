@@ -30,12 +30,14 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.mini2Dx.miniscript.core.AbstractGameScriptingEngineTest;
 import org.mini2Dx.miniscript.core.GameScriptingEngine;
 
 /**
  * UATs for {@link RubyGameScriptingEngine}
  */
+@Ignore
 public class RubyGameScriptingEngineTest extends AbstractGameScriptingEngineTest {
 
 	@Override

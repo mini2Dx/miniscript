@@ -54,11 +54,32 @@ public class KotlinGameScriptingEngine extends GameScriptingEngine {
 		super(maxConcurrentScripts);
 	}
 
+	public KotlinGameScriptingEngine(ClasspathScriptProvider classpathScriptProvider, int maxConcurrentScripts) {
+		super(classpathScriptProvider, maxConcurrentScripts);
+	}
+
+	public KotlinGameScriptingEngine(boolean sandboxed) {
+		super(sandboxed);
+	}
+
+	public KotlinGameScriptingEngine(ClasspathScriptProvider classpathScriptProvider, boolean sandboxed) {
+		super(classpathScriptProvider, sandboxed);
+	}
+
+	public KotlinGameScriptingEngine(int maxConcurrentScripts, boolean sandboxed) {
+		super(maxConcurrentScripts, sandboxed);
+	}
+
+	public KotlinGameScriptingEngine(ClasspathScriptProvider classpathScriptProvider, int maxConcurrentScripts, boolean sandboxed) {
+		super(classpathScriptProvider, maxConcurrentScripts, sandboxed);
+	}
+
 	@Override
 	protected ScriptExecutorPool<?> createScriptExecutorPool(ClasspathScriptProvider classpathScriptProvider, int poolSize, boolean sandboxing) {
 		if(sandboxing) {
 			throw new SandboxingUnsupportedException(SCRIPTING_LANGUAGE);
 		}
+		System.setProperty("idea.io.use.fallback", "true");
 		return new KotlinScriptExecutorPool(this, poolSize);
 	}
 

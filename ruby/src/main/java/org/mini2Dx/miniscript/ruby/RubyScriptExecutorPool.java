@@ -100,7 +100,7 @@ public class RubyScriptExecutorPool implements ScriptExecutorPool<EmbedEvalUnit>
 	public ScriptingContainer getLocalScriptingContainer() {
 		long threadId = Thread.currentThread().getId();
 		if (!threadCompilers.containsKey(threadId)) {
-			ScriptingContainer scriptingContainer = new ScriptingContainer(LocalContextScope.THREADSAFE,
+			ScriptingContainer scriptingContainer = new ScriptingContainer(LocalContextScope.SINGLETHREAD,
 					LocalVariableBehavior.PERSISTENT);
 			scriptingContainer.setCompileMode(CompileMode.JIT);
 			threadCompilers.put(threadId, scriptingContainer);

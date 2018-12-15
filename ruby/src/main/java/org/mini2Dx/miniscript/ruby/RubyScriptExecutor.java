@@ -54,10 +54,9 @@ public class RubyScriptExecutor implements ScriptExecutor<EmbedEvalUnit> {
 		PerThreadGameScript<EmbedEvalUnit> script = (PerThreadGameScript<EmbedEvalUnit>) s;
 
 		ScriptingContainer scriptingContainer = executorPool.getLocalScriptingContainer();
-		
-		for (String variableName : bindings.keySet()) {
-			scriptingContainer.put(variableName, bindings.get(variableName));
-		}
+
+		scriptingContainer.getVarMap().putAll(bindings);
+
 		if (!script.hasLocalScript()) {
 			script.putLocalScript(scriptingContainer.parse(script.getContent()));
 		}
