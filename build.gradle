@@ -238,8 +238,16 @@ project(":" + rootProject.name + "-gradle-plugin") {
 
 	apply plugin: 'java-gradle-plugin'
 
+	gradlePlugin {
+		plugins {
+			miniscriptPlugin {
+				id = 'org.mini2Dx.miniscript'
+				implementationClass = 'org.mini2Dx.miniscript.gradle.MiniscriptPlugin'
+			}
+		}
+	}
+
 	dependencies {
-		compile project(":" + rootProject.name + "-groovy")
 		compile project(":" + rootProject.name + "-kotlin")
 		compile project(":" + rootProject.name + "-lua")
 		compile project(":" + rootProject.name + "-python")
@@ -255,5 +263,5 @@ project(":" + rootProject.name + "-gradle-plugin") {
 }
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '4.10.2'
+    gradleVersion = '4.10.3'
 }
