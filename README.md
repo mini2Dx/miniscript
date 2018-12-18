@@ -1,4 +1,5 @@
-# miniscript
+miniscript
+====================================
 
 [![Build Status](https://travis-ci.org/mini2Dx/miniscript.svg?branch=master)](https://travis-ci.org/mini2Dx/miniscript)
 [![Join the chat at https://gitter.im/mini2Dx/mini2Dx](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/mini2Dx/mini2Dx?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
@@ -12,11 +13,13 @@ A library for adding scripting to Java-based games
 *   [Changelog](https://github.com/mini2Dx/miniscript/blob/master/CHANGES)
 *   [License](https://github.com/mini2Dx/miniscript/blob/master/LICENSE)
 
-## Goals
+Goals
+------------------------------------------
 
-The main objective of miniscript is to provide a framework for adding scripting to Java-based games independent for the scripting language used.
+The main objective of miniscript is to provide a framework for adding scripting to Java-based games independent of the scripting language used.
 
-## Supported Scripting Languages
+Supported Scripting Languages
+------------------------------------------
 
 The following scripting languages are currently supported:
 
@@ -26,10 +29,12 @@ The following scripting languages are currently supported:
 *   Ruby
 *   Kotlin
 
-## License
+License
+------------------------------------------
 
 The project is licensed under the MIT License.
 
-## Contributing
+Contributing
+------------------------------------------
 
 See the [Contributing Page](https://github.com/mini2Dx/miniscript/blob/master/CONTRIBUTING.md)
