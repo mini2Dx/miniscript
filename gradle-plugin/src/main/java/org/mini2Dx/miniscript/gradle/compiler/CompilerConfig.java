@@ -1,35 +1,64 @@
+/**
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2018 Thomas Cashman
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 package org.mini2Dx.miniscript.gradle.compiler;
+
+import org.mini2Dx.miniscript.gradle.CompilerInputFile;
 
 import java.io.File;
 
 public class CompilerConfig {
-	private final String outputPackage;
-	private final String outputPackageAsPath;
-	private final File outputDirectory;
+	private final File rootOutputDir;
+	private final String outputRootPackage;
+	private final String outputRootPackageAsPath;
+	private final File outputRootDirectory;
 
-	private File inputScriptFile;
-	private String inputScriptFilename;
-	private String inputScriptFileSuffix;
-	private String inputScriptFilenameWithoutSuffix;
+	private CompilerInputFile inputScriptFile;
 
+	private String outputPackage, outputPackageAsPath;
 	private String outputClass;
 	private File outputClassFile;
 
-	public CompilerConfig(String outputPackage, File rootOutputDir) {
+	public CompilerConfig(String outputRootPackage, File rootOutputDir) {
 		super();
-		this.outputPackage = outputPackage;
-		this.outputPackageAsPath = outputPackage.replace('.', '/') + "/";
-		this.outputDirectory = new File(rootOutputDir, outputPackageAsPath);
+		this.rootOutputDir = rootOutputDir;
+		this.outputRootPackage = outputRootPackage;
+		this.outputRootPackageAsPath = outputRootPackage.replace('.', '/') + "/";
+		this.outputRootDirectory = new File(rootOutputDir, outputRootPackageAsPath.replace('/', File.separatorChar));
 	}
 
-	public void setInputScriptFile(File inputScriptFile) {
-		this.inputScriptFile = inputScriptFile;
-		this.inputScriptFilename = inputScriptFile.getName();
-		this.inputScriptFileSuffix = inputScriptFilename.substring(inputScriptFilename.lastIndexOf('.')).toLowerCase();
-		this.inputScriptFilenameWithoutSuffix = inputScriptFile.getName().substring( 0, inputScriptFile.getName().lastIndexOf('.'));
+	public void setInputScriptFile(CompilerInputFile inputScriptFile) {
+		this.inputScriptFile  = inputScriptFile;
 
-		this.outputClass = outputPackage + "." + inputScriptFilenameWithoutSuffix + ".class";
-		this.outputClassFile = new File(outputDirectory, inputScriptFilenameWithoutSuffix + ".class");
+		this.outputPackage = inputScriptFile.getOutputPackageName(outputRootPackage);
+		this.outputPackageAsPath = outputPackage.replace('.', '/') + "/";
+		this.outputClass = outputPackage + "." + inputScriptFile.getOutputClassName() + ".class";
+
+		final File packageDir = new File(rootOutputDir, outputPackage.replace('.', File.separatorChar));
+		if(!packageDir.exists()) {
+			packageDir.mkdirs();
+		}
+		this.outputClassFile = new File(packageDir,  inputScriptFile.getOutputClassName() + ".class");
 	}
 
 	public String getOutputPackage() {
@@ -40,24 +69,8 @@ public class CompilerConfig {
 		return outputPackageAsPath;
 	}
 
-	public File getOutputDirectory() {
-		return outputDirectory;
-	}
-
-	public File getInputScriptFile() {
+	public CompilerInputFile getInputScriptFile() {
 		return inputScriptFile;
-	}
-
-	public String getInputScriptFilename() {
-		return inputScriptFilename;
-	}
-
-	public String getInputScriptFileSuffix() {
-		return inputScriptFileSuffix;
-	}
-
-	public String getInputScriptFilenameWithoutSuffix() {
-		return inputScriptFilenameWithoutSuffix;
 	}
 
 	public String getOutputClass() {
@@ -66,5 +79,17 @@ public class CompilerConfig {
 
 	public File getOutputClassFile() {
 		return outputClassFile;
+	}
+
+	public String getOutputRootPackage() {
+		return outputRootPackage;
+	}
+
+	public String getOutputRootPackageAsPath() {
+		return outputRootPackageAsPath;
+	}
+
+	public File getOutputRootDirectory() {
+		return outputRootDirectory;
 	}
 }

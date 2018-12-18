@@ -23,18 +23,39 @@
  */
 package org.mini2Dx.miniscript.core;
 
-import java.util.Set;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Interface for retrieving pre-compiled scripts stored within the classpath
- */
-public interface ClasspathScriptProvider {
+public class PerThreadClasspathGameScript<S> extends GameScript<S> {
+	private final Map<Long, S> threadToScriptMapping = new ConcurrentHashMap<Long, S>();
+	private final S content;
 
-	public <T> T getClasspathScript(int scriptId);
+	public PerThreadClasspathGameScript(S content) {
+		super();
+		this.content = content;
+	}
 
-	public int getScriptId(String filepath);
+	@Override
+	public S getScript() {
+		return threadToScriptMapping.get(Thread.currentThread().getId());
+	}
 
-	public int getTotalScripts();
+	@Override
+	public boolean hasScript() {
+		return threadToScriptMapping.containsKey(Thread.currentThread().getId());
+	}
 
-	public Set<String> getFilepaths();
+	@Override
+	public void setScript(S script) {
+		threadToScriptMapping.put(Thread.currentThread().getId(), script);
+	}
+
+	public S compileInstance() {
+		try {
+			return (S) content.getClass().newInstance();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return content;
+	}
 }

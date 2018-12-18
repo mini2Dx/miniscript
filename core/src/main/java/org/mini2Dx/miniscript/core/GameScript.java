@@ -34,6 +34,7 @@ public abstract class GameScript<S> {
 	private final int id;
 	
 	public GameScript() {
+		super();
 		id = ID_GENERATOR.incrementAndGet();
 	}
 
@@ -42,6 +43,10 @@ public abstract class GameScript<S> {
 	}
 
 	public abstract S getScript();
+
+	public abstract boolean hasScript();
+
+	public abstract void setScript(S script);
 
 	public static void offsetIds(int offset) {
 		ID_GENERATOR.addAndGet(offset);

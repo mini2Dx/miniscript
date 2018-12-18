@@ -23,10 +23,14 @@
  */
 package org.mini2Dx.miniscript.core;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * An implementation of {@link ClasspathScriptProvider} that contains no scripts
  */
 public class NoopClasspathScriptProvider implements ClasspathScriptProvider {
+	private static final Set<String> EMPTY_FILEPATH_SET = new HashSet<String>();
 
 	@Override
 	public <T> T getClasspathScript(int scriptId) {
@@ -41,5 +45,10 @@ public class NoopClasspathScriptProvider implements ClasspathScriptProvider {
 	@Override
 	public int getTotalScripts() {
 		return 0;
+	}
+
+	@Override
+	public Set<String> getFilepaths() {
+		return EMPTY_FILEPATH_SET;
 	}
 }

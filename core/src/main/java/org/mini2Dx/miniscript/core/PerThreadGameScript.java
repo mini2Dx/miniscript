@@ -38,17 +38,19 @@ public class PerThreadGameScript<S> extends GameScript<S> {
 		super();
 		this.content = content;
 	}
-	
-	public boolean hasLocalScript() {
-		return threadToScriptMapping.containsKey(Thread.currentThread().getId());
-	}
 
 	@Override
 	public S getScript() {
 		return threadToScriptMapping.get(Thread.currentThread().getId());
 	}
 
-	public void putLocalScript(S script) {
+	@Override
+	public boolean hasScript() {
+		return threadToScriptMapping.containsKey(Thread.currentThread().getId());
+	}
+
+	@Override
+	public void setScript(S script) {
 		threadToScriptMapping.put(Thread.currentThread().getId(), script);
 	}
 

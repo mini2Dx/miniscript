@@ -57,8 +57,8 @@ public class RubyScriptExecutor implements ScriptExecutor<EmbedEvalUnit> {
 
 		scriptingContainer.getVarMap().putAll(bindings);
 
-		if (!script.hasLocalScript()) {
-			script.putLocalScript(scriptingContainer.parse(script.getContent()));
+		if (!script.hasScript()) {
+			script.setScript(scriptingContainer.parse(script.getContent()));
 		}
 		
 		try {

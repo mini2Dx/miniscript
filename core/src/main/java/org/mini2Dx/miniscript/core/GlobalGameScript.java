@@ -28,7 +28,7 @@ package org.mini2Dx.miniscript.core;
  * execution is isolated regardless of the thread it is executing on
  */
 public class GlobalGameScript<S> extends GameScript<S> {
-	private final S script;
+	private S script;
 
 	public GlobalGameScript(S script) {
 		this.script = script;
@@ -37,5 +37,15 @@ public class GlobalGameScript<S> extends GameScript<S> {
 	@Override
 	public S getScript() {
 		return script;
+	}
+
+	@Override
+	public boolean hasScript() {
+		return script != null;
+	}
+
+	@Override
+	public void setScript(S script) {
+		this.script = script;
 	}
 }

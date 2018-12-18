@@ -49,7 +49,7 @@ import org.mini2Dx.miniscript.core.exception.ScriptExecutorUnavailableException;
  */
 public class LuaScriptExecutorPool implements ScriptExecutorPool<LuaValue> {
 	private final Map<Long, Globals> threadCompilers = new ConcurrentHashMap<Long, Globals>();
-	private final Map<Integer, PerThreadGameScript<LuaValue>> scripts = new ConcurrentHashMap<Integer, PerThreadGameScript<LuaValue>>();
+	private final Map<Integer, GameScript<LuaValue>> scripts = new ConcurrentHashMap<Integer, GameScript<LuaValue>>();
 	private final BlockingQueue<ScriptExecutor<LuaValue>> executors;
 	private final GameScriptingEngine gameScriptingEngine;
 	private final ClasspathScriptProvider classpathScriptProvider;
@@ -63,6 +63,13 @@ public class LuaScriptExecutorPool implements ScriptExecutorPool<LuaValue> {
 		this.gameScriptingEngine = gameScriptingEngine;
 		this.classpathScriptProvider = classpathScriptProvider;
 		this.sandboxed = sandboxed;
+
+		if(classpathScriptProvider.getTotalScripts() > 0) {
+			for(int i = 0; i < classpathScriptProvider.getTotalScripts(); i++) {
+				scripts.put(i, new PerThreadClasspathGameScript<LuaValue>((LuaValue) classpathScriptProvider.getClasspathScript(i)));
+				GameScript.offsetIds(i);
+			}
+		}
 		
 		executors = new ArrayBlockingQueue<ScriptExecutor<LuaValue>>(poolSize);
 
@@ -137,12 +144,28 @@ public class LuaScriptExecutorPool implements ScriptExecutorPool<LuaValue> {
 		}
 		return threadCompilers.get(threadId);
 	}
-	
-	public LuaValue compileWithGlobals(Globals globals, String script) {
-		if(sandboxed) {
-			return sandboxedGlobals.load(script, "main", globals);
+
+	public LuaValue compileWithGlobals(Globals globals, GameScript<LuaValue> gameScript) {
+		if(gameScript instanceof GlobalGameScript) {
+			return gameScript.getScript();
+		} else if(gameScript instanceof PerThreadClasspathGameScript) {
+			return compileClassPathGameScript(globals, (PerThreadClasspathGameScript) gameScript);
 		} else {
-			return globals.load(script);
+			return compilePerThreadGameScriptWithGlobals(globals, (PerThreadGameScript) gameScript);
+		}
+	}
+
+	private LuaValue compileClassPathGameScript(Globals globals, PerThreadClasspathGameScript<LuaValue> perThreadClasspathGameScript) {
+		final LuaValue result = perThreadClasspathGameScript.compileInstance();
+		result.initupvalue1(globals);
+		return result;
+	}
+
+	private LuaValue compilePerThreadGameScriptWithGlobals(Globals globals, PerThreadGameScript<LuaValue> perThreadGameScript) {
+		if(sandboxed) {
+			return sandboxedGlobals.load(perThreadGameScript.getContent(), "main", globals);
+		} else {
+			return globals.load(perThreadGameScript.getContent());
 		}
 	}
 	
