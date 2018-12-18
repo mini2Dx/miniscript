@@ -1,3 +1,5 @@
+[1.1.1-SNAPSHOT]
+
 [1.1.0]
 - Added miniscript-gradle-plugin for pre-compiling scripts at build time (currently only Lua is supported)
 - Update to Kotlin 1.3.11
