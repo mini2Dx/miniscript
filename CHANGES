@@ -1,4 +1,5 @@
 [1.1.1-SNAPSHOT]
+- Fixed paths containing numbers generating invalid package names
 
 [1.1.0]
 - Added miniscript-gradle-plugin for pre-compiling scripts at build time (currently only Lua is supported)
