@@ -83,7 +83,7 @@ public class PatchedLuaJC implements Globals.Loader {
 		return loader.load(p, classname, luaname, globals);
 	}
 
-	private static String toStandardJavaClassName( String luachunkname ) {
+	public static String toStandardJavaClassName( String luachunkname ) {
 		String stub = toStub( luachunkname );
 		StringBuffer classname = new StringBuffer();
 		for (int i = 0, n = stub.length(); i < n; ++i) {
@@ -100,7 +100,17 @@ public class PatchedLuaJC implements Globals.Loader {
 				if(c == '/') {
 					classname.append(c);
 				} else if(Character.isJavaIdentifierPart(c)) {
-					classname.append(c);
+					final char previousChar = stub.charAt(i - 1);
+					if(previousChar == '/') {
+						if(!Character.isJavaIdentifierStart(c)) {
+							classname.append('_');
+							classname.append(c);
+						} else {
+							classname.append(c);
+						}
+					} else {
+						classname.append(c);
+					}
 				} else {
 					classname.append('_');
 				}

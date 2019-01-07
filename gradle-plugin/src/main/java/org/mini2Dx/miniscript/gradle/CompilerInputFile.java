@@ -76,11 +76,29 @@ public class CompilerInputFile {
 
 	public String getOutputPackageName(String rootScriptPackage) {
 		if(inputScriptRelativeFilename.indexOf('/') > 0 || inputScriptRelativeFilename.indexOf('\\') > 0) {
-			return rootScriptPackage + '.' + inputScriptRelativeFilename.
+			final String initialResult = rootScriptPackage + '.' + inputScriptRelativeFilename.
+					substring(0, inputScriptRelativeFilename.indexOf('/') > 0 ?
+							inputScriptRelativeFilename.lastIndexOf('/') :
+							inputScriptRelativeFilename.lastIndexOf('\\')).
 					replace('/', '.').
 					replace('\\', '.').
-					replace('-', '_')
-					.substring(0, inputScriptRelativeFilename.lastIndexOf('.'));
+					replace('-', '_');
+
+			final StringBuilder result = new StringBuilder();
+			result.append(initialResult.charAt(0));
+			for(int i = 1; i < initialResult.length(); i++) {
+				if(initialResult.charAt(i - 1) != '.') {
+					result.append(initialResult.charAt(i));
+					continue;
+				}
+				if(Character.isJavaIdentifierStart(initialResult.charAt(i))) {
+					result.append(initialResult.charAt(i));
+					continue;
+				}
+				result.append('_');
+				result.append(initialResult.charAt(i));
+			}
+			return result.toString();
 		}
 		return rootScriptPackage;
 	}
