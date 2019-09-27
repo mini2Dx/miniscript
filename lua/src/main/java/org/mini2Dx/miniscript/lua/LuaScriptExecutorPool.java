@@ -66,8 +66,10 @@ public class LuaScriptExecutorPool implements ScriptExecutorPool<LuaValue> {
 
 		if(classpathScriptProvider.getTotalScripts() > 0) {
 			for(int i = 0; i < classpathScriptProvider.getTotalScripts(); i++) {
-				scripts.put(i, new PerThreadClasspathGameScript<LuaValue>((LuaValue) classpathScriptProvider.getClasspathScript(i)));
-				GameScript.offsetIds(i);
+				GameScript.offsetIds(i - 1);
+				PerThreadClasspathGameScript testing = new PerThreadClasspathGameScript<LuaValue>((LuaValue) classpathScriptProvider.getClasspathScript(i));
+				int key = testing.getId();
+				scripts.put(key, testing);
 			}
 		}
 		
