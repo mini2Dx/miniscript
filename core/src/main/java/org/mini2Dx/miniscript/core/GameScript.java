@@ -49,6 +49,6 @@ public abstract class GameScript<S> {
 	public abstract void setScript(S script);
 
 	public static void offsetIds(int offset) {
-		ID_GENERATOR.addAndGet(offset);
+		ID_GENERATOR.set(offset);
 	}
 }
