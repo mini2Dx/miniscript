@@ -32,9 +32,7 @@ import java.util.Scanner;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import org.mini2Dx.miniscript.core.exception.InsufficientCompilersException;
@@ -61,7 +59,7 @@ public abstract class GameScriptingEngine implements Runnable {
 	private final Set<Integer> completedFutures = new HashSet<Integer>();
 	private final Set<Integer> completedScripts = new HashSet<Integer>();
 
-	private final ScheduledExecutorService executorService;
+	private final ThreadPoolProvider threadPoolProvider;
 	private final ScriptExecutorPool<?> scriptExecutorPool;
 
 	private boolean cancelReallocatedFutures = true;
@@ -73,6 +71,10 @@ public abstract class GameScriptingEngine implements Runnable {
 	 */
 	public GameScriptingEngine() {
 		this(Runtime.getRuntime().availableProcessors() + 1);
+	}
+
+	public GameScriptingEngine(ThreadPoolProvider threadPoolProvider) {
+		this(Runtime.getRuntime().availableProcessors() + 1, threadPoolProvider);
 	}
 
 	/**
@@ -88,6 +90,10 @@ public abstract class GameScriptingEngine implements Runnable {
 		this(new NoopClasspathScriptProvider(), maxConcurrentScripts);
 	}
 
+	public GameScriptingEngine(int maxConcurrentScripts, ThreadPoolProvider threadPoolProvider) {
+		this(new NoopClasspathScriptProvider(), maxConcurrentScripts, threadPoolProvider);
+	}
+
 	/**
 	 * Constructs a scripting engine backed by a thread pool. Sandboxing is
 	 * enabled if the implementation supports it.
@@ -100,8 +106,15 @@ public abstract class GameScriptingEngine implements Runnable {
 		super();
 		scriptExecutorPool = createScriptExecutorPool(classpathScriptProvider, maxConcurrentScripts, isSandboxingSupported());
 
-		executorService = Executors.newScheduledThreadPool(
-				Math.min(maxConcurrentScripts + 1, Runtime.getRuntime().availableProcessors() * 2));
+		threadPoolProvider = new DefaultThreadPoolProvider(maxConcurrentScripts + 1);
+		init();
+	}
+
+	public GameScriptingEngine(ClasspathScriptProvider classpathScriptProvider, int maxConcurrentScripts, ThreadPoolProvider threadPoolProvider) {
+		super();
+		scriptExecutorPool = createScriptExecutorPool(classpathScriptProvider, maxConcurrentScripts, isSandboxingSupported());
+
+		this.threadPoolProvider = threadPoolProvider;
 		init();
 	}
 
@@ -116,6 +129,10 @@ public abstract class GameScriptingEngine implements Runnable {
 		this(new NoopClasspathScriptProvider(), sandboxed);
 	}
 
+	public GameScriptingEngine(ThreadPoolProvider threadPoolProvider, boolean sandboxed) {
+		this(new NoopClasspathScriptProvider(), threadPoolProvider, sandboxed);
+	}
+
 	/**
 	 * Constructs a scripting engine backed by a thread pool with the maximum
 	 * amount of concurrent scripts set to the amount of processors + 1.
@@ -124,6 +141,10 @@ public abstract class GameScriptingEngine implements Runnable {
 	 */
 	public GameScriptingEngine(ClasspathScriptProvider classpathScriptProvider, boolean sandboxed) {
 		this(classpathScriptProvider,Runtime.getRuntime().availableProcessors() + 1, sandboxed);
+	}
+
+	public GameScriptingEngine(ClasspathScriptProvider classpathScriptProvider, ThreadPoolProvider threadPoolProvider, boolean sandboxed) {
+		this(classpathScriptProvider,Runtime.getRuntime().availableProcessors() + 1, threadPoolProvider, sandboxed);
 	}
 
 	/**
@@ -140,6 +161,10 @@ public abstract class GameScriptingEngine implements Runnable {
 		this(new NoopClasspathScriptProvider(), maxConcurrentScripts, sandboxed);
 	}
 
+	public GameScriptingEngine(int maxConcurrentScripts, ThreadPoolProvider threadPoolProvider, boolean sandboxed) {
+		this(new NoopClasspathScriptProvider(), maxConcurrentScripts, threadPoolProvider, sandboxed);
+	}
+
 	/**
 	 * Constructs a scripting engine backed by a thread pool.
 	 * @param classpathScriptProvider The auto-generated {@link ClasspathScriptProvider} for the game
@@ -153,14 +178,22 @@ public abstract class GameScriptingEngine implements Runnable {
 		super();
 		scriptExecutorPool = createScriptExecutorPool(classpathScriptProvider, maxConcurrentScripts, sandboxed);
 
-		executorService = Executors.newScheduledThreadPool(
-				Math.min(maxConcurrentScripts + 1, Runtime.getRuntime().availableProcessors() * 2));
+		threadPoolProvider = new DefaultThreadPoolProvider(maxConcurrentScripts + 1);
+		init();
+	}
+
+	public GameScriptingEngine(ClasspathScriptProvider classpathScriptProvider,
+	                           int maxConcurrentScripts, ThreadPoolProvider threadPoolProvider, boolean sandboxed) {
+		super();
+		scriptExecutorPool = createScriptExecutorPool(classpathScriptProvider, maxConcurrentScripts, sandboxed);
+
+		this.threadPoolProvider = threadPoolProvider;
 		init();
 	}
 
 	private void init() {
-		executorService.submit(this);
-		executorService.scheduleAtFixedRate(new Runnable() {
+		threadPoolProvider.submit(this);
+		threadPoolProvider.scheduleAtFixedRate(new Runnable() {
 			@Override
 			public void run() {
 				try {
@@ -178,7 +211,7 @@ public abstract class GameScriptingEngine implements Runnable {
 	 * Shuts down the thread pool and cleans up resources
 	 */
 	public void dispose() {
-		executorService.shutdown();
+		threadPoolProvider.shutdown();
 	}
 
 	/**
@@ -236,7 +269,7 @@ public abstract class GameScriptingEngine implements Runnable {
 			while ((scriptInvocation = scriptInvocations.poll()) != null) {
 				ScriptExecutionTask<?> executionTask = scriptExecutorPool.execute(scriptInvocation.getScriptId(),
 						scriptInvocation.getScriptBindings(), scriptInvocation.getInvocationListener());
-				Future<?> taskFuture = executorService.submit(executionTask);
+				Future<?> taskFuture = threadPoolProvider.submit(executionTask);
 				executionTask.setTaskFuture(taskFuture);
 				runningScripts.put(executionTask.getTaskId(), executionTask);
 				scriptInvocation.release();
@@ -246,9 +279,9 @@ public abstract class GameScriptingEngine implements Runnable {
 		}
 		long duration = System.currentTimeMillis() - startTime;
 		if (duration >= 16L) {
-			executorService.submit(this);
+			threadPoolProvider.submit(this);
 		} else {
-			executorService.schedule(this, 16L - duration, TimeUnit.MILLISECONDS);
+			threadPoolProvider.schedule(this, 16L - duration, TimeUnit.MILLISECONDS);
 		}
 	}
 
