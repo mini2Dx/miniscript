@@ -1,11 +1,9 @@
 language: java
 os:
   - linux
-sudo: false
-addons:
-  apt:
-    packages:
-      - oracle-java8-installer
+dist: xenial
+jdk:
+  - openjdk8
 notifications:
   email:
     on_success: change
