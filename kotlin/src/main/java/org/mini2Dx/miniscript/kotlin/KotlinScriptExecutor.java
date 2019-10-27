@@ -54,12 +54,13 @@ public class KotlinScriptExecutor implements ScriptExecutor<CompiledKotlinScript
 	}
 
 	@Override
-	public ScriptExecutionResult execute(GameScript<CompiledKotlinScript> script, ScriptBindings bindings,
+	public ScriptExecutionResult execute(int scriptId, GameScript<CompiledKotlinScript> script, ScriptBindings bindings,
 			boolean returnResult) throws Exception {
 		PerThreadGameScript<CompiledKotlinScript> threadScript = (PerThreadGameScript<CompiledKotlinScript>) script;
 		for (String variableName : bindings.keySet()) {
 			engine.put(variableName, bindings.get(variableName));
 		}
+		engine.put(ScriptBindings.SCRIPT_ID_VAR, scriptId);
 
 		try {
 			engine.eval(threadScript.getContent());
@@ -79,17 +80,25 @@ public class KotlinScriptExecutor implements ScriptExecutor<CompiledKotlinScript
 
 		ScriptExecutionResult executionResult = new ScriptExecutionResult(null);
 		for (String variableName : bindings.keySet()) {
-			try {
-				executionResult.put(variableName, engine.eval(variableName));
-			} catch (Exception e) {
-				if(e.getMessage().contains("unresolved reference")) {
-					executionResult.remove(variableName);
-				} else {
-					e.printStackTrace();
-				}
+			putResult(executionResult, variableName);
+		}
+		putResult(executionResult, ScriptBindings.SCRIPT_ID_VAR);
+
+		return executionResult;
+	}
+
+	private void putResult(ScriptExecutionResult executionResult, String variableName) {
+		try {
+			System.out.println(variableName);
+			executionResult.put(variableName, engine.eval(variableName));
+		} catch (Exception e) {
+			e.printStackTrace();
+			if(e.getMessage().contains("unresolved reference")) {
+				executionResult.remove(variableName);
+			} else {
+				e.printStackTrace();
 			}
 		}
-		return executionResult;
 	}
 
 	@Override

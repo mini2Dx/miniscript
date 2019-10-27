@@ -79,7 +79,7 @@ public class PythonScriptExecutorPool implements ScriptExecutorPool<PyCode> {
 		if(!scripts.containsKey(scriptId)) {
 			throw new NoSuchScriptException(scriptId);
 		}
-		return new ScriptExecutionTask<PyCode>(gameScriptingEngine, executor, scripts.get(scriptId), scriptBindings,
+		return new ScriptExecutionTask<PyCode>(gameScriptingEngine, executor, scriptId, scripts.get(scriptId), scriptBindings,
 				invocationListener);
 	}
 

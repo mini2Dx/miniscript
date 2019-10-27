@@ -49,13 +49,14 @@ public class RubyScriptExecutor implements ScriptExecutor<EmbedEvalUnit> {
 	}
 
 	@Override
-	public ScriptExecutionResult execute(GameScript<EmbedEvalUnit> s, ScriptBindings bindings,
+	public ScriptExecutionResult execute(int scriptId, GameScript<EmbedEvalUnit> s, ScriptBindings bindings,
 			boolean returnResult) throws Exception {
 		PerThreadGameScript<EmbedEvalUnit> script = (PerThreadGameScript<EmbedEvalUnit>) s;
 
 		ScriptingContainer scriptingContainer = executorPool.getLocalScriptingContainer();
 
 		scriptingContainer.getVarMap().putAll(bindings);
+		scriptingContainer.getVarMap().put(ScriptBindings.SCRIPT_ID_VAR, scriptId);
 
 		if (!script.hasScript()) {
 			script.setScript(scriptingContainer.parse(script.getContent()));

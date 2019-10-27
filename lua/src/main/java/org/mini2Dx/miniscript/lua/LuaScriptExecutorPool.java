@@ -112,7 +112,7 @@ public class LuaScriptExecutorPool implements ScriptExecutorPool<LuaValue> {
 		if(!scripts.containsKey(scriptId)) {
 			throw new NoSuchScriptException(scriptId);
 		}
-		return new ScriptExecutionTask<LuaValue>(gameScriptingEngine, executor, scripts.get(scriptId),
+		return new ScriptExecutionTask<LuaValue>(gameScriptingEngine, executor, scriptId, scripts.get(scriptId),
 				scriptBindings, invocationListener);
 	}
 

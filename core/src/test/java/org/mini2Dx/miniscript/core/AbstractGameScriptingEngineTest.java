@@ -25,6 +25,7 @@ package org.mini2Dx.miniscript.core;
 
 import java.io.InputStream;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.After;
@@ -33,6 +34,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mini2Dx.miniscript.core.dummy.DummyGameFuture;
 import org.mini2Dx.miniscript.core.dummy.ScriptResult;
+import org.mini2Dx.miniscript.core.exception.InsufficientCompilersException;
 import org.mini2Dx.miniscript.core.exception.NoSuchScriptException;
 
 /**
@@ -68,6 +70,8 @@ public abstract class AbstractGameScriptingEngineTest {
 	
 	@Test
 	public void testInvokeScript() throws Exception {
+		final AtomicInteger scriptIdVariableResult = new AtomicInteger(-1);
+
 		final int expectedScriptId = scriptingEngine.compileScript(getDefaultScript());
 		scriptingEngine.invokeCompiledScript(expectedScriptId, scriptBindings, new ScriptInvocationListener() {
 			
@@ -83,6 +87,8 @@ public abstract class AbstractGameScriptingEngineTest {
 					scriptResult.set(ScriptResult.SUCCESS);
 					scriptExecuted.set(true);
 				}
+
+				scriptIdVariableResult.set((int) executionResult.get(ScriptBindings.SCRIPT_ID_VAR));
 			}
 			
 			@Override
@@ -111,6 +117,7 @@ public abstract class AbstractGameScriptingEngineTest {
 		Assert.assertEquals(false, gameFuture.waitOccurred());
 		Assert.assertEquals(false, gameFuture.isFutureSkipped());
 		Assert.assertEquals(false, gameFuture.isScriptSkipped());
+		Assert.assertEquals(expectedScriptId, scriptIdVariableResult.get());
 	}
 	
 	@Test
@@ -572,12 +579,12 @@ public abstract class AbstractGameScriptingEngineTest {
 		}
 		//Most languages use Integer
 		if(executionResult.get("intValue") instanceof Integer && ((Integer) executionResult.get("intValue")) != 101) {
-			System.err.println("Expected intValue to be 101 but was " + executionResult.get("stringValue"));
+			System.err.println("Expected intValue to be 101 but was " + executionResult.get("intValue"));
 			return false;
 		}
 		//Ruby uses Long
 		if(executionResult.get("intValue") instanceof Long && ((Long) executionResult.get("intValue")) != 101) {
-			System.err.println("Expected intValue to be 101 but was " + executionResult.get("stringValue"));
+			System.err.println("Expected intValue to be 101 but was " + executionResult.get("intValue"));
 			return false;
 		}
 		return true;

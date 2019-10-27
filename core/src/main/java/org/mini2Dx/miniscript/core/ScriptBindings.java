@@ -34,6 +34,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * A mapping of variable names to objects passed to a script
  */
 public class ScriptBindings implements Map<String, Object> {
+	public static final String SCRIPT_ID_VAR = "scriptId";
+
 	private final Map<String, Object> bindings = new ConcurrentHashMap<String, Object>();
 
 	/**

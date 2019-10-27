@@ -50,13 +50,15 @@ public class LuaScriptExecutor implements ScriptExecutor<LuaValue> {
 	}
 
 	@Override
-	public ScriptExecutionResult execute(GameScript<LuaValue> script, ScriptBindings bindings, boolean returnResult)
+	public ScriptExecutionResult execute(int scriptId, GameScript<LuaValue> script, ScriptBindings bindings, boolean returnResult)
 			throws Exception {
 		Globals globals = executorPool.getLocalGlobals();
 		
 		for (String variableName : bindings.keySet()) {
 			globals.set(variableName, CoerceJavaToLua.coerce(bindings.get(variableName)));
 		}
+		globals.set(ScriptBindings.SCRIPT_ID_VAR, CoerceJavaToLua.coerce(scriptId));
+
 		if (!script.hasScript()) {
 			script.setScript(executorPool.compileWithGlobals(globals, script));
 		}

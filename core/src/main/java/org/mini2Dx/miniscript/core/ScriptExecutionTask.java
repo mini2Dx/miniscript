@@ -38,7 +38,8 @@ import org.mini2Dx.miniscript.core.notification.ScriptSuccessNotification;
 public class ScriptExecutionTask<S> implements Runnable {
 	private static final AtomicInteger ID_GENERATOR = new AtomicInteger(0);
 
-	private final int id;
+	private final int taskId;
+	private final int scriptId;
 	private final GameScriptingEngine scriptingEngine;
 	private final ScriptExecutor<S> executor;
 	private final GameScript<S> script;
@@ -49,20 +50,21 @@ public class ScriptExecutionTask<S> implements Runnable {
 	private Future<?> taskFuture;
 
 	public ScriptExecutionTask(GameScriptingEngine gameScriptingEngine, ScriptExecutor<S> executor,
-			GameScript<S> script, ScriptBindings scriptBindings, ScriptInvocationListener scriptInvocationListener) {
+			int scriptId, GameScript<S> script, ScriptBindings scriptBindings, ScriptInvocationListener scriptInvocationListener) {
 		this.scriptingEngine = gameScriptingEngine;
 		this.executor = executor;
+		this.scriptId = scriptId;
 		this.script = script;
 		this.scriptBindings = scriptBindings;
 		this.scriptInvocationListener = scriptInvocationListener;
 
-		id = ID_GENERATOR.incrementAndGet();
+		taskId = ID_GENERATOR.incrementAndGet();
 	}
 
 	@Override
 	public void run() {
 		try {
-			ScriptExecutionResult executionResult = executor.execute(script, scriptBindings,
+			ScriptExecutionResult executionResult = executor.execute(scriptId, script, scriptBindings,
 					scriptInvocationListener != null);
 			if (scriptInvocationListener != null) {
 				if (scriptInvocationListener.callOnGameThread()) {
@@ -116,7 +118,7 @@ public class ScriptExecutionTask<S> implements Runnable {
 	}
 
 	public int getTaskId() {
-		return id;
+		return taskId;
 	}
 
 	public int getScriptId() {

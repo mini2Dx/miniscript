@@ -89,7 +89,7 @@ public class GroovyScriptExecutorPool implements ScriptExecutorPool<Script> {
 		if(!scripts.containsKey(scriptId)) {
 			throw new NoSuchScriptException(scriptId);
 		}
-		return new ScriptExecutionTask<Script>(gameScriptingEngine, executor, scripts.get(scriptId), scriptBindings,
+		return new ScriptExecutionTask<Script>(gameScriptingEngine, executor, scriptId, scripts.get(scriptId), scriptBindings,
 				invocationListener);
 	}
 

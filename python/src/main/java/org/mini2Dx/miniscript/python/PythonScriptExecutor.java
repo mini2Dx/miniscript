@@ -55,11 +55,13 @@ public class PythonScriptExecutor implements ScriptExecutor<PyCode> {
 	}
 
 	@Override
-	public ScriptExecutionResult execute(GameScript<PyCode> script, ScriptBindings bindings, boolean returnResult) throws Exception {
+	public ScriptExecutionResult execute(int scriptId, GameScript<PyCode> script, ScriptBindings bindings, boolean returnResult) throws Exception {
 		PyCode pythonScript = script.getScript();
 		for (String variableName : bindings.keySet()) {
 			pythonInterpreter.set(variableName, bindings.get(variableName));
 		}
+		pythonInterpreter.set(ScriptBindings.SCRIPT_ID_VAR, scriptId);
+
 		try {
 			pythonInterpreter.exec(pythonScript);
 		} catch (PyException e) {
@@ -78,6 +80,7 @@ public class PythonScriptExecutor implements ScriptExecutor<PyCode> {
 		for(String variableName : bindings.keySet()) {
 			executionResult.put(variableName, pythonInterpreter.get(variableName, Object.class));
 		}
+		executionResult.put(ScriptBindings.SCRIPT_ID_VAR, pythonInterpreter.get(ScriptBindings.SCRIPT_ID_VAR, Object.class));
 		return executionResult;
 	}
 

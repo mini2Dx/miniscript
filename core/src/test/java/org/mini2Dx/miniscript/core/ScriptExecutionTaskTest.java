@@ -37,10 +37,10 @@ public class ScriptExecutionTaskTest {
 	@Test
 	public void testIdGeneration() {
 		ScriptExecutionTask<DummyScript> task1 = new ScriptExecutionTask<DummyScript>(new DummyGameScriptingEngine(),
-				new DummyScriptExecutor(null), new GlobalGameScript<DummyScript>(new DummyScript("")),
+				new DummyScriptExecutor(null), 0, new GlobalGameScript<DummyScript>(new DummyScript("")),
 				new ScriptBindings(), null);
 		ScriptExecutionTask<DummyScript> task2 = new ScriptExecutionTask<DummyScript>(new DummyGameScriptingEngine(),
-				new DummyScriptExecutor(null), new GlobalGameScript<DummyScript>(new DummyScript("")),
+				new DummyScriptExecutor(null), 0, new GlobalGameScript<DummyScript>(new DummyScript("")),
 				new ScriptBindings(), null);
 		Assert.assertEquals(true, task1.getTaskId() != task2.getTaskId());
 	}
@@ -49,7 +49,7 @@ public class ScriptExecutionTaskTest {
 	public void testRunExecutesScript() {
 		DummyScript script = new DummyScript("");
 		ScriptExecutionTask<DummyScript> task = new ScriptExecutionTask<DummyScript>(new DummyGameScriptingEngine(),
-				new DummyScriptExecutor(null), new GlobalGameScript<DummyScript>(script), new ScriptBindings(), null);
+				new DummyScriptExecutor(null), 0, new GlobalGameScript<DummyScript>(script), new ScriptBindings(), null);
 		task.run();
 		Assert.assertEquals(true, script.isExecuted());
 	}

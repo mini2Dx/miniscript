@@ -79,7 +79,7 @@ public class RubyScriptExecutorPool implements ScriptExecutorPool<EmbedEvalUnit>
 		if(!scripts.containsKey(scriptId)) {
 			throw new NoSuchScriptException(scriptId);
 		}
-		return new ScriptExecutionTask<EmbedEvalUnit>(gameScriptingEngine, executor, scripts.get(scriptId),
+		return new ScriptExecutionTask<EmbedEvalUnit>(gameScriptingEngine, executor, scriptId, scripts.get(scriptId),
 				scriptBindings, invocationListener);
 	}
 

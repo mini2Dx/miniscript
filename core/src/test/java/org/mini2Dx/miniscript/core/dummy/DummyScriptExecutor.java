@@ -48,7 +48,7 @@ public class DummyScriptExecutor implements ScriptExecutor<DummyScript> {
 	}
 
 	@Override
-	public ScriptExecutionResult execute(GameScript<DummyScript> script, ScriptBindings bindings, boolean returnResult) throws Exception {
+	public ScriptExecutionResult execute(int scriptId, GameScript<DummyScript> script, ScriptBindings bindings, boolean returnResult) throws Exception {
 		script.getScript().setExecuted(true);
 		return returnResult ? new ScriptExecutionResult(new HashMap<String, Object>()) : null;
 	}

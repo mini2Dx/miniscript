@@ -88,8 +88,8 @@ public class KotlinScriptExecutorPool implements ScriptExecutorPool<CompiledKotl
 		if(!scripts.containsKey(scriptId)) {
 			throw new NoSuchScriptException(scriptId);
 		}
-		return new ScriptExecutionTask<CompiledKotlinScript>(gameScriptingEngine, executor, scripts.get(scriptId), scriptBindings,
-				invocationListener);
+		return new ScriptExecutionTask<CompiledKotlinScript>(gameScriptingEngine, executor,
+				scriptId, scripts.get(scriptId), scriptBindings, invocationListener);
 	}
 
 	private ScriptExecutor<CompiledKotlinScript> allocateExecutor() {

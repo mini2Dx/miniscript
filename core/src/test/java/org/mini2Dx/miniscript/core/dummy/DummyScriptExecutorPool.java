@@ -74,8 +74,8 @@ public class DummyScriptExecutorPool implements ScriptExecutorPool<DummyScript> 
 		if (executor == null) {
 			throw new ScriptExecutorUnavailableException(scriptId);
 		}
-		return new ScriptExecutionTask<DummyScript>(gameScriptingEngine, executor, scripts.get(scriptId),
-				scriptBindings, invocationListener);
+		return new ScriptExecutionTask<DummyScript>(gameScriptingEngine, executor, scriptId,
+				scripts.get(scriptId), scriptBindings, invocationListener);
 	}
 
 	@Override

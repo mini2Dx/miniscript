@@ -51,9 +51,12 @@ public class GroovyScriptExecutor implements ScriptExecutor<Script> {
 	}
 	
 	@Override
-	public ScriptExecutionResult execute(GameScript<Script> script, ScriptBindings bindings, boolean returnResult) throws Exception {
+	public ScriptExecutionResult execute(int scriptId, GameScript<Script> script, ScriptBindings bindings, boolean returnResult) throws Exception {
 		Script groovyScript = script.getScript();
-		groovyScript.setBinding(new Binding(bindings));
+
+		Binding binding = new Binding(bindings);
+		binding.setVariable(ScriptBindings.SCRIPT_ID_VAR, scriptId);
+		groovyScript.setBinding(binding);
 		groovyScript.run();
 		
 		return returnResult ? new ScriptExecutionResult(groovyScript.getBinding().getVariables()) : null;
