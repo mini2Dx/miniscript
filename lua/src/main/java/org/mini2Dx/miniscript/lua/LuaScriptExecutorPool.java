@@ -42,6 +42,7 @@ import org.luaj.vm2.lib.jse.JseMathLib;
 import org.luaj.vm2.lib.jse.JsePlatform;
 import org.mini2Dx.miniscript.core.*;
 import org.mini2Dx.miniscript.core.exception.InsufficientCompilersException;
+import org.mini2Dx.miniscript.core.exception.NoSuchScriptException;
 import org.mini2Dx.miniscript.core.exception.ScriptExecutorUnavailableException;
 
 /**
@@ -107,6 +108,9 @@ public class LuaScriptExecutorPool implements ScriptExecutorPool<LuaValue> {
 		ScriptExecutor<LuaValue> executor = allocateExecutor();
 		if (executor == null) {
 			throw new ScriptExecutorUnavailableException(scriptId);
+		}
+		if(!scripts.containsKey(scriptId)) {
+			throw new NoSuchScriptException(scriptId);
 		}
 		return new ScriptExecutionTask<LuaValue>(gameScriptingEngine, executor, scripts.get(scriptId),
 				scriptBindings, invocationListener);

@@ -36,6 +36,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.mini2Dx.miniscript.core.exception.InsufficientCompilersException;
+import org.mini2Dx.miniscript.core.exception.NoSuchScriptException;
 import org.mini2Dx.miniscript.core.notification.ScriptNotification;
 
 /**
@@ -264,8 +265,8 @@ public abstract class GameScriptingEngine implements Runnable {
 	@Override
 	public void run() {
 		long startTime = System.currentTimeMillis();
+		ScriptInvocation scriptInvocation = null;
 		try {
-			ScriptInvocation scriptInvocation = null;
 			while ((scriptInvocation = scriptInvocations.poll()) != null) {
 				ScriptExecutionTask<?> executionTask = scriptExecutorPool.execute(scriptInvocation.getScriptId(),
 						scriptInvocation.getScriptBindings(), scriptInvocation.getInvocationListener());
@@ -273,6 +274,12 @@ public abstract class GameScriptingEngine implements Runnable {
 				executionTask.setTaskFuture(taskFuture);
 				runningScripts.put(executionTask.getTaskId(), executionTask);
 				scriptInvocation.release();
+			}
+		} catch (NoSuchScriptException e) {
+			if(scriptInvocation != null && scriptInvocation.getInvocationListener() != null) {
+				scriptInvocation.getInvocationListener().onScriptException(scriptInvocation.getScriptId(), e);
+			} else {
+				e.printStackTrace();
 			}
 		} catch (Exception e) {
 			e.printStackTrace();

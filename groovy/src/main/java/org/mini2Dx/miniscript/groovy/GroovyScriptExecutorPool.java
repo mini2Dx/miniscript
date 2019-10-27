@@ -36,6 +36,7 @@ import org.mini2Dx.miniscript.core.ScriptExecutor;
 import org.mini2Dx.miniscript.core.ScriptExecutorPool;
 import org.mini2Dx.miniscript.core.ScriptInvocationListener;
 import org.mini2Dx.miniscript.core.exception.InsufficientCompilersException;
+import org.mini2Dx.miniscript.core.exception.NoSuchScriptException;
 import org.mini2Dx.miniscript.core.exception.ScriptExecutorUnavailableException;
 
 import groovy.lang.Script;
@@ -84,6 +85,9 @@ public class GroovyScriptExecutorPool implements ScriptExecutorPool<Script> {
 		ScriptExecutor<Script> executor = allocateExecutor();
 		if (executor == null) {
 			throw new ScriptExecutorUnavailableException(scriptId);
+		}
+		if(!scripts.containsKey(scriptId)) {
+			throw new NoSuchScriptException(scriptId);
 		}
 		return new ScriptExecutionTask<Script>(gameScriptingEngine, executor, scripts.get(scriptId), scriptBindings,
 				invocationListener);

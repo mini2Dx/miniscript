@@ -33,6 +33,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mini2Dx.miniscript.core.dummy.DummyGameFuture;
 import org.mini2Dx.miniscript.core.dummy.ScriptResult;
+import org.mini2Dx.miniscript.core.exception.NoSuchScriptException;
 
 /**
  * Base UAT class for {@link GameScriptingEngine} implementations
@@ -377,6 +378,113 @@ public abstract class AbstractGameScriptingEngineTest {
 		Assert.assertEquals(true, gameFuture.waitOccurred());
 		Assert.assertEquals(false, gameFuture.isFutureSkipped());
 		Assert.assertEquals(true, gameFuture.isScriptSkipped());
+	}
+
+	@Test
+	public void testSkipScriptAlreadyCompleted() throws Exception {
+		final int expectedScriptId = scriptingEngine.compileScript(getWaitForCompletionScript());
+		scriptingEngine.invokeCompiledScript(expectedScriptId, scriptBindings, new ScriptInvocationListener() {
+
+			@Override
+			public void onScriptSuccess(int scriptId, ScriptExecutionResult executionResult) {
+				if(scriptId != expectedScriptId) {
+					scriptResult.set(ScriptResult.INCORRECT_SCRIPT_ID);
+					scriptExecuted.set(true);
+				} else if(!checkExpectedScriptResults(executionResult)) {
+					scriptResult.set(ScriptResult.INCORRECT_VARIABLES);
+					scriptExecuted.set(true);
+				} else {
+					scriptResult.set(ScriptResult.SUCCESS);
+					scriptExecuted.set(true);
+				}
+			}
+
+			@Override
+			public void onScriptSkipped(int scriptId) {
+				scriptResult.set(ScriptResult.SKIPPED);
+				scriptExecuted.set(true);
+			}
+
+			@Override
+			public void onScriptException(int scriptId, Exception e) {
+				e.printStackTrace();
+				scriptResult.set(ScriptResult.EXCEPTION);
+				scriptExecuted.set(true);
+			}
+
+			@Override
+			public boolean callOnGameThread() {
+				return true;
+			}
+		});
+		final long timeout = 20000L;
+		long timer = 0L;
+
+		while(!scriptExecuted.get() && timer < timeout) {
+			long startTime = System.currentTimeMillis();
+			gameFuture.setFutureCompleted(true);
+			scriptingEngine.update(1f);
+			timer += System.currentTimeMillis() - startTime;
+		}
+		scriptingEngine.update(1f);
+
+		if(timer >= timeout) {
+			Assert.fail("Timed out after " + timeout + "ms wait for script");
+		}
+
+		scriptingEngine.skipScript(expectedScriptId);
+
+		Assert.assertEquals(ScriptResult.SUCCESS, scriptResult.get());
+		Assert.assertEquals(true, gameFuture.isUpdated());
+		Assert.assertEquals(true, gameFuture.waitOccurred());
+		Assert.assertEquals(false, gameFuture.isFutureSkipped());
+		Assert.assertEquals(false, gameFuture.isScriptSkipped());
+		Assert.assertEquals(1, gameFuture.getUpdateCount());
+	}
+
+	@Test
+	public void testNonExistantScript() {
+		scriptingEngine.invokeCompiledScript(-1, scriptBindings, new ScriptInvocationListener() {
+
+			@Override
+			public void onScriptSuccess(int scriptId, ScriptExecutionResult executionResult) {
+				scriptResult.set(ScriptResult.SUCCESS);
+				scriptExecuted.set(true);
+			}
+
+			@Override
+			public void onScriptSkipped(int scriptId) {
+				scriptResult.set(ScriptResult.SKIPPED);
+				scriptExecuted.set(true);
+			}
+
+			@Override
+			public void onScriptException(int scriptId, Exception e) {
+				e.printStackTrace();
+				scriptResult.set(ScriptResult.EXCEPTION);
+				scriptExecuted.set(true);
+			}
+
+			@Override
+			public boolean callOnGameThread() {
+				return true;
+			}
+		});
+
+		final long timeout = 20000L;
+		long timer = 0L;
+
+		while(!scriptExecuted.get() && timer < timeout) {
+			try {
+				Thread.sleep(1000);
+			} catch (Exception e) {}
+		}
+
+		if(timer >= timeout) {
+			Assert.fail("Timed out after " + timeout + "ms wait for script");
+		}
+
+		Assert.assertEquals(ScriptResult.EXCEPTION, scriptResult.get());
 	}
 	
 	@Test
