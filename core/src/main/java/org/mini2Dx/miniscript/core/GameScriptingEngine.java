@@ -223,6 +223,13 @@ public abstract class GameScriptingEngine implements Runnable {
 	 */
 	public abstract boolean isSandboxingSupported();
 
+	/**
+	 * Checks if scripts can be synchronously run within other scripts
+	 *
+	 * @return True if scripts can be invoke synchronously within scripts
+	 */
+	public abstract boolean isEmbeddedSynchronousScriptSupported();
+
 	protected abstract ScriptExecutorPool<?> createScriptExecutorPool(ClasspathScriptProvider classpathScriptProvider,
 	                                                                  int poolSize, boolean sandboxing);
 
@@ -357,8 +364,32 @@ public abstract class GameScriptingEngine implements Runnable {
 	/**
 	 * Compiles a script for execution. Note it is best to call this
 	 * sequentially before any script executions to avoid throwing a
-	 * {@link InsufficientCompilersException}
-	 * 
+	 * {@link InsufficientCompilersException}.
+	 *
+	 * Note: If the filepath has already been compiled, the script will not be compiled and the previous compilation is used.
+	 *
+	 * @param filepath The filepath to store for the script
+	 * @param scriptContent
+	 *            The text contents of the script
+	 * @return The unique id for the script
+	 * @throws InsufficientCompilersException
+	 *             Thrown if there are no script compilers available
+	 * @throws InsufficientCompilersException
+	 *             Thrown if there are no script compilers available
+	 */
+	public int compileScript(String filepath, String scriptContent) throws InsufficientCompilersException {
+		final int existingId = scriptExecutorPool.getCompiledScriptId(filepath);
+		if(existingId > -1) {
+			return existingId;
+		}
+		return scriptExecutorPool.preCompileScript(filepath, scriptContent);
+	}
+
+	/**
+	 * Compiles a script for execution. Note it is best to call this
+	 * sequentially before any script executions to avoid throwing a
+	 * {@link InsufficientCompilersException}.
+	 *
 	 * @param scriptContent
 	 *            The text contents of the script
 	 * @return The unique id for the script
@@ -368,7 +399,16 @@ public abstract class GameScriptingEngine implements Runnable {
 	 *             Thrown if there are no script compilers available
 	 */
 	public int compileScript(String scriptContent) throws InsufficientCompilersException {
-		return scriptExecutorPool.preCompileScript(scriptContent);
+		return compileScript(String.valueOf(scriptContent.hashCode()), scriptContent);
+	}
+
+	/**
+	 * Returns the script ID for a given filepath
+	 * @param filepath The filepath to lookup
+	 * @return -1 if the script has not been compiled
+	 */
+	public int getCompiledScriptId(String filepath) {
+		return scriptExecutorPool.getCompiledScriptId(filepath);
 	}
 
 	/**
@@ -384,13 +424,13 @@ public abstract class GameScriptingEngine implements Runnable {
 	 * @throws IOException
 	 *             Throw if the {@link InputStream} could not be read or closed
 	 */
-	public int compileScript(InputStream inputStream) throws InsufficientCompilersException, IOException {
+	public int compileScript(String filepath, InputStream inputStream) throws InsufficientCompilersException, IOException {
 		Scanner scanner = new Scanner(inputStream);
 		scanner.useDelimiter("\\A");
 		String contents = scanner.hasNext() ? scanner.next() : "";
 		scanner.close();
 		inputStream.close();
-		return compileScript(contents);
+		return compileScript(filepath, contents);
 	}
 
 	/**
@@ -452,13 +492,13 @@ public abstract class GameScriptingEngine implements Runnable {
 	 */
 	public int invokeScript(String scriptContent, ScriptBindings scriptBindings,
 			ScriptInvocationListener invocationListener) throws InsufficientCompilersException {
-		int scriptId = compileScript(scriptContent);
+		int scriptId = compileScript(String.valueOf(scriptContent.hashCode()), scriptContent);
 		invokeCompiledScript(scriptId, scriptBindings, invocationListener);
 		return scriptId;
 	}
 
 	/**
-	 * Executes a compiled script immediately on the thread calling this method.
+	 * Executes a compiled script synchronously on the thread calling this method.
 	 * 
 	 * Warning: If no {@link ScriptExecutor}s are available this will block
 	 * until one is available
@@ -468,12 +508,12 @@ public abstract class GameScriptingEngine implements Runnable {
 	 * @param scriptBindings
 	 *            The variable bindings for the script
 	 */
-	public void invokeCompiledScriptLocally(int scriptId, ScriptBindings scriptBindings) {
-		invokeCompiledScriptLocally(scriptId, scriptBindings, null);
+	public void invokeCompiledScriptSync(int scriptId, ScriptBindings scriptBindings) {
+		invokeCompiledScriptSync(scriptId, scriptBindings, null);
 	}
 
 	/**
-	 * Executes a compiled script immediately on the thread calling this method.
+	 * Executes a compiled script synchronously on the thread calling this method.
 	 * 
 	 * Warning: If no {@link ScriptExecutor}s are available this will block
 	 * until one is available
@@ -486,8 +526,8 @@ public abstract class GameScriptingEngine implements Runnable {
 	 *            A {@link ScriptInvocationListener} to list for invocation
 	 *            results
 	 */
-	public void invokeCompiledScriptLocally(int scriptId, ScriptBindings scriptBindings,
-			ScriptInvocationListener invocationListener) {
+	public void invokeCompiledScriptSync(int scriptId, ScriptBindings scriptBindings,
+										 ScriptInvocationListener invocationListener) {
 		ScriptExecutionTask<?> executionTask = scriptExecutorPool.execute(scriptId, scriptBindings, invocationListener);
 		runningScripts.put(executionTask.getTaskId(), executionTask);
 		executionTask.run();

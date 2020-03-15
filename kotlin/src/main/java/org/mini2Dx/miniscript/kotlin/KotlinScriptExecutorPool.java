@@ -29,13 +29,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.jetbrains.kotlin.cli.common.repl.KotlinJsr223JvmScriptEngineBase.CompiledKotlinScript;
-import org.mini2Dx.miniscript.core.GameScript;
-import org.mini2Dx.miniscript.core.GameScriptingEngine;
-import org.mini2Dx.miniscript.core.ScriptBindings;
-import org.mini2Dx.miniscript.core.ScriptExecutionTask;
-import org.mini2Dx.miniscript.core.ScriptExecutor;
-import org.mini2Dx.miniscript.core.ScriptExecutorPool;
-import org.mini2Dx.miniscript.core.ScriptInvocationListener;
+import org.mini2Dx.miniscript.core.*;
 import org.mini2Dx.miniscript.core.exception.InsufficientCompilersException;
 import org.mini2Dx.miniscript.core.exception.NoSuchScriptException;
 import org.mini2Dx.miniscript.core.exception.ScriptExecutorUnavailableException;
@@ -45,8 +39,15 @@ import org.mini2Dx.miniscript.core.exception.ScriptExecutorUnavailableException;
  */
 public class KotlinScriptExecutorPool implements ScriptExecutorPool<CompiledKotlinScript> {
 	private final Map<Integer, GameScript<CompiledKotlinScript>> scripts = new ConcurrentHashMap<Integer, GameScript<CompiledKotlinScript>>();
+	private final Map<String, Integer> filepathToScriptId = new ConcurrentHashMap<String, Integer>();
 	private final BlockingQueue<ScriptExecutor<CompiledKotlinScript>> executors;
 	private final GameScriptingEngine gameScriptingEngine;
+	private final SynchronizedObjectPool<KotlinEmbeddedScriptInvoker> embeddedScriptInvokerPool = new SynchronizedObjectPool<KotlinEmbeddedScriptInvoker>() {
+		@Override
+		protected KotlinEmbeddedScriptInvoker construct() {
+			return new KotlinEmbeddedScriptInvoker(gameScriptingEngine, KotlinScriptExecutorPool.this);
+		}
+	};
 
 	public KotlinScriptExecutorPool(GameScriptingEngine gameScriptingEngine, int poolSize) {
 		this.gameScriptingEngine = gameScriptingEngine;
@@ -67,7 +68,16 @@ public class KotlinScriptExecutorPool implements ScriptExecutorPool<CompiledKotl
 	}
 
 	@Override
-	public int preCompileScript(String scriptContent) throws InsufficientCompilersException {
+	public int getCompiledScriptId(String filepath) {
+		return filepathToScriptId.getOrDefault(filepath, -1);
+	}
+
+	GameScript<CompiledKotlinScript> getScript(int id) {
+		return scripts.get(id);
+	}
+
+	@Override
+	public int preCompileScript(String filepath, String scriptContent) throws InsufficientCompilersException {
 		ScriptExecutor<CompiledKotlinScript> executor = executors.poll();
 		if (executor == null) {
 			throw new InsufficientCompilersException();
@@ -75,6 +85,7 @@ public class KotlinScriptExecutorPool implements ScriptExecutorPool<CompiledKotl
 		GameScript<CompiledKotlinScript> script = executor.compile(scriptContent);
 		executor.release();
 		scripts.put(script.getId(), script);
+		filepathToScriptId.put(filepath, script.getId());
 		return script.getId();
 	}
 
@@ -86,6 +97,7 @@ public class KotlinScriptExecutorPool implements ScriptExecutorPool<CompiledKotl
 			throw new ScriptExecutorUnavailableException(scriptId);
 		}
 		if(!scripts.containsKey(scriptId)) {
+			executor.release();
 			throw new NoSuchScriptException(scriptId);
 		}
 		return new ScriptExecutionTask<CompiledKotlinScript>(gameScriptingEngine, executor,
@@ -104,5 +116,9 @@ public class KotlinScriptExecutorPool implements ScriptExecutorPool<CompiledKotl
 	@Override
 	public GameScriptingEngine getGameScriptingEngine() {
 		return gameScriptingEngine;
+	}
+
+	public SynchronizedObjectPool<KotlinEmbeddedScriptInvoker> getEmbeddedScriptInvokerPool() {
+		return embeddedScriptInvokerPool;
 	}
 }

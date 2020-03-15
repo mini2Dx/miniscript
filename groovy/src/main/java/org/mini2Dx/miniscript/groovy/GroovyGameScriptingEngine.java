@@ -66,4 +66,9 @@ public class GroovyGameScriptingEngine extends GameScriptingEngine {
 	public boolean isSandboxingSupported() {
 		return false;
 	}
+
+	@Override
+	public boolean isEmbeddedSynchronousScriptSupported() {
+		return true;
+	}
 }

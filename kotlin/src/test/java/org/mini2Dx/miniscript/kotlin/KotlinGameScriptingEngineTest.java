@@ -30,6 +30,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.mini2Dx.miniscript.core.AbstractGameScriptingEngineTest;
 import org.mini2Dx.miniscript.core.GameScriptingEngine;
 
@@ -55,7 +56,30 @@ public class KotlinGameScriptingEngineTest extends AbstractGameScriptingEngineTe
 		Assert.fail("Could not read default script");
 		return null;
 	}
-	
+
+	@Override
+	protected String getDefaultScriptFilepath() {
+		return "default.kts";
+	}
+
+	@Override
+	protected String getInvokeWithScript() {
+		try {
+			return new String(Files.readAllBytes(Paths.get(this.getClass().getResource("/invokeWithinScript.kts").toURI())));
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (URISyntaxException e) {
+			e.printStackTrace();
+		}
+		Assert.fail("Could not read waitForCompletion script");
+		return null;
+	}
+
+	@Override
+	protected String getInvokeWithinScriptFilepath() {
+		return "invokeWithinScript.kts";
+	}
+
 	@Override
 	protected InputStream getDefaultScriptInputStream() {
 		return KotlinGameScriptingEngineTest.class.getResourceAsStream("/default.kts");

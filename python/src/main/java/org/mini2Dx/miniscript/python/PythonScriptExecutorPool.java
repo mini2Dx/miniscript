@@ -23,30 +23,31 @@
  */
 package org.mini2Dx.miniscript.python;
 
-import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
-
-import org.mini2Dx.miniscript.core.GameScript;
-import org.mini2Dx.miniscript.core.GameScriptingEngine;
-import org.mini2Dx.miniscript.core.ScriptBindings;
-import org.mini2Dx.miniscript.core.ScriptExecutionTask;
-import org.mini2Dx.miniscript.core.ScriptExecutor;
-import org.mini2Dx.miniscript.core.ScriptExecutorPool;
-import org.mini2Dx.miniscript.core.ScriptInvocationListener;
+import org.mini2Dx.miniscript.core.*;
 import org.mini2Dx.miniscript.core.exception.InsufficientCompilersException;
 import org.mini2Dx.miniscript.core.exception.NoSuchScriptException;
 import org.mini2Dx.miniscript.core.exception.ScriptExecutorUnavailableException;
 import org.python.core.PyCode;
+
+import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * An implementation of {@link ScriptExecutorPool} for Python-based scripts
  */
 public class PythonScriptExecutorPool implements ScriptExecutorPool<PyCode> {
 	private final Map<Integer, GameScript<PyCode>> scripts = new ConcurrentHashMap<Integer, GameScript<PyCode>>();
+	private final Map<String, Integer> filepathToScriptId = new ConcurrentHashMap<String, Integer>();
 	private final BlockingQueue<ScriptExecutor<PyCode>> executors;
 	private final GameScriptingEngine gameScriptingEngine;
+	private final SynchronizedObjectPool<PythonEmbeddedScriptInvoker> embeddedScriptInvokerPool = new SynchronizedObjectPool<PythonEmbeddedScriptInvoker>() {
+		@Override
+		protected PythonEmbeddedScriptInvoker construct() {
+			return new PythonEmbeddedScriptInvoker(gameScriptingEngine, PythonScriptExecutorPool.this);
+		}
+	};
 
 	public PythonScriptExecutorPool(GameScriptingEngine gameScriptingEngine, int poolSize) {
 		this.gameScriptingEngine = gameScriptingEngine;
@@ -58,7 +59,12 @@ public class PythonScriptExecutorPool implements ScriptExecutorPool<PyCode> {
 	}
 
 	@Override
-	public int preCompileScript(String scriptContent) throws InsufficientCompilersException {
+	public int getCompiledScriptId(String filepath) {
+		return filepathToScriptId.getOrDefault(filepath, -1);
+	}
+
+	@Override
+	public int preCompileScript(String filepath, String scriptContent) throws InsufficientCompilersException {
 		ScriptExecutor<PyCode> executor = executors.poll();
 		if (executor == null) {
 			throw new InsufficientCompilersException();
@@ -66,6 +72,7 @@ public class PythonScriptExecutorPool implements ScriptExecutorPool<PyCode> {
 		GameScript<PyCode> script = executor.compile(scriptContent);
 		executor.release();
 		scripts.put(script.getId(), script);
+		filepathToScriptId.put(filepath, script.getId());
 		return script.getId();
 	}
 
@@ -77,6 +84,7 @@ public class PythonScriptExecutorPool implements ScriptExecutorPool<PyCode> {
 			throw new ScriptExecutorUnavailableException(scriptId);
 		}
 		if(!scripts.containsKey(scriptId)) {
+			executor.release();
 			throw new NoSuchScriptException(scriptId);
 		}
 		return new ScriptExecutionTask<PyCode>(gameScriptingEngine, executor, scriptId, scripts.get(scriptId), scriptBindings,
@@ -104,5 +112,13 @@ public class PythonScriptExecutorPool implements ScriptExecutorPool<PyCode> {
 	@Override
 	public GameScriptingEngine getGameScriptingEngine() {
 		return gameScriptingEngine;
+	}
+
+	GameScript<PyCode> getScript(int scriptId) {
+		return scripts.get(scriptId);
+	}
+
+	public SynchronizedObjectPool<PythonEmbeddedScriptInvoker> getEmbeddedScriptInvokerPool() {
+		return embeddedScriptInvokerPool;
 	}
 }

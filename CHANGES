@@ -1,6 +1,11 @@
+[1.3.0]
+- Added scripts variable binding to invoke scripts within scripts
+- Improved variable returning in Python scripts
+- Reduced garbage generation
+
 [1.2.0]
 - Mininmum Java version is now Java 8
-- Update to Groovy 2.5.8
+- Update to Groovy 2.5.10
 - Update to JRuby 9.2.8.0
 - Throw NoSuchScriptException if a unallocated script ID is invoked
 - Provide scriptId variable to executing script

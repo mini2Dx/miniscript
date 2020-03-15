@@ -23,10 +23,7 @@
  */
 package org.mini2Dx.miniscript.core;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -35,8 +32,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class ScriptBindings implements Map<String, Object> {
 	public static final String SCRIPT_ID_VAR = "scriptId";
+	public static final String SCRIPT_PARENT_ID_VAR = "scriptParentId";
+	public static final String SCRIPT_INVOKE_VAR = "scripts";
 
-	private final Map<String, Object> bindings = new ConcurrentHashMap<String, Object>();
+	private final Map<String, Object> bindings = Collections.synchronizedMap(new HashMap<String, Object>());
 
 	/**
 	 * Creates a duplicate instance of this {@link ScriptBindings}

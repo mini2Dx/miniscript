@@ -35,5 +35,7 @@ public interface ScriptExecutor<S> {
 	public ScriptExecutionResult execute(int scriptId, GameScript<S> script, ScriptBindings bindings, boolean returnResult)
 			throws Exception;
 
+	public void executeEmbedded(int parentScriptId, int scriptId, GameScript<S> script, EmbeddedScriptInvoker embeddedScriptInvoker, ScriptBindings bindings) throws Exception;
+
 	public void release();
 }

@@ -51,10 +51,17 @@ import org.mini2Dx.miniscript.core.exception.ScriptExecutorUnavailableException;
 public class LuaScriptExecutorPool implements ScriptExecutorPool<LuaValue> {
 	private final Map<Long, Globals> threadCompilers = new ConcurrentHashMap<Long, Globals>();
 	private final Map<Integer, GameScript<LuaValue>> scripts = new ConcurrentHashMap<Integer, GameScript<LuaValue>>();
+	private final Map<String, Integer> filepathToScriptId = new ConcurrentHashMap<String, Integer>();
 	private final BlockingQueue<ScriptExecutor<LuaValue>> executors;
 	private final GameScriptingEngine gameScriptingEngine;
 	private final ClasspathScriptProvider classpathScriptProvider;
 	private final boolean sandboxed;
+	private final SynchronizedObjectPool<LuaEmbeddedScriptInvoker> embeddedScriptInvokerPool = new SynchronizedObjectPool<LuaEmbeddedScriptInvoker>() {
+		@Override
+		protected LuaEmbeddedScriptInvoker construct() {
+			return new LuaEmbeddedScriptInvoker(gameScriptingEngine, LuaScriptExecutorPool.this);
+		}
+	};
 	
 	private Globals sandboxedGlobals;
 
@@ -96,9 +103,15 @@ public class LuaScriptExecutorPool implements ScriptExecutorPool<LuaValue> {
 	}
 
 	@Override
-	public int preCompileScript(String scriptContent) throws InsufficientCompilersException {
+	public int getCompiledScriptId(String filepath) {
+		return filepathToScriptId.getOrDefault(filepath, -1);
+	}
+
+	@Override
+	public int preCompileScript(String filepath, String scriptContent) throws InsufficientCompilersException {
 		PerThreadGameScript<LuaValue> script = new PerThreadGameScript<LuaValue>(scriptContent);
 		scripts.put(script.getId(), script);
+		filepathToScriptId.put(filepath, script.getId());
 		return script.getId();
 	}
 
@@ -110,6 +123,7 @@ public class LuaScriptExecutorPool implements ScriptExecutorPool<LuaValue> {
 			throw new ScriptExecutorUnavailableException(scriptId);
 		}
 		if(!scripts.containsKey(scriptId)) {
+			executor.release();
 			throw new NoSuchScriptException(scriptId);
 		}
 		return new ScriptExecutionTask<LuaValue>(gameScriptingEngine, executor, scriptId, scripts.get(scriptId),
@@ -128,6 +142,10 @@ public class LuaScriptExecutorPool implements ScriptExecutorPool<LuaValue> {
 	@Override
 	public GameScriptingEngine getGameScriptingEngine() {
 		return gameScriptingEngine;
+	}
+
+	GameScript<LuaValue> getScript(int id) {
+		return scripts.get(id);
 	}
 	
 	private ScriptExecutor<LuaValue> allocateExecutor() {
@@ -186,5 +204,9 @@ public class LuaScriptExecutorPool implements ScriptExecutorPool<LuaValue> {
 		result.load(new DebugLib());
 		result.set("debug", LuaValue.NIL);
 		return result;
+	}
+
+	public SynchronizedObjectPool<LuaEmbeddedScriptInvoker> getEmbeddedScriptInvokerPool() {
+		return embeddedScriptInvokerPool;
 	}
 }

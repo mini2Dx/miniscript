@@ -28,13 +28,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.mini2Dx.miniscript.core.GameScript;
-import org.mini2Dx.miniscript.core.GameScriptingEngine;
-import org.mini2Dx.miniscript.core.ScriptBindings;
-import org.mini2Dx.miniscript.core.ScriptExecutionTask;
-import org.mini2Dx.miniscript.core.ScriptExecutor;
-import org.mini2Dx.miniscript.core.ScriptExecutorPool;
-import org.mini2Dx.miniscript.core.ScriptInvocationListener;
+import org.mini2Dx.miniscript.core.*;
 import org.mini2Dx.miniscript.core.exception.InsufficientCompilersException;
 import org.mini2Dx.miniscript.core.exception.NoSuchScriptException;
 import org.mini2Dx.miniscript.core.exception.ScriptExecutorUnavailableException;
@@ -46,8 +40,15 @@ import groovy.lang.Script;
  */
 public class GroovyScriptExecutorPool implements ScriptExecutorPool<Script> {
 	private final Map<Integer, GameScript<Script>> scripts = new ConcurrentHashMap<Integer, GameScript<Script>>();
+	private final Map<String, Integer> filepathToScriptId = new ConcurrentHashMap<String, Integer>();
 	private final BlockingQueue<ScriptExecutor<Script>> executors;
 	private final GameScriptingEngine gameScriptingEngine;
+	private final SynchronizedObjectPool<GroovyEmbeddedScriptInvoker> embeddedScriptInvokerPool = new SynchronizedObjectPool<GroovyEmbeddedScriptInvoker>() {
+		@Override
+		protected GroovyEmbeddedScriptInvoker construct() {
+			return new GroovyEmbeddedScriptInvoker(gameScriptingEngine, GroovyScriptExecutorPool.this);
+		}
+	};
 
 	public GroovyScriptExecutorPool(GameScriptingEngine gameScriptingEngine, int poolSize) {
 		this.gameScriptingEngine = gameScriptingEngine;
@@ -68,7 +69,12 @@ public class GroovyScriptExecutorPool implements ScriptExecutorPool<Script> {
 	}
 
 	@Override
-	public int preCompileScript(String scriptContent) throws InsufficientCompilersException {
+	public int getCompiledScriptId(String filepath) {
+		return filepathToScriptId.getOrDefault(filepath, -1);
+	}
+
+	@Override
+	public int preCompileScript(String filepath, String scriptContent) throws InsufficientCompilersException {
 		ScriptExecutor<Script> executor = executors.poll();
 		if (executor == null) {
 			throw new InsufficientCompilersException();
@@ -76,6 +82,7 @@ public class GroovyScriptExecutorPool implements ScriptExecutorPool<Script> {
 		GameScript<Script> script = executor.compile(scriptContent);
 		executor.release();
 		scripts.put(script.getId(), script);
+		filepathToScriptId.put(filepath, script.getId());
 		return script.getId();
 	}
 
@@ -87,6 +94,7 @@ public class GroovyScriptExecutorPool implements ScriptExecutorPool<Script> {
 			throw new ScriptExecutorUnavailableException(scriptId);
 		}
 		if(!scripts.containsKey(scriptId)) {
+			executor.release();
 			throw new NoSuchScriptException(scriptId);
 		}
 		return new ScriptExecutionTask<Script>(gameScriptingEngine, executor, scriptId, scripts.get(scriptId), scriptBindings,
@@ -105,5 +113,13 @@ public class GroovyScriptExecutorPool implements ScriptExecutorPool<Script> {
 	@Override
 	public GameScriptingEngine getGameScriptingEngine() {
 		return gameScriptingEngine;
+	}
+
+	public SynchronizedObjectPool<GroovyEmbeddedScriptInvoker> getEmbeddedScriptInvokerPool() {
+		return embeddedScriptInvokerPool;
+	}
+
+	GameScript<Script> getScript(int scriptId) {
+		return scripts.get(scriptId);
 	}
 }

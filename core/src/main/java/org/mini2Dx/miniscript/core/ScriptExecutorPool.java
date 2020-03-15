@@ -32,7 +32,9 @@ import org.mini2Dx.miniscript.core.exception.InsufficientCompilersException;
  */
 public interface ScriptExecutorPool<S> {
 
-	public int preCompileScript(String scriptContent) throws InsufficientCompilersException;
+	public int getCompiledScriptId(String filepath);
+
+	public int preCompileScript(String filepath, String scriptContent) throws InsufficientCompilersException;
 
 	public ScriptExecutionTask<?> execute(int scriptId, ScriptBindings scriptBindings,
 			ScriptInvocationListener invocationListener);

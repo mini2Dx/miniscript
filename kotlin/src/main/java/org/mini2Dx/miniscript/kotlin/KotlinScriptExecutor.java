@@ -28,11 +28,7 @@ import org.jetbrains.kotlin.ir.expressions.IrConstKind.Char;
 import org.jetbrains.kotlin.script.jsr223.KotlinJsr223JvmLocalScriptEngine;
 import org.jetbrains.kotlin.script.jsr223.KotlinJsr223JvmLocalScriptEngineFactory;
 import org.jetbrains.kotlin.util.KotlinFrontEndException;
-import org.mini2Dx.miniscript.core.GameScript;
-import org.mini2Dx.miniscript.core.PerThreadGameScript;
-import org.mini2Dx.miniscript.core.ScriptBindings;
-import org.mini2Dx.miniscript.core.ScriptExecutionResult;
-import org.mini2Dx.miniscript.core.ScriptExecutor;
+import org.mini2Dx.miniscript.core.*;
 import org.mini2Dx.miniscript.core.exception.ScriptSkippedException;
 
 /**
@@ -56,11 +52,19 @@ public class KotlinScriptExecutor implements ScriptExecutor<CompiledKotlinScript
 	@Override
 	public ScriptExecutionResult execute(int scriptId, GameScript<CompiledKotlinScript> script, ScriptBindings bindings,
 			boolean returnResult) throws Exception {
-		PerThreadGameScript<CompiledKotlinScript> threadScript = (PerThreadGameScript<CompiledKotlinScript>) script;
+		final PerThreadGameScript<CompiledKotlinScript> threadScript = (PerThreadGameScript<CompiledKotlinScript>) script;
+
+		final KotlinEmbeddedScriptInvoker embeddedScriptInvoker = executorPool.getEmbeddedScriptInvokerPool().allocate();
+		embeddedScriptInvoker.setScriptBindings(bindings);
+		embeddedScriptInvoker.setScriptExecutor(this);
+		embeddedScriptInvoker.setParentScriptId(scriptId);
+
 		for (String variableName : bindings.keySet()) {
 			engine.put(variableName, bindings.get(variableName));
 		}
+		engine.put(ScriptBindings.SCRIPT_PARENT_ID_VAR, -1);
 		engine.put(ScriptBindings.SCRIPT_ID_VAR, scriptId);
+		engine.put(ScriptBindings.SCRIPT_INVOKE_VAR, embeddedScriptInvoker);
 
 		try {
 			engine.eval(threadScript.getContent());
@@ -73,6 +77,8 @@ public class KotlinScriptExecutor implements ScriptExecutor<CompiledKotlinScript
 				throw e;
 			}
 		}
+
+		executorPool.getEmbeddedScriptInvokerPool().release(embeddedScriptInvoker);
 
 		if (!returnResult) {
 			return null;
@@ -87,12 +93,47 @@ public class KotlinScriptExecutor implements ScriptExecutor<CompiledKotlinScript
 		return executionResult;
 	}
 
+	@Override
+	public void executeEmbedded(int parentScriptId, int scriptId, GameScript<CompiledKotlinScript> script,
+								EmbeddedScriptInvoker embeddedScriptInvoker, ScriptBindings bindings) throws Exception {
+		throw new RuntimeException("Embedded synchronous script invokes not supported in Kotlin.");
+/*		PerThreadGameScript<CompiledKotlinScript> threadScript = (PerThreadGameScript<CompiledKotlinScript>) script;
+		engine.put(ScriptBindings.SCRIPT_PARENT_ID_VAR, parentScriptId);
+		engine.put(ScriptBindings.SCRIPT_ID_VAR, scriptId);
+		embeddedScriptInvoker.setParentScriptId(scriptId);
+
+		try {
+			engine.eval(threadScript.getContent());
+		} catch (Exception e) {
+			if(e.getMessage().contains(ScriptSkippedException.class.getName())) {
+				throw new ScriptSkippedException();
+			} else if(e.getCause() instanceof ScriptSkippedException) {
+				throw new ScriptSkippedException();
+			} else {
+				throw e;
+			}
+		}
+
+		for (String variableName : bindings.keySet()) {
+			try {
+				bindings.put(variableName, engine.eval(variableName));
+			} catch (Exception e) {
+				if(e.getMessage().contains("unresolved reference")) {
+					bindings.remove(variableName);
+				} else {
+					e.printStackTrace();
+				}
+			}
+		}
+
+		engine.put(ScriptBindings.SCRIPT_ID_VAR, parentScriptId);
+		embeddedScriptInvoker.setParentScriptId(parentScriptId);*/
+	}
+
 	private void putResult(ScriptExecutionResult executionResult, String variableName) {
 		try {
-			System.out.println(variableName);
 			executionResult.put(variableName, engine.eval(variableName));
 		} catch (Exception e) {
-			e.printStackTrace();
 			if(e.getMessage().contains("unresolved reference")) {
 				executionResult.remove(variableName);
 			} else {

@@ -43,6 +43,7 @@ import org.mini2Dx.miniscript.core.exception.ScriptExecutorUnavailableException;
  */
 public class DummyScriptExecutorPool implements ScriptExecutorPool<DummyScript> {
 	private final Map<Integer, GameScript<DummyScript>> scripts = new ConcurrentHashMap<Integer, GameScript<DummyScript>>();
+	private final Map<String, Integer> filepathsToScriptIds = new ConcurrentHashMap<String, Integer>();
 	private final BlockingQueue<ScriptExecutor<DummyScript>> executors;
 	private final GameScriptingEngine gameScriptingEngine;
 
@@ -56,7 +57,7 @@ public class DummyScriptExecutorPool implements ScriptExecutorPool<DummyScript> 
 	}
 
 	@Override
-	public int preCompileScript(String scriptContent) throws InsufficientCompilersException {
+	public int preCompileScript(String filepath, String scriptContent) throws InsufficientCompilersException {
 		ScriptExecutor<DummyScript> executor = executors.poll();
 		if (executor == null) {
 			throw new InsufficientCompilersException();
@@ -64,7 +65,13 @@ public class DummyScriptExecutorPool implements ScriptExecutorPool<DummyScript> 
 		GameScript<DummyScript> script = executor.compile(scriptContent);
 		executor.release();
 		scripts.put(script.getId(), script);
+		filepathsToScriptIds.put(filepath, script.getId());
 		return script.getId();
+	}
+
+	@Override
+	public int getCompiledScriptId(String filepath) {
+		return filepathsToScriptIds.get(filepath);
 	}
 
 	@Override

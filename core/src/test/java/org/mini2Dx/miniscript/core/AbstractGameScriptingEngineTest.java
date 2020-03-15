@@ -26,6 +26,7 @@ package org.mini2Dx.miniscript.core;
 import java.io.InputStream;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.After;
@@ -34,8 +35,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mini2Dx.miniscript.core.dummy.DummyGameFuture;
 import org.mini2Dx.miniscript.core.dummy.ScriptResult;
-import org.mini2Dx.miniscript.core.exception.InsufficientCompilersException;
-import org.mini2Dx.miniscript.core.exception.NoSuchScriptException;
 
 /**
  * Base UAT class for {@link GameScriptingEngine} implementations
@@ -70,7 +69,7 @@ public abstract class AbstractGameScriptingEngineTest {
 	
 	@Test
 	public void testInvokeScript() throws Exception {
-		final AtomicInteger scriptIdVariableResult = new AtomicInteger(-1);
+		final AtomicLong scriptIdVariableResult = new AtomicLong(-1);
 
 		final int expectedScriptId = scriptingEngine.compileScript(getDefaultScript());
 		scriptingEngine.invokeCompiledScript(expectedScriptId, scriptBindings, new ScriptInvocationListener() {
@@ -88,7 +87,7 @@ public abstract class AbstractGameScriptingEngineTest {
 					scriptExecuted.set(true);
 				}
 
-				scriptIdVariableResult.set((int) executionResult.get(ScriptBindings.SCRIPT_ID_VAR));
+				scriptIdVariableResult.set(((Number) executionResult.get(ScriptBindings.SCRIPT_ID_VAR)).longValue());
 			}
 			
 			@Override
@@ -123,7 +122,7 @@ public abstract class AbstractGameScriptingEngineTest {
 	@Test
 	public void testInvokeScriptLocally() throws Exception {
 		final int expectedScriptId = scriptingEngine.compileScript(getDefaultScript());
-		scriptingEngine.invokeCompiledScriptLocally(expectedScriptId, scriptBindings, new ScriptInvocationListener() {
+		scriptingEngine.invokeCompiledScriptSync(expectedScriptId, scriptBindings, new ScriptInvocationListener() {
 			
 			@Override
 			public void onScriptSuccess(int scriptId, ScriptExecutionResult executionResult) {
@@ -168,7 +167,7 @@ public abstract class AbstractGameScriptingEngineTest {
 	
 	@Test
 	public void testInvokeScriptViaInputStream() throws Exception {
-		final int expectedScriptId = scriptingEngine.compileScript(getDefaultScriptInputStream());
+		final int expectedScriptId = scriptingEngine.compileScript(getDefaultScriptFilepath(), getDefaultScriptInputStream());
 		scriptingEngine.invokeCompiledScript(expectedScriptId, scriptBindings, new ScriptInvocationListener() {
 			
 			@Override
@@ -547,14 +546,97 @@ public abstract class AbstractGameScriptingEngineTest {
 		Assert.assertEquals(ScriptResult.SUCCESS, scriptResult.get());
 		Assert.assertEquals(0, scriptingEngine.runningFutures.size());
 	}
+
+	@Test
+	public void testInvokeEmbeddedScript() throws Exception {
+		if(!scriptingEngine.isEmbeddedSynchronousScriptSupported()) {
+			return;
+		}
+
+		final int expectedScriptId = scriptingEngine.compileScript(getInvokeWithinScriptFilepath(), getInvokeWithScript());
+		scriptingEngine.compileScript(getDefaultScriptFilepath(), getDefaultScript());
+		scriptingEngine.invokeCompiledScript(expectedScriptId, scriptBindings, new ScriptInvocationListener() {
+
+			@Override
+			public void onScriptSuccess(int scriptId, ScriptExecutionResult executionResult) {
+				if(scriptId != expectedScriptId) {
+					scriptResult.set(ScriptResult.INCORRECT_SCRIPT_ID);
+					scriptExecuted.set(true);
+				} else if(!checkExpectedEmbeddedScriptResults(executionResult)) {
+					scriptResult.set(ScriptResult.INCORRECT_VARIABLES);
+					scriptExecuted.set(true);
+				} else {
+					scriptResult.set(ScriptResult.SUCCESS);
+					scriptExecuted.set(true);
+				}
+			}
+
+			@Override
+			public void onScriptSkipped(int scriptId) {
+				scriptResult.set(ScriptResult.SKIPPED);
+				scriptExecuted.set(true);
+			}
+
+			@Override
+			public void onScriptException(int scriptId, Exception e) {
+				e.printStackTrace();
+				scriptResult.set(ScriptResult.EXCEPTION);
+				scriptExecuted.set(true);
+			}
+
+			@Override
+			public boolean callOnGameThread() {
+				return true;
+			}
+		});
+		final long timeout = 20000L;
+		long timer = 0L;
+
+		while(!scriptExecuted.get() && timer < timeout) {
+			long startTime = System.currentTimeMillis();
+			scriptingEngine.update(1f);
+			timer += System.currentTimeMillis() - startTime;
+		}
+
+		if(timer >= timeout) {
+			Assert.fail("Timed out after " + timeout + "ms wait for script");
+		}
+
+		Assert.assertEquals(ScriptResult.SUCCESS, scriptResult.get());
+		Assert.assertEquals(true, gameFuture.isUpdated());
+		Assert.assertEquals(false, gameFuture.waitOccurred());
+		Assert.assertEquals(false, gameFuture.isFutureSkipped());
+		Assert.assertEquals(false, gameFuture.isScriptSkipped());
+	}
 	
 	protected abstract GameScriptingEngine createScriptingEngine();
 	
 	protected abstract InputStream getDefaultScriptInputStream();
 	
 	protected abstract String getDefaultScript();
+
+	protected abstract String getDefaultScriptFilepath();
+
+	protected abstract String getInvokeWithScript();
+
+	protected abstract String getInvokeWithinScriptFilepath();
 	
 	protected abstract String getWaitForCompletionScript();
+
+	protected boolean checkExpectedEmbeddedScriptResults(ScriptExecutionResult executionResult) {
+		if(!checkExpectedScriptResults(executionResult)) {
+			return false;
+		}
+		if(!executionResult.containsKey("intValue2")) {
+			System.err.println("intValue2 not present");
+			return false;
+		}
+		if(executionResult.get("intValue2") instanceof Integer && ((Integer) executionResult.get("intValue2")) != 102) {
+			System.err.println("Expected intValue2 to be 102 but was " + executionResult.get("intValue2"));
+			return false;
+		}
+		return true;
+	}
 	
 	protected boolean checkExpectedScriptResults(ScriptExecutionResult executionResult) {
 		if(!executionResult.containsKey("stringValue")) {

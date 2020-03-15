@@ -97,4 +97,9 @@ public class LuaGameScriptingEngine extends GameScriptingEngine {
 	public boolean isSandboxingSupported() {
 		return true;
 	}
+
+	@Override
+	public boolean isEmbeddedSynchronousScriptSupported() {
+		return true;
+	}
 }

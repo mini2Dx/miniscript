@@ -25,12 +25,7 @@ package org.mini2Dx.miniscript.ruby;
 
 import org.jruby.embed.EmbedEvalUnit;
 import org.jruby.embed.ScriptingContainer;
-import org.mini2Dx.miniscript.core.GameScript;
-import org.mini2Dx.miniscript.core.PerThreadGameScript;
-import org.mini2Dx.miniscript.core.ScriptBindings;
-import org.mini2Dx.miniscript.core.ScriptExecutionResult;
-import org.mini2Dx.miniscript.core.ScriptExecutor;
-import org.mini2Dx.miniscript.core.ScriptInvocationListener;
+import org.mini2Dx.miniscript.core.*;
 import org.mini2Dx.miniscript.core.exception.ScriptSkippedException;
 
 /**
@@ -51,12 +46,19 @@ public class RubyScriptExecutor implements ScriptExecutor<EmbedEvalUnit> {
 	@Override
 	public ScriptExecutionResult execute(int scriptId, GameScript<EmbedEvalUnit> s, ScriptBindings bindings,
 			boolean returnResult) throws Exception {
-		PerThreadGameScript<EmbedEvalUnit> script = (PerThreadGameScript<EmbedEvalUnit>) s;
+		final PerThreadGameScript<EmbedEvalUnit> script = (PerThreadGameScript<EmbedEvalUnit>) s;
 
-		ScriptingContainer scriptingContainer = executorPool.getLocalScriptingContainer();
+		final ScriptingContainer scriptingContainer = executorPool.getLocalScriptingContainer();
+
+		final RubyEmbeddedScriptInvoker embeddedScriptInvoker = executorPool.getEmbeddedScriptInvokerPool().allocate();
+		embeddedScriptInvoker.setScriptBindings(bindings);
+		embeddedScriptInvoker.setScriptExecutor(this);
+		embeddedScriptInvoker.setParentScriptId(scriptId);
 
 		scriptingContainer.getVarMap().putAll(bindings);
+		scriptingContainer.getVarMap().put(ScriptBindings.SCRIPT_PARENT_ID_VAR, -1);
 		scriptingContainer.getVarMap().put(ScriptBindings.SCRIPT_ID_VAR, scriptId);
+		scriptingContainer.getVarMap().put(ScriptBindings.SCRIPT_INVOKE_VAR, embeddedScriptInvoker);
 
 		if (!script.hasScript()) {
 			script.setScript(scriptingContainer.parse(script.getContent()));
@@ -73,6 +75,8 @@ public class RubyScriptExecutor implements ScriptExecutor<EmbedEvalUnit> {
 			}
 		}
 
+		executorPool.getEmbeddedScriptInvokerPool().release(embeddedScriptInvoker);
+
 		if (!returnResult) {
 			scriptingContainer.clear();
 			return null;
@@ -80,6 +84,36 @@ public class RubyScriptExecutor implements ScriptExecutor<EmbedEvalUnit> {
 		ScriptExecutionResult executionResult = new ScriptExecutionResult(scriptingContainer.getVarMap().getMap());
 		scriptingContainer.clear();
 		return executionResult;
+	}
+
+	@Override
+	public void executeEmbedded(int parentScriptId, int scriptId, GameScript<EmbedEvalUnit> s,
+								EmbeddedScriptInvoker embeddedScriptInvoker, ScriptBindings bindings) throws Exception {
+		throw new RuntimeException("Embedded synchronous script invokes not supported in Ruby.");
+		/*final PerThreadGameScript<EmbedEvalUnit> script = (PerThreadGameScript<EmbedEvalUnit>) s;
+
+		final ScriptingContainer scriptingContainer = executorPool.getLocalScriptingContainer();
+		scriptingContainer.getVarMap().put(ScriptBindings.SCRIPT_PARENT_ID_VAR, parentScriptId);
+		scriptingContainer.getVarMap().put(ScriptBindings.SCRIPT_ID_VAR, scriptId);
+		embeddedScriptInvoker.setParentScriptId(scriptId);
+
+		if (!script.hasScript()) {
+			script.setScript(scriptingContainer.parse(script.getContent()));
+		}
+
+		try {
+			EmbedEvalUnit embedEvalUnit = script.getScript();
+			embedEvalUnit.run();
+		} catch (Exception e) {
+			if(e.getCause() instanceof ScriptSkippedException) {
+				throw new ScriptSkippedException();
+			} else {
+				throw e;
+			}
+		}
+
+		scriptingContainer.getVarMap().put(ScriptBindings.SCRIPT_ID_VAR, parentScriptId);
+		embeddedScriptInvoker.setParentScriptId(parentScriptId);*/
 	}
 
 	@Override

@@ -55,7 +55,30 @@ public class LuaGameScriptingEngineTest extends AbstractGameScriptingEngineTest 
 		Assert.fail("Could not read default script");
 		return null;
 	}
-	
+
+	@Override
+	protected String getDefaultScriptFilepath() {
+		return "default.lua";
+	}
+
+	@Override
+	protected String getInvokeWithScript() {
+		try {
+			return new String(Files.readAllBytes(Paths.get(this.getClass().getResource("/invokeWithinScript.lua").toURI())));
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (URISyntaxException e) {
+			e.printStackTrace();
+		}
+		Assert.fail("Could not read default script");
+		return null;
+	}
+
+	@Override
+	protected String getInvokeWithinScriptFilepath() {
+		return "invokeWithinScript.lua";
+	}
+
 	@Override
 	protected InputStream getDefaultScriptInputStream() {
 		return LuaGameScriptingEngineTest.class.getResourceAsStream("/default.lua");

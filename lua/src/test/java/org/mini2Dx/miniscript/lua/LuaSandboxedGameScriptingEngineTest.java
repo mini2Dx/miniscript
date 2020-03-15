@@ -39,8 +39,18 @@ public class LuaSandboxedGameScriptingEngineTest extends SandboxedGameScriptingE
 	}
 
 	@Override
+	protected String getSandboxScriptWithIllegalLinesFilepath() {
+		return "illegalSandbox.lua";
+	}
+
+	@Override
 	protected InputStream getSandboxScriptWithIllegalLines() {
 		return LuaGameScriptingEngineTest.class.getResourceAsStream("/illegalSandbox.lua");
+	}
+
+	@Override
+	protected String getSandboxScriptFilepath() {
+		return "legalSandbox.lua";
 	}
 
 	@Override

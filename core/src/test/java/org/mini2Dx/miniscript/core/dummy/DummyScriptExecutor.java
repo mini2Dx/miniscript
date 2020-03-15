@@ -25,12 +25,7 @@ package org.mini2Dx.miniscript.core.dummy;
 
 import java.util.HashMap;
 
-import org.mini2Dx.miniscript.core.GameScript;
-import org.mini2Dx.miniscript.core.GlobalGameScript;
-import org.mini2Dx.miniscript.core.ScriptBindings;
-import org.mini2Dx.miniscript.core.ScriptExecutionResult;
-import org.mini2Dx.miniscript.core.ScriptExecutor;
-import org.mini2Dx.miniscript.core.ScriptInvocationListener;
+import org.mini2Dx.miniscript.core.*;
 
 /**
  * An implementation of {@link ScriptExecutor} for unit tests
@@ -51,6 +46,11 @@ public class DummyScriptExecutor implements ScriptExecutor<DummyScript> {
 	public ScriptExecutionResult execute(int scriptId, GameScript<DummyScript> script, ScriptBindings bindings, boolean returnResult) throws Exception {
 		script.getScript().setExecuted(true);
 		return returnResult ? new ScriptExecutionResult(new HashMap<String, Object>()) : null;
+	}
+
+	@Override
+	public void executeEmbedded(int parentScriptId, int scriptId, GameScript<DummyScript> script, EmbeddedScriptInvoker embeddedScriptInvoker, ScriptBindings bindings) throws Exception {
+		script.getScript().setExecuted(true);
 	}
 
 	@Override

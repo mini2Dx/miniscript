@@ -33,13 +33,7 @@ import org.jruby.embed.EmbedEvalUnit;
 import org.jruby.embed.LocalContextScope;
 import org.jruby.embed.LocalVariableBehavior;
 import org.jruby.embed.ScriptingContainer;
-import org.mini2Dx.miniscript.core.GameScriptingEngine;
-import org.mini2Dx.miniscript.core.PerThreadGameScript;
-import org.mini2Dx.miniscript.core.ScriptBindings;
-import org.mini2Dx.miniscript.core.ScriptExecutionTask;
-import org.mini2Dx.miniscript.core.ScriptExecutor;
-import org.mini2Dx.miniscript.core.ScriptExecutorPool;
-import org.mini2Dx.miniscript.core.ScriptInvocationListener;
+import org.mini2Dx.miniscript.core.*;
 import org.mini2Dx.miniscript.core.exception.InsufficientCompilersException;
 import org.mini2Dx.miniscript.core.exception.NoSuchScriptException;
 import org.mini2Dx.miniscript.core.exception.ScriptExecutorUnavailableException;
@@ -50,8 +44,15 @@ import org.mini2Dx.miniscript.core.exception.ScriptExecutorUnavailableException;
 public class RubyScriptExecutorPool implements ScriptExecutorPool<EmbedEvalUnit> {
 	private final Map<Long, ScriptingContainer> threadCompilers = new ConcurrentHashMap<Long, ScriptingContainer>();
 	private final Map<Integer, PerThreadGameScript<EmbedEvalUnit>> scripts = new ConcurrentHashMap<Integer, PerThreadGameScript<EmbedEvalUnit>>();
+	private final Map<String, Integer> filepathToScriptId = new ConcurrentHashMap<String, Integer>();
 	private final BlockingQueue<ScriptExecutor<EmbedEvalUnit>> executors;
 	private final GameScriptingEngine gameScriptingEngine;
+	private final SynchronizedObjectPool<RubyEmbeddedScriptInvoker> embeddedScriptInvokerPool = new SynchronizedObjectPool<RubyEmbeddedScriptInvoker>() {
+		@Override
+		protected RubyEmbeddedScriptInvoker construct() {
+			return new RubyEmbeddedScriptInvoker(gameScriptingEngine, RubyScriptExecutorPool.this);
+		}
+	};
 
 	public RubyScriptExecutorPool(GameScriptingEngine gameScriptingEngine, int poolSize) {
 		this.gameScriptingEngine = gameScriptingEngine;
@@ -63,9 +64,15 @@ public class RubyScriptExecutorPool implements ScriptExecutorPool<EmbedEvalUnit>
 	}
 
 	@Override
-	public int preCompileScript(String scriptContent) throws InsufficientCompilersException {
+	public int getCompiledScriptId(String filepath) {
+		return filepathToScriptId.getOrDefault(filepath, -1);
+	}
+
+	@Override
+	public int preCompileScript(String filepath, String scriptContent) throws InsufficientCompilersException {
 		PerThreadGameScript<EmbedEvalUnit> script = new PerThreadGameScript<EmbedEvalUnit>(scriptContent);
 		scripts.put(script.getId(), script);
+		filepathToScriptId.put(filepath, script.getId());
 		return script.getId();
 	}
 
@@ -77,6 +84,7 @@ public class RubyScriptExecutorPool implements ScriptExecutorPool<EmbedEvalUnit>
 			throw new ScriptExecutorUnavailableException(scriptId);
 		}
 		if(!scripts.containsKey(scriptId)) {
+			executor.release();
 			throw new NoSuchScriptException(scriptId);
 		}
 		return new ScriptExecutionTask<EmbedEvalUnit>(gameScriptingEngine, executor, scriptId, scripts.get(scriptId),
@@ -115,5 +123,13 @@ public class RubyScriptExecutorPool implements ScriptExecutorPool<EmbedEvalUnit>
 	@Override
 	public GameScriptingEngine getGameScriptingEngine() {
 		return gameScriptingEngine;
+	}
+
+	GameScript<EmbedEvalUnit> getScript(int scriptId) {
+		return scripts.get(scriptId);
+	}
+
+	public SynchronizedObjectPool<RubyEmbeddedScriptInvoker> getEmbeddedScriptInvokerPool() {
+		return embeddedScriptInvokerPool;
 	}
 }

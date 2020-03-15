@@ -26,7 +26,7 @@ package org.mini2Dx.miniscript.core.exception;
 /**
  * Thrown when a script was skipped
  */
-public class ScriptSkippedException extends Exception {
+public class ScriptSkippedException extends RuntimeException {
 	private static final long serialVersionUID = -7901574884568506426L;
 
 }

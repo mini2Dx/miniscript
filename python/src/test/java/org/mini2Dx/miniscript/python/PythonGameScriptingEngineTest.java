@@ -55,7 +55,30 @@ public class PythonGameScriptingEngineTest extends AbstractGameScriptingEngineTe
 		Assert.fail("Could not read default script");
 		return null;
 	}
-	
+
+	@Override
+	protected String getDefaultScriptFilepath() {
+		return "default.py";
+	}
+
+	@Override
+	protected String getInvokeWithScript() {
+		try {
+			return new String(Files.readAllBytes(Paths.get(this.getClass().getResource("/invokeWithinScript.py").toURI())));
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (URISyntaxException e) {
+			e.printStackTrace();
+		}
+		Assert.fail("Could not read default script");
+		return null;
+	}
+
+	@Override
+	protected String getInvokeWithinScriptFilepath() {
+		return "invokeWithinScript.py";
+	}
+
 	@Override
 	protected InputStream getDefaultScriptInputStream() {
 		return PythonGameScriptingEngineTest.class.getResourceAsStream("/default.py");

@@ -23,12 +23,7 @@
  */
 package org.mini2Dx.miniscript.groovy;
 
-import org.mini2Dx.miniscript.core.GameScript;
-import org.mini2Dx.miniscript.core.GlobalGameScript;
-import org.mini2Dx.miniscript.core.ScriptBindings;
-import org.mini2Dx.miniscript.core.ScriptExecutionResult;
-import org.mini2Dx.miniscript.core.ScriptExecutor;
-import org.mini2Dx.miniscript.core.ScriptInvocationListener;
+import org.mini2Dx.miniscript.core.*;
 
 import groovy.lang.Binding;
 import groovy.lang.GroovyShell;
@@ -40,6 +35,8 @@ import groovy.lang.Script;
 public class GroovyScriptExecutor implements ScriptExecutor<Script> {
 	private final GroovyScriptExecutorPool executorPool;
 	private final GroovyShell groovyShell = new GroovyShell();
+
+	private Script lastScript;
 	
 	public GroovyScriptExecutor(GroovyScriptExecutorPool executorPool) {
 		this.executorPool = executorPool;
@@ -52,14 +49,48 @@ public class GroovyScriptExecutor implements ScriptExecutor<Script> {
 	
 	@Override
 	public ScriptExecutionResult execute(int scriptId, GameScript<Script> script, ScriptBindings bindings, boolean returnResult) throws Exception {
-		Script groovyScript = script.getScript();
+		final Script groovyScript = script.getScript();
+		this.lastScript = groovyScript;
 
-		Binding binding = new Binding(bindings);
+		final GroovyEmbeddedScriptInvoker embeddedScriptInvoker = executorPool.getEmbeddedScriptInvokerPool().allocate();
+		embeddedScriptInvoker.setScriptBindings(bindings);
+		embeddedScriptInvoker.setScriptExecutor(this);
+		embeddedScriptInvoker.setParentScriptId(scriptId);
+
+		final Binding binding = new Binding(bindings);
+		binding.setVariable(ScriptBindings.SCRIPT_PARENT_ID_VAR, -1);
 		binding.setVariable(ScriptBindings.SCRIPT_ID_VAR, scriptId);
+		binding.setVariable(ScriptBindings.SCRIPT_INVOKE_VAR, embeddedScriptInvoker);
 		groovyScript.setBinding(binding);
 		groovyScript.run();
+
+		executorPool.getEmbeddedScriptInvokerPool().release(embeddedScriptInvoker);
 		
 		return returnResult ? new ScriptExecutionResult(groovyScript.getBinding().getVariables()) : null;
+	}
+
+	@Override
+	public void executeEmbedded(int parentScriptId, int scriptId, GameScript<Script> script,
+								EmbeddedScriptInvoker embeddedScriptInvoker, ScriptBindings bindings) throws Exception {
+		final Script previousScript = lastScript;
+		final Script groovyScript = script.getScript();
+		this.lastScript = groovyScript;
+		embeddedScriptInvoker.setParentScriptId(scriptId);
+
+		final Binding binding = new Binding(previousScript.getBinding().getVariables());
+		binding.setVariable(ScriptBindings.SCRIPT_PARENT_ID_VAR, parentScriptId);
+		binding.setVariable(ScriptBindings.SCRIPT_ID_VAR, scriptId);
+		binding.setVariable(ScriptBindings.SCRIPT_INVOKE_VAR, embeddedScriptInvoker);
+		groovyScript.setBinding(binding);
+		groovyScript.run();
+
+		this.lastScript = previousScript;
+		lastScript.getBinding().setVariable(ScriptBindings.SCRIPT_ID_VAR, parentScriptId);
+		embeddedScriptInvoker.setParentScriptId(parentScriptId);
+
+		for(Object variableName : groovyScript.getBinding().getVariables().keySet()) {
+			this.lastScript.getBinding().setVariable((String) variableName, groovyScript.getBinding().getVariables().get(variableName));
+		}
 	}
 
 	@Override

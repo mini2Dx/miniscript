@@ -73,7 +73,7 @@ public abstract class SandboxedGameScriptingEngineTest {
 	
 	@Test
 	public void testSandboxScript() throws InsufficientCompilersException, IOException {
-		final int expectedScriptId = scriptingEngine.compileScript(getSandboxScript());
+		final int expectedScriptId = scriptingEngine.compileScript(getSandboxScriptFilepath(), getSandboxScript());
 		scriptingEngine.invokeCompiledScript(expectedScriptId, scriptBindings, new ScriptInvocationListener() {
 			
 			@Override
@@ -121,7 +121,7 @@ public abstract class SandboxedGameScriptingEngineTest {
 	
 	@Test
 	public void testSandboxScriptWithIllegalLines() throws InsufficientCompilersException, IOException {
-		final int expectedScriptId = scriptingEngine.compileScript(getSandboxScriptWithIllegalLines());
+		final int expectedScriptId = scriptingEngine.compileScript(getSandboxScriptWithIllegalLinesFilepath(), getSandboxScriptWithIllegalLines());
 		scriptingEngine.invokeCompiledScript(expectedScriptId, scriptBindings, new ScriptInvocationListener() {
 			
 			@Override
@@ -168,9 +168,13 @@ public abstract class SandboxedGameScriptingEngineTest {
 	}
 	
 	protected abstract GameScriptingEngine createScriptingEngineWithSandboxing();
-	
+
+	protected abstract String getSandboxScriptWithIllegalLinesFilepath();
+
 	protected abstract InputStream getSandboxScriptWithIllegalLines();
-	
+
+	protected abstract String getSandboxScriptFilepath();
+
 	protected abstract InputStream getSandboxScript();
 	
 	protected boolean checkExpectedScriptResults(ScriptExecutionResult executionResult) {

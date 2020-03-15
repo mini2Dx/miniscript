@@ -37,7 +37,6 @@ import org.mini2Dx.miniscript.core.GameScriptingEngine;
 /**
  * UATs for {@link RubyGameScriptingEngine}
  */
-@Ignore
 public class RubyGameScriptingEngineTest extends AbstractGameScriptingEngineTest {
 
 	@Override
@@ -57,7 +56,30 @@ public class RubyGameScriptingEngineTest extends AbstractGameScriptingEngineTest
 		Assert.fail("Could not read default script");
 		return null;
 	}
-	
+
+	@Override
+	protected String getDefaultScriptFilepath() {
+		return "default.rb";
+	}
+
+	@Override
+	protected String getInvokeWithScript() {
+		try {
+			return new String(Files.readAllBytes(Paths.get(this.getClass().getResource("/invokeWithinScript.rb").toURI())));
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (URISyntaxException e) {
+			e.printStackTrace();
+		}
+		Assert.fail("Could not read default script");
+		return null;
+	}
+
+	@Override
+	protected String getInvokeWithinScriptFilepath() {
+		return "invokeWithinScript.rb";
+	}
+
 	@Override
 	protected InputStream getDefaultScriptInputStream() {
 		return RubyGameScriptingEngineTest.class.getResourceAsStream("/default.rb");

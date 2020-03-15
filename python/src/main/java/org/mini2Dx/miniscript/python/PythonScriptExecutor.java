@@ -23,15 +23,9 @@
  */
 package org.mini2Dx.miniscript.python;
 
-import org.mini2Dx.miniscript.core.GameScript;
-import org.mini2Dx.miniscript.core.GlobalGameScript;
-import org.mini2Dx.miniscript.core.ScriptBindings;
-import org.mini2Dx.miniscript.core.ScriptExecutionResult;
-import org.mini2Dx.miniscript.core.ScriptExecutor;
-import org.mini2Dx.miniscript.core.ScriptInvocationListener;
+import org.mini2Dx.miniscript.core.*;
 import org.mini2Dx.miniscript.core.exception.ScriptSkippedException;
-import org.python.core.PyCode;
-import org.python.core.PyException;
+import org.python.core.*;
 import org.python.util.InteractiveInterpreter;
 
 /**
@@ -56,11 +50,19 @@ public class PythonScriptExecutor implements ScriptExecutor<PyCode> {
 
 	@Override
 	public ScriptExecutionResult execute(int scriptId, GameScript<PyCode> script, ScriptBindings bindings, boolean returnResult) throws Exception {
-		PyCode pythonScript = script.getScript();
+		final PyCode pythonScript = script.getScript();
+
+		final PythonEmbeddedScriptInvoker embeddedScriptInvoker = executorPool.getEmbeddedScriptInvokerPool().allocate();
+		embeddedScriptInvoker.setScriptBindings(bindings);
+		embeddedScriptInvoker.setScriptExecutor(this);
+		embeddedScriptInvoker.setParentScriptId(scriptId);
+
 		for (String variableName : bindings.keySet()) {
 			pythonInterpreter.set(variableName, bindings.get(variableName));
 		}
+		pythonInterpreter.set(ScriptBindings.SCRIPT_PARENT_ID_VAR, -1);
 		pythonInterpreter.set(ScriptBindings.SCRIPT_ID_VAR, scriptId);
+		pythonInterpreter.set(ScriptBindings.SCRIPT_INVOKE_VAR, embeddedScriptInvoker);
 
 		try {
 			pythonInterpreter.exec(pythonScript);
@@ -71,17 +73,47 @@ public class PythonScriptExecutor implements ScriptExecutor<PyCode> {
 				throw e;
 			}
 		}
+
+		executorPool.getEmbeddedScriptInvokerPool().release(embeddedScriptInvoker);
 		
 		if(!returnResult) {
 			return null;
 		}
-		//TODO: Find way to extract all variables
-		ScriptExecutionResult executionResult = new ScriptExecutionResult(null);
-		for(String variableName : bindings.keySet()) {
-			executionResult.put(variableName, pythonInterpreter.get(variableName, Object.class));
+		final ScriptExecutionResult executionResult = new ScriptExecutionResult(null);
+
+		final PyStringMap  locals = (PyStringMap) pythonInterpreter.getLocals();
+		for(Object key : locals.keys()) {
+			executionResult.put(key.toString(), pythonInterpreter.get(key.toString(), Object.class));
 		}
-		executionResult.put(ScriptBindings.SCRIPT_ID_VAR, pythonInterpreter.get(ScriptBindings.SCRIPT_ID_VAR, Object.class));
 		return executionResult;
+	}
+
+	@Override
+	public void executeEmbedded(int parentScriptId, int scriptId, GameScript<PyCode> script,
+								EmbeddedScriptInvoker embeddedScriptInvoker, ScriptBindings bindings) throws Exception {
+		final PyCode pythonScript = script.getScript();
+
+		pythonInterpreter.set(ScriptBindings.SCRIPT_PARENT_ID_VAR, parentScriptId);
+		pythonInterpreter.set(ScriptBindings.SCRIPT_ID_VAR, scriptId);
+		embeddedScriptInvoker.setParentScriptId(scriptId);
+
+		try {
+			pythonInterpreter.exec(pythonScript);
+		} catch (PyException e) {
+			if(e.getCause() instanceof ScriptSkippedException) {
+				throw new ScriptSkippedException();
+			} else {
+				throw e;
+			}
+		}
+
+		pythonInterpreter.set(ScriptBindings.SCRIPT_ID_VAR, parentScriptId);
+		embeddedScriptInvoker.setParentScriptId(parentScriptId);
+
+		final PyStringMap  locals = (PyStringMap) pythonInterpreter.getLocals();
+		for(Object key : locals.keys()) {
+			bindings.put(key.toString(), pythonInterpreter.get(key.toString(), Object.class));
+		}
 	}
 
 	@Override
