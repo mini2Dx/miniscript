@@ -28,7 +28,8 @@ import java.util.Map;
 import java.util.Set;
 
 public abstract class GeneratedClasspathScriptProvider implements ClasspathScriptProvider {
-	private final Map<String, Integer> scriptToIds = new HashMap<String, Integer>();
+	private final Map<String, Integer> scriptFilepathsToIds = new HashMap<String, Integer>();
+	private final Map<Integer, String> scriptIdsToFilepaths = new HashMap<Integer, String>();
 	private final Map<Integer, Object> idsToScripts = new HashMap<Integer, Object>();
 
 	public GeneratedClasspathScriptProvider() {
@@ -38,7 +39,8 @@ public abstract class GeneratedClasspathScriptProvider implements ClasspathScrip
 
 		int count = 0;
 		for(String filepath : generatedScripts.keySet()) {
-			scriptToIds.put(filepath, count);
+			scriptFilepathsToIds.put(filepath, count);
+			scriptIdsToFilepaths.put(count, filepath);
 			idsToScripts.put(count, generatedScripts.get(filepath));
 			count++;
 		}
@@ -51,17 +53,22 @@ public abstract class GeneratedClasspathScriptProvider implements ClasspathScrip
 
 	@Override
 	public int getScriptId(String filepath) {
-		return scriptToIds.get(filepath);
+		return scriptFilepathsToIds.get(filepath);
 	}
 
 	@Override
 	public int getTotalScripts() {
-		return scriptToIds.size();
+		return scriptFilepathsToIds.size();
 	}
 
 	@Override
 	public Set<String> getFilepaths() {
-		return scriptToIds.keySet();
+		return scriptFilepathsToIds.keySet();
+	}
+
+	@Override
+	public String getFilepath(int scriptId) {
+		return scriptIdsToFilepaths.get(scriptId);
 	}
 
 	public abstract Map getGeneratedScripts();

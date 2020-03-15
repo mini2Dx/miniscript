@@ -99,8 +99,8 @@ public class PythonScriptExecutor implements ScriptExecutor<PyCode> {
 
 		try {
 			pythonInterpreter.exec(pythonScript);
-		} catch (PyException e) {
-			if(e.getCause() instanceof ScriptSkippedException) {
+		} catch (Exception e) {
+			if(e instanceof ScriptSkippedException || e.getCause() instanceof ScriptSkippedException) {
 				throw new ScriptSkippedException();
 			} else {
 				throw e;

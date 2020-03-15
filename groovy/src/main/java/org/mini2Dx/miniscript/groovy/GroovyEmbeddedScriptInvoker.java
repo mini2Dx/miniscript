@@ -49,7 +49,7 @@ public class GroovyEmbeddedScriptInvoker extends EmbeddedScriptInvoker {
 		try {
 			scriptExecutor.executeEmbedded(parentScriptId, scriptId, script, this, scriptBindings);
 		} catch (Exception e) {
-			if(e.getCause() instanceof ScriptSkippedException) {
+			if(e instanceof ScriptSkippedException || e.getCause() instanceof ScriptSkippedException) {
 				throw new ScriptSkippedException();
 			} else {
 				e.printStackTrace();

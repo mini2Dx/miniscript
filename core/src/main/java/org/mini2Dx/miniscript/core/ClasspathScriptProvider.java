@@ -34,6 +34,8 @@ public interface ClasspathScriptProvider {
 
 	public int getScriptId(String filepath);
 
+	public String getFilepath(int scriptId);
+
 	public int getTotalScripts();
 
 	public Set<String> getFilepaths();

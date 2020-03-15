@@ -43,6 +43,11 @@ public class NoopClasspathScriptProvider implements ClasspathScriptProvider {
 	}
 
 	@Override
+	public String getFilepath(int scriptId) {
+		return null;
+	}
+
+	@Override
 	public int getTotalScripts() {
 		return 0;
 	}

@@ -68,7 +68,7 @@ public class RubyScriptExecutor implements ScriptExecutor<EmbedEvalUnit> {
 			EmbedEvalUnit embedEvalUnit = script.getScript();
 			embedEvalUnit.run();
 		} catch (Exception e) {
-			if(e.getCause() instanceof ScriptSkippedException) {
+			if(e instanceof ScriptSkippedException || e.getCause() instanceof ScriptSkippedException) {
 				throw new ScriptSkippedException();
 			} else {
 				throw e;
