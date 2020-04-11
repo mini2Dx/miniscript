@@ -24,8 +24,11 @@
 package org.mini2Dx.miniscript.core;
 
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class DefaultThreadPoolProvider implements ThreadPoolProvider {
+	private static final String THREAD_NAME_PREFIX = "miniscript-thread-";
+	private static final AtomicInteger THREAD_ID = new AtomicInteger(0);
 
 	private final ScheduledExecutorService executorService;
 
@@ -35,7 +38,13 @@ public class DefaultThreadPoolProvider implements ThreadPoolProvider {
 
 	public DefaultThreadPoolProvider(int maxConcurrentScripts) {
 		executorService = Executors.newScheduledThreadPool(
-				Math.min(maxConcurrentScripts + 1, Runtime.getRuntime().availableProcessors() * 2));
+				Math.min(maxConcurrentScripts + 1, Runtime.getRuntime().availableProcessors() * 2),
+				new ThreadFactory() {
+					@Override
+					public Thread newThread(Runnable r) {
+						return new Thread(r, THREAD_NAME_PREFIX + THREAD_ID.getAndIncrement());
+					}
+				});
 	}
 
 	@Override

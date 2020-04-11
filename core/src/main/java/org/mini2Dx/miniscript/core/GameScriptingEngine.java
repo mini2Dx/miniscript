@@ -31,6 +31,7 @@ import java.util.Queue;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.mini2Dx.miniscript.core.exception.InsufficientCompilersException;
 import org.mini2Dx.miniscript.core.exception.NoSuchScriptException;
@@ -62,6 +63,8 @@ public abstract class GameScriptingEngine implements Runnable {
 
 	private ScheduledFuture cleanupTask;
 	private boolean cancelReallocatedFutures = true;
+
+	private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
 
 	/**
 	 * Constructs a scripting engine backed by a thread pool with the maximum
@@ -192,7 +195,7 @@ public abstract class GameScriptingEngine implements Runnable {
 
 	private void init() {
 		threadPoolProvider.submit(this);
-		 threadPoolProvider.scheduleAtFixedRate(new Runnable() {
+		threadPoolProvider.scheduleAtFixedRate(new Runnable() {
 			@Override
 			public void run() {
 				try {
@@ -210,6 +213,8 @@ public abstract class GameScriptingEngine implements Runnable {
 	 * Shuts down the thread pool and cleans up resources
 	 */
 	public void dispose() {
+		shuttingDown.set(true);
+
 		if(cleanupTask != null) {
 			cleanupTask.cancel(false);
 			cleanupTask = null;
@@ -293,6 +298,10 @@ public abstract class GameScriptingEngine implements Runnable {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		if(shuttingDown.get()) {
+			return;
+		}
+
 		long duration = System.currentTimeMillis() - startTime;
 		if (duration >= 16L) {
 			threadPoolProvider.submit(this);
