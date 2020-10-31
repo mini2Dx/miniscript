@@ -36,8 +36,7 @@ public class CompilerConfig {
 	private CompilerInputFile inputScriptFile;
 
 	private String outputPackage, outputPackageAsPath;
-	private String outputClass;
-	private File outputClassFile;
+	private File packageDir;
 
 	public CompilerConfig(String outputRootPackage, File rootOutputDir) {
 		super();
@@ -52,13 +51,11 @@ public class CompilerConfig {
 
 		this.outputPackage = inputScriptFile.getOutputPackageName(outputRootPackage);
 		this.outputPackageAsPath = outputPackage.replace('.', '/') + "/";
-		this.outputClass = outputPackage + "." + inputScriptFile.getOutputClassName() + ".class";
 
-		final File packageDir = new File(rootOutputDir, outputPackage.replace('.', File.separatorChar));
+		packageDir = new File(rootOutputDir, outputPackage.replace('.', File.separatorChar));
 		if(!packageDir.exists()) {
 			packageDir.mkdirs();
 		}
-		this.outputClassFile = new File(packageDir,  inputScriptFile.getOutputClassName() + ".class");
 	}
 
 	public String getOutputPackage() {
@@ -73,12 +70,14 @@ public class CompilerConfig {
 		return inputScriptFile;
 	}
 
-	public String getOutputClass() {
-		return outputClass;
-	}
-
-	public File getOutputClassFile() {
-		return outputClassFile;
+	public File getOutputClassFile(String qualifiedClassName) {
+		final String className;
+		if(qualifiedClassName.contains("/")) {
+			className = qualifiedClassName.substring(qualifiedClassName.lastIndexOf('/') + 1).replace('-', '_');
+		} else {
+			className = qualifiedClassName.replace('-', '_');
+		}
+		return new File(packageDir,  className + ".class");
 	}
 
 	public String getOutputRootPackage() {

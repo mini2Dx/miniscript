@@ -32,7 +32,9 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.Set;
 
 public class LuaScriptCompiler implements ScriptCompiler {
 	private final Project project;
@@ -55,7 +57,7 @@ public class LuaScriptCompiler implements ScriptCompiler {
 		for (Enumeration enumeration = luaHashtable.keys(); enumeration.hasMoreElements(); ) {
 			final String className = (String) enumeration.nextElement();
 			final byte[] bytes = (byte[]) luaHashtable.get(className);
-			final FileOutputStream outputStream = new FileOutputStream(compilerConfig.getOutputClassFile());
+			final FileOutputStream outputStream = new FileOutputStream(compilerConfig.getOutputClassFile(className));
 			outputStream.write( bytes );
 			outputStream.close();
 		}
@@ -76,6 +78,7 @@ public class LuaScriptCompiler implements ScriptCompiler {
 	private static final class LuaClassLoader extends ClassLoader {
 		private final Hashtable luaHashtable;
 		private final Project project;
+		private final Set<String> loadedClasses = new HashSet<>();
 
 		private LuaClassLoader(Hashtable luaHashtable, Project project) {
 			this.luaHashtable = luaHashtable;
@@ -83,10 +86,21 @@ public class LuaScriptCompiler implements ScriptCompiler {
 		}
 
 		public Class findClass(String classname) throws ClassNotFoundException {
-			byte[] bytes = (byte[]) luaHashtable.get(classname);
-			if ( bytes != null )
-				return defineClass(classname.replace('/', '.'), bytes, 0, bytes.length);
-			return project.getBuildscript().getClassLoader().loadClass(classname);
+			final String classNameWithDot = classname.replace('/', '.');
+			final String classNameWithSlash = classname.replace('.', '/');
+
+			if(loadedClasses.contains(classNameWithSlash)) {
+				return findLoadedClass(classNameWithDot);
+			}
+			byte[] bytes = (byte[]) luaHashtable.get(classNameWithSlash);
+			final Class result;
+			if (bytes != null) {
+				result = defineClass(classNameWithDot, bytes, 0, bytes.length);
+			} else {
+				result = project.getBuildscript().getClassLoader().loadClass(classNameWithDot);
+			}
+			loadedClasses.add(classNameWithSlash);
+			return result;
 		}
 	}
 }
