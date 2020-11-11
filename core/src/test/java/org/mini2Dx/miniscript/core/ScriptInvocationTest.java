@@ -6,6 +6,7 @@ package org.mini2Dx.miniscript.core;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.*;
 import java.util.concurrent.PriorityBlockingQueue;
 
 public class ScriptInvocationTest {
@@ -72,5 +73,30 @@ public class ScriptInvocationTest {
 
 		Assert.assertEquals(invocation2, queue.poll());
 		Assert.assertEquals(invocation1, queue.poll());
+	}
+
+	@Test
+	public void testPriority() {
+		final Random random = new Random();
+		final List<Integer> unordered = new ArrayList<>();
+
+		for(int i = 0; i < 1000; i++) {
+			final int priority = random.nextInt();
+			final ScriptInvocation invocation = new ScriptInvocation(null);
+			invocation.setPriority(priority);
+			unordered.add(priority);
+
+			queue.offer(invocation);
+		}
+
+		final List<Integer> ordered = new ArrayList<>(unordered);
+		Collections.sort(ordered);
+		Collections.reverse(ordered);
+
+		for(int i = 0; i < 1000; i++) {
+			final int expectedPriority = ordered.get(i);
+			final ScriptInvocation result = queue.poll();
+			Assert.assertEquals(expectedPriority, result.getPriority());
+		}
 	}
 }
