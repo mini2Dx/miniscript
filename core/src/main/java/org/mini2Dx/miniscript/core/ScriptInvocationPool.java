@@ -38,9 +38,10 @@ public class ScriptInvocationPool {
 	 * @param scriptId The script id being invoked
 	 * @param scriptBindings The {@link ScriptBindings}
 	 * @param invocationListener An optional {@link ScriptInvocationListener}
+	 * @param priority The script execution priority
 	 * @return A {@link ScriptInvocation} instance set to the provided parameters
 	 */
-	public ScriptInvocation allocate(int scriptId, ScriptBindings scriptBindings, ScriptInvocationListener invocationListener) {
+	public ScriptInvocation allocate(int scriptId, ScriptBindings scriptBindings, ScriptInvocationListener invocationListener, int priority) {
 		ScriptInvocation result = pool.poll();
 		if(result == null) {
 			//If pool is empty create a new instance that will eventually be returned to the pool
@@ -49,6 +50,7 @@ public class ScriptInvocationPool {
 		result.setScriptId(scriptId);
 		result.setScriptBindings(scriptBindings);
 		result.setInvocationListener(invocationListener);
+		result.setPriority(priority);
 		return result;
 	}
 	

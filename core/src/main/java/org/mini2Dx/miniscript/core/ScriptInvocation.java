@@ -26,14 +26,15 @@ package org.mini2Dx.miniscript.core;
 /**
  * Wraps a script invocation so it can be queued concurrently
  */
-public class ScriptInvocation {
+public class ScriptInvocation implements Comparable<ScriptInvocation> {
 	private final ScriptInvocationPool invocationPool;
 	
 	private int scriptId;
 	private ScriptBindings scriptBindings;
 	private ScriptInvocationListener invocationListener;
+	private int priority;
 	
-	public ScriptInvocation(ScriptInvocationPool invocationPool) {
+	ScriptInvocation(ScriptInvocationPool invocationPool) {
 		this.invocationPool = invocationPool;
 	}
 
@@ -60,8 +61,22 @@ public class ScriptInvocation {
 	public void setInvocationListener(ScriptInvocationListener invocationListener) {
 		this.invocationListener = invocationListener;
 	}
-	
+
+	public int getPriority() {
+		return priority;
+	}
+
+	public void setPriority(int priority) {
+		this.priority = priority;
+	}
+
 	public void release() {
+		priority = 0;
 		invocationPool.release(this);
+	}
+
+	@Override
+	public int compareTo(ScriptInvocation o) {
+		return Integer.compare(o.priority, priority);
 	}
 }

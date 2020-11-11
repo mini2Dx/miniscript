@@ -49,7 +49,7 @@ public abstract class GameScriptingEngine implements Runnable {
 	public static GameScriptingEngine MOST_RECENT_INSTANCE = null;
 
 	private final ScriptInvocationPool scriptInvocationPool = new ScriptInvocationPool();
-	private final Queue<ScriptInvocation> scriptInvocations = new ConcurrentLinkedQueue<ScriptInvocation>();
+	private final Queue<ScriptInvocation> scriptInvocations = new PriorityBlockingQueue<>(64);
 	final Queue<ScriptNotification> scriptNotifications = new ConcurrentLinkedQueue<ScriptNotification>();
 
 	final Queue<GameFuture> queuedFutures = new ConcurrentLinkedQueue<GameFuture>();
@@ -469,7 +469,23 @@ public abstract class GameScriptingEngine implements Runnable {
 	 */
 	public void invokeCompiledScript(int scriptId, ScriptBindings scriptBindings,
 			ScriptInvocationListener invocationListener) {
-		scriptInvocations.offer(scriptInvocationPool.allocate(scriptId, scriptBindings, invocationListener));
+		invokeCompiledScript(scriptId, scriptBindings, invocationListener, 0);
+	}
+
+	/**
+	 * Queues a compiled script for execution in the engine's thread pool
+	 *
+	 * @param scriptId
+	 *            The id of the script to run
+	 * @param scriptBindings
+	 *            The variable bindings for the script
+	 * @param invocationListener
+	 *            A {@link ScriptInvocationListener} to list for invocation results
+	 * @param priority The script execution priority (higher value = higher priority)
+	 */
+	public void invokeCompiledScript(int scriptId, ScriptBindings scriptBindings,
+									 ScriptInvocationListener invocationListener, int priority) {
+		scriptInvocations.offer(scriptInvocationPool.allocate(scriptId, scriptBindings, invocationListener, priority));
 	}
 
 	/**
@@ -505,6 +521,28 @@ public abstract class GameScriptingEngine implements Runnable {
 			ScriptInvocationListener invocationListener) throws InsufficientCompilersException {
 		int scriptId = compileScript(String.valueOf(scriptContent.hashCode()), scriptContent);
 		invokeCompiledScript(scriptId, scriptBindings, invocationListener);
+		return scriptId;
+	}
+
+	/**
+	 * Compiles and queues a script for execution in the engine's thread pool
+	 *
+	 * @param scriptContent
+	 *            The text content of the script
+	 * @param scriptBindings
+	 *            The variable bindings for the script
+	 * @param invocationListener
+	 *            A {@link ScriptInvocationListener} to list for invocation
+	 *            results
+	 * @param priority The script execution priority (higher value = higher priority)
+	 * @return The unique id for the script
+	 * @throws InsufficientCompilersException
+	 *             Thrown if there are no script compilers available
+	 */
+	public int invokeScript(String scriptContent, ScriptBindings scriptBindings,
+							ScriptInvocationListener invocationListener, int priority) throws InsufficientCompilersException {
+		int scriptId = compileScript(String.valueOf(scriptContent.hashCode()), scriptContent);
+		invokeCompiledScript(scriptId, scriptBindings, invocationListener, priority);
 		return scriptId;
 	}
 
