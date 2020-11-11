@@ -29,7 +29,7 @@ subprojects {
 	apply plugin: "maven"
 	
 	group = 'org.mini2Dx'
-	version = '1.5.0'
+	version = '1.5.1-SNAPSHOT'
 
 	repositories {
 		mavenLocal()
