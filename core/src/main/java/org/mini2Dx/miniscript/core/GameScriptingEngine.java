@@ -278,10 +278,16 @@ public abstract class GameScriptingEngine implements Runnable {
 	 */
 	@Override
 	public void run() {
+		if(shuttingDown.get()) {
+			return;
+		}
 		long startTime = System.currentTimeMillis();
 		ScriptInvocation scriptInvocation = null;
 		try {
 			while ((scriptInvocation = scriptInvocations.poll()) != null) {
+				if(shuttingDown.get()) {
+					continue;
+				}
 				ScriptExecutionTask<?> executionTask = scriptExecutorPool.execute(scriptInvocation.getScriptId(),
 						scriptInvocation.getScriptBindings(), scriptInvocation.getInvocationListener());
 				Future<?> taskFuture = threadPoolProvider.submit(executionTask);
