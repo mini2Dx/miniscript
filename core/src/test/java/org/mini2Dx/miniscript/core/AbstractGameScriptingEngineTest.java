@@ -25,7 +25,6 @@ package org.mini2Dx.miniscript.core;
 
 import java.io.InputStream;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -317,7 +316,7 @@ public abstract class AbstractGameScriptingEngineTest {
 		while(!scriptExecuted.get() && timer < timeout) {
 			final long startTime = System.currentTimeMillis();
 			scriptingEngine.update(1f);
-			scriptingEngine.skipAllGameFutures();
+			scriptingEngine.skipAllRunningGameFutures();
 			timer += System.currentTimeMillis() - startTime;
 		}
 		if(timer >= timeout) {

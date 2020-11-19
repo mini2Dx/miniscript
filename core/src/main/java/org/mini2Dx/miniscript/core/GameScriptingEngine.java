@@ -372,10 +372,37 @@ public abstract class GameScriptingEngine implements Runnable {
 	/**
 	 * Skips all currently running {@link GameFuture}s
 	 */
-	public void skipAllGameFutures() {
+	public void skipAllRunningGameFutures() {
 		for (GameFuture gameFuture : runningFutures.values()) {
 			gameFuture.skipFuture();
 		}
+	}
+
+	/**
+	 * Skips all currently queued {@link GameFuture}s
+	 */
+	public void skipAllQueuedGameFutures() {
+		while(!queuedFutures.isEmpty()) {
+			final GameFuture gameFuture = queuedFutures.poll();
+			if(gameFuture == null) {
+				continue;
+			}
+			gameFuture.skipFuture();
+		}
+	}
+
+	/**
+	 * Removes all currently running {@link GameFuture}s without sending skipFuture event
+	 */
+	public void cancelAllRunningGameFutures() {
+		runningFutures.clear();
+	}
+
+	/**
+	 * Removes all currently queued {@link GameFuture}s without sending skipFuture event
+	 */
+	public void cancelAllQueuedGameFutures() {
+		queuedFutures.clear();
 	}
 
 	/**
@@ -605,4 +632,6 @@ public abstract class GameScriptingEngine implements Runnable {
 	public void setCancelReallocatedFutures(boolean cancelReallocatedFutures) {
 		this.cancelReallocatedFutures = cancelReallocatedFutures;
 	}
+
+
 }
