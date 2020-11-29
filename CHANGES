@@ -1,3 +1,6 @@
+[1.5.3]
+- Add wfc() alias for waitForCompletion()
+
 [1.5.2]
 - Allow scripts to be optionally interrupted during dispose()
 

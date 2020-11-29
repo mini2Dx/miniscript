@@ -140,6 +140,14 @@ public abstract class GameFuture {
 	}
 
 	/**
+	 * Alias to {@link #waitForCompletion()}
+	 * @throws ScriptSkippedException
+	 */
+	public void wfc() throws ScriptSkippedException {
+		waitForCompletion();
+	}
+
+	/**
 	 * Returns if this {@link GameFuture} is complete
 	 * 
 	 * @return True if this completed without being skipped
