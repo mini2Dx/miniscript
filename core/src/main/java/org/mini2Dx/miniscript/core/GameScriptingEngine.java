@@ -213,13 +213,21 @@ public abstract class GameScriptingEngine implements Runnable {
 	 * Shuts down the thread pool and cleans up resources
 	 */
 	public void dispose() {
+		dispose(false);
+	}
+
+	/**
+	 * Shuts down the thread pool and cleans up resources
+	 * @param interruptScripts True if running scripts should be interrupted
+	 */
+	public void dispose(boolean interruptScripts) {
 		shuttingDown.set(true);
 
 		if(cleanupTask != null) {
 			cleanupTask.cancel(false);
 			cleanupTask = null;
 		}
-		threadPoolProvider.shutdown();
+		threadPoolProvider.shutdown(interruptScripts);
 	}
 
 	/**

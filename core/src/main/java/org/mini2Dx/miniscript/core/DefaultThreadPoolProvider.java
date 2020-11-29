@@ -63,7 +63,11 @@ public class DefaultThreadPoolProvider implements ThreadPoolProvider {
 	}
 
 	@Override
-	public void shutdown() {
-		executorService.shutdown();
+	public void shutdown(boolean interruptThreads) {
+		if(interruptThreads) {
+			executorService.shutdownNow();
+		} else {
+			executorService.shutdown();
+		}
 	}
 }

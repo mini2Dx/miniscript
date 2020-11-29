@@ -1,3 +1,6 @@
+[1.5.2]
+- Allow scripts to be optionally interrupted during dispose()
+
 [1.5.1]
 - Only allow currently executing scripts to finish during shutdown. Any other queued scripts will be skipped.
 - Add methods to cancel queued and running futures without sending skip event

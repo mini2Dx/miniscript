@@ -15,6 +15,6 @@ public interface ThreadPoolProvider {
 
 	public ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit);
 
-	void shutdown();
+	void shutdown(boolean interruptThreads);
 
 }
