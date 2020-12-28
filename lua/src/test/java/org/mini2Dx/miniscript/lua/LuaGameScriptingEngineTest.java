@@ -70,13 +70,31 @@ public class LuaGameScriptingEngineTest extends AbstractGameScriptingEngineTest 
 		} catch (URISyntaxException e) {
 			e.printStackTrace();
 		}
-		Assert.fail("Could not read default script");
+		Assert.fail("Could not read invokeWithinScript script");
 		return null;
 	}
 
 	@Override
 	protected String getInvokeWithinScriptFilepath() {
 		return "invokeWithinScript.lua";
+	}
+
+	@Override
+	protected String getNestedInvokeWithScript() {
+		try {
+			return new String(Files.readAllBytes(Paths.get(this.getClass().getResource("/nestedInvokeWithinScript.lua").toURI())));
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (URISyntaxException e) {
+			e.printStackTrace();
+		}
+		Assert.fail("Could not read nestedInvokeWithinScript script");
+		return null;
+	}
+
+	@Override
+	protected String getNestedInvokeWithinScriptFilepath() {
+		return "nestedInvokeWithinScript.lua";
 	}
 
 	@Override

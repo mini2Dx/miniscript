@@ -70,13 +70,31 @@ public class GroovyGameScriptingEngineTest extends AbstractGameScriptingEngineTe
 		} catch (URISyntaxException e) {
 			e.printStackTrace();
 		}
-		Assert.fail("Could not read default script");
+		Assert.fail("Could not read invokeWithinScript script");
 		return null;
 	}
 
 	@Override
 	protected String getInvokeWithinScriptFilepath() {
 		return "invokeWithinScript.groovy";
+	}
+
+	@Override
+	protected String getNestedInvokeWithScript() {
+		try {
+			return new String(Files.readAllBytes(Paths.get(this.getClass().getResource("/nestedInvokeWithinScript.groovy").toURI())));
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (URISyntaxException e) {
+			e.printStackTrace();
+		}
+		Assert.fail("Could not read nestedInvokeWithinScript script");
+		return null;
+	}
+
+	@Override
+	protected String getNestedInvokeWithinScriptFilepath() {
+		return "nestedInvokeWithinScript.groovy";
 	}
 
 	@Override

@@ -1,3 +1,5 @@
+package org.mini2Dx.miniscript.lua;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.luaj.vm2.lib.jse.JsePlatform;

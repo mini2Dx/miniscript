@@ -607,7 +607,70 @@ public abstract class AbstractGameScriptingEngineTest {
 		Assert.assertEquals(false, gameFuture.isFutureSkipped());
 		Assert.assertEquals(false, gameFuture.isScriptSkipped());
 	}
-	
+
+	@Test
+	public void testInvokeNestedEmbeddedScript() throws Exception {
+		if(!scriptingEngine.isEmbeddedSynchronousScriptSupported()) {
+			return;
+		}
+
+		final int expectedScriptId = scriptingEngine.compileScript(getNestedInvokeWithinScriptFilepath(), getNestedInvokeWithScript());
+		scriptingEngine.compileScript(getDefaultScriptFilepath(), getDefaultScript());
+		scriptingEngine.compileScript(getInvokeWithinScriptFilepath(), getInvokeWithScript());
+		scriptingEngine.invokeCompiledScript(expectedScriptId, scriptBindings, new ScriptInvocationListener() {
+
+			@Override
+			public void onScriptSuccess(int scriptId, ScriptExecutionResult executionResult) {
+				if(scriptId != expectedScriptId) {
+					scriptResult.set(ScriptResult.INCORRECT_SCRIPT_ID);
+					scriptExecuted.set(true);
+				} else if(!checkExpectedNestedEmbeddedScriptResults(executionResult)) {
+					scriptResult.set(ScriptResult.INCORRECT_VARIABLES);
+					scriptExecuted.set(true);
+				} else {
+					scriptResult.set(ScriptResult.SUCCESS);
+					scriptExecuted.set(true);
+				}
+			}
+
+			@Override
+			public void onScriptSkipped(int scriptId) {
+				scriptResult.set(ScriptResult.SKIPPED);
+				scriptExecuted.set(true);
+			}
+
+			@Override
+			public void onScriptException(int scriptId, Exception e) {
+				e.printStackTrace();
+				scriptResult.set(ScriptResult.EXCEPTION);
+				scriptExecuted.set(true);
+			}
+
+			@Override
+			public boolean callOnGameThread() {
+				return true;
+			}
+		});
+		final long timeout = 20000L;
+		long timer = 0L;
+
+		while(!scriptExecuted.get() && timer < timeout) {
+			long startTime = System.currentTimeMillis();
+			scriptingEngine.update(1f);
+			timer += System.currentTimeMillis() - startTime;
+		}
+
+		if(timer >= timeout) {
+			Assert.fail("Timed out after " + timeout + "ms wait for script");
+		}
+
+		Assert.assertEquals(ScriptResult.SUCCESS, scriptResult.get());
+		Assert.assertEquals(true, gameFuture.isUpdated());
+		Assert.assertEquals(false, gameFuture.waitOccurred());
+		Assert.assertEquals(false, gameFuture.isFutureSkipped());
+		Assert.assertEquals(false, gameFuture.isScriptSkipped());
+	}
+
 	protected abstract GameScriptingEngine createScriptingEngine();
 	
 	protected abstract InputStream getDefaultScriptInputStream();
@@ -619,8 +682,36 @@ public abstract class AbstractGameScriptingEngineTest {
 	protected abstract String getInvokeWithScript();
 
 	protected abstract String getInvokeWithinScriptFilepath();
-	
+
+	protected abstract String getNestedInvokeWithScript();
+
+	protected abstract String getNestedInvokeWithinScriptFilepath();
+
 	protected abstract String getWaitForCompletionScript();
+
+	protected boolean checkExpectedNestedEmbeddedScriptResults(ScriptExecutionResult executionResult) {
+		if(!executionResult.containsKey("booleanValue")) {
+			System.err.println("booleanValue not present");
+			return false;
+		}
+		if(!executionResult.containsKey("intValue")) {
+			System.err.println("intValue not present");
+			return false;
+		}
+		if(!"hello1234".equals(executionResult.get("stringValue"))) {
+			System.err.println("Expected stringValue to be hello123 but was " + executionResult.get("stringValue"));
+			return false;
+		}
+		if(!executionResult.containsKey("intValue2")) {
+			System.err.println("intValue2 not present");
+			return false;
+		}
+		if(executionResult.get("intValue2") instanceof Integer && ((Integer) executionResult.get("intValue2")) != 102) {
+			System.err.println("Expected intValue2 to be 102 but was " + executionResult.get("intValue2"));
+			return false;
+		}
+		return true;
+	}
 
 	protected boolean checkExpectedEmbeddedScriptResults(ScriptExecutionResult executionResult) {
 		if(!checkExpectedScriptResults(executionResult)) {
