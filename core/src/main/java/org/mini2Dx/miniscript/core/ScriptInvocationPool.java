@@ -23,15 +23,16 @@
  */
 package org.mini2Dx.miniscript.core;
 
+import org.mini2Dx.miniscript.core.util.ReadWriteArrayQueue;
+
 import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * Provides a pool of reusable {@link ScriptInvocation} instances to reduce
  * object allocation
  */
 public class ScriptInvocationPool {
-	private final Queue<ScriptInvocation> pool = new ConcurrentLinkedQueue<ScriptInvocation>();
+	private final Queue<ScriptInvocation> pool = new ReadWriteArrayQueue<>();
 	
 	/**
 	 * Allocate a {@link ScriptInvocation} instance

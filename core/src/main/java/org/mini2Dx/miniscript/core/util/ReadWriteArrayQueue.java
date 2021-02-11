@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2018 Thomas Cashman
+ * Copyright (c) 2020 Thomas Cashman
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,42 +21,13 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.mini2Dx.miniscript.core;
+package org.mini2Dx.miniscript.core.util;
 
-import org.mini2Dx.miniscript.core.util.ReadWriteMap;
+import java.util.ArrayDeque;
 
-import java.util.Map;
+public class ReadWriteArrayQueue<E> extends AbstractConcurrentQueue<E> {
 
-public class PerThreadClasspathGameScript<S> extends GameScript<S> {
-	private final Map<Long, S> threadToScriptMapping = new ReadWriteMap<>();
-	private final S content;
-
-	public PerThreadClasspathGameScript(S content) {
-		super();
-		this.content = content;
-	}
-
-	@Override
-	public S getScript() {
-		return threadToScriptMapping.get(Thread.currentThread().getId());
-	}
-
-	@Override
-	public boolean hasScript() {
-		return threadToScriptMapping.containsKey(Thread.currentThread().getId());
-	}
-
-	@Override
-	public void setScript(S script) {
-		threadToScriptMapping.put(Thread.currentThread().getId(), script);
-	}
-
-	public S compileInstance() {
-		try {
-			return (S) content.getClass().newInstance();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return content;
+	public ReadWriteArrayQueue() {
+		super(new ArrayDeque());
 	}
 }

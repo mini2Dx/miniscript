@@ -23,10 +23,10 @@
  */
 package org.mini2Dx.miniscript.core;
 
+import org.mini2Dx.miniscript.core.exception.ScriptSkippedException;
+
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import org.mini2Dx.miniscript.core.exception.ScriptSkippedException;
 
 /**
  * Represents a task that will complete in-game at a future time

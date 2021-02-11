@@ -24,8 +24,6 @@
 package org.mini2Dx.miniscript.core;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A mapping of variable names to objects passed to a script

@@ -46,7 +46,8 @@ subprojects {
 
 		bcelVersion='5.2'
 		javaPoetVersion='1.11.1'
-		
+		lockProviderVersion='1.1.0'
+
 		junitVersion='4.11'
 		jmockVersion='2.5.1'
 	}
@@ -144,6 +145,8 @@ project(":" + rootProject.name + "-core") {
 	description = "miniscript core library"
 	
 	dependencies {
+		compile "org.mini2Dx:mini2Dx-lock-provider:$lockProviderVersion"
+
 		testCompile "junit:junit:$junitVersion"
 		testCompile "org.jmock:jmock-junit4:$jmockVersion"
 		testCompile "org.jmock:jmock-legacy:$jmockVersion"

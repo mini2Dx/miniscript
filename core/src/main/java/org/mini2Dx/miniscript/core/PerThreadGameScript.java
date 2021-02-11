@@ -23,15 +23,16 @@
  */
 package org.mini2Dx.miniscript.core;
 
+import org.mini2Dx.miniscript.core.util.ReadWriteMap;
+
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * An implementation of {@link GameScript} for language runtimes where
  * a script must be compiled on a per thread basis
  */
 public class PerThreadGameScript<S> extends GameScript<S> {
-	private final Map<Long, S> threadToScriptMapping = new ConcurrentHashMap<Long, S>();
+	private final Map<Long, S> threadToScriptMapping = new ReadWriteMap<>();
 	private final String content;
 	
 	public PerThreadGameScript(String content) {

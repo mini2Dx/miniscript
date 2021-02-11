@@ -23,19 +23,22 @@
  */
 package org.mini2Dx.miniscript.core;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Scanner;
-import java.util.Set;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-
+import org.mini2Dx.lockprovider.Locks;
+import org.mini2Dx.lockprovider.jvm.JvmLocks;
 import org.mini2Dx.miniscript.core.exception.InsufficientCompilersException;
 import org.mini2Dx.miniscript.core.exception.NoSuchScriptException;
 import org.mini2Dx.miniscript.core.notification.ScriptNotification;
+import org.mini2Dx.miniscript.core.util.ReadWriteArrayQueue;
+import org.mini2Dx.miniscript.core.util.ReadWriteMap;
+import org.mini2Dx.miniscript.core.util.ReadWritePriorityQueue;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.*;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Provides scripting functionality to your game
@@ -48,13 +51,15 @@ public abstract class GameScriptingEngine implements Runnable {
 	 */
 	public static GameScriptingEngine MOST_RECENT_INSTANCE = null;
 
-	private final ScriptInvocationPool scriptInvocationPool = new ScriptInvocationPool();
-	private final Queue<ScriptInvocation> scriptInvocations = new PriorityBlockingQueue<>(64);
-	final Queue<ScriptNotification> scriptNotifications = new ConcurrentLinkedQueue<ScriptNotification>();
+	public static Locks LOCK_PROVIDER = new JvmLocks();
 
-	final Queue<GameFuture> queuedFutures = new ConcurrentLinkedQueue<GameFuture>();
-	final Map<Integer, GameFuture> runningFutures = new ConcurrentHashMap<Integer, GameFuture>();
-	private final Map<Integer, ScriptExecutionTask<?>> runningScripts = new ConcurrentHashMap<Integer, ScriptExecutionTask<?>>();
+	private final ScriptInvocationPool scriptInvocationPool = new ScriptInvocationPool();
+	private final Queue<ScriptInvocation> scriptInvocations = new ReadWritePriorityQueue<>();
+	final Queue<ScriptNotification> scriptNotifications = new ReadWriteArrayQueue<ScriptNotification>();
+
+	final Queue<GameFuture> queuedFutures = new ReadWriteArrayQueue<>();
+	final Map<Integer, GameFuture> runningFutures = new ReadWriteMap<Integer, GameFuture>();
+	private final Map<Integer, ScriptExecutionTask<?>> runningScripts = new ReadWriteMap<Integer, ScriptExecutionTask<?>>();
 	private final Set<Integer> completedFutures = new HashSet<Integer>();
 	private final Set<Integer> completedScripts = new HashSet<Integer>();
 

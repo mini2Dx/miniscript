@@ -1,3 +1,6 @@
+[1.6.0]
+- Use mini2Dx-lock-provider for concurrency
+
 [1.5.3]
 - Add wfc() alias for waitForCompletion()
 

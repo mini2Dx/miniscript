@@ -23,14 +23,14 @@
  */
 package org.mini2Dx.miniscript.core;
 
-import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import org.mini2Dx.miniscript.core.exception.ScriptSkippedException;
 import org.mini2Dx.miniscript.core.notification.ScriptExceptionNotification;
 import org.mini2Dx.miniscript.core.notification.ScriptSkippedNotification;
 import org.mini2Dx.miniscript.core.notification.ScriptSuccessNotification;
+
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Executes a script
