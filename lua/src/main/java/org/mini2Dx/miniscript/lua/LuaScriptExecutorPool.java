@@ -23,20 +23,11 @@
  */
 package org.mini2Dx.miniscript.lua;
 
-import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
-
 import org.luaj.vm2.Globals;
 import org.luaj.vm2.LoadState;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.compiler.LuaC;
-import org.luaj.vm2.lib.Bit32Lib;
-import org.luaj.vm2.lib.DebugLib;
-import org.luaj.vm2.lib.PackageLib;
-import org.luaj.vm2.lib.StringLib;
-import org.luaj.vm2.lib.TableLib;
+import org.luaj.vm2.lib.*;
 import org.luaj.vm2.lib.jse.JseBaseLib;
 import org.luaj.vm2.lib.jse.JseMathLib;
 import org.luaj.vm2.lib.jse.JsePlatform;
@@ -44,14 +35,19 @@ import org.mini2Dx.miniscript.core.*;
 import org.mini2Dx.miniscript.core.exception.InsufficientCompilersException;
 import org.mini2Dx.miniscript.core.exception.NoSuchScriptException;
 import org.mini2Dx.miniscript.core.exception.ScriptExecutorUnavailableException;
+import org.mini2Dx.miniscript.core.util.ReadWriteBlockingQueue;
+import org.mini2Dx.miniscript.core.util.ReadWriteMap;
+
+import java.util.Map;
+import java.util.concurrent.BlockingQueue;
 
 /**
  * An implementation of {@link ScriptExecutorPool} for Lua scripts
  */
 public class LuaScriptExecutorPool implements ScriptExecutorPool<LuaValue> {
-	private final Map<Long, Globals> threadCompilers = new ConcurrentHashMap<Long, Globals>();
-	private final Map<Integer, GameScript<LuaValue>> scripts = new ConcurrentHashMap<Integer, GameScript<LuaValue>>();
-	private final Map<String, Integer> filepathToScriptId = new ConcurrentHashMap<String, Integer>();
+	private final Map<Long, Globals> threadCompilers = new ReadWriteMap<>();
+	private final Map<Integer, GameScript<LuaValue>> scripts = new ReadWriteMap<Integer, GameScript<LuaValue>>();
+	private final Map<String, Integer> filepathToScriptId = new ReadWriteMap<String, Integer>();
 	private final BlockingQueue<ScriptExecutor<LuaValue>> executors;
 	private final GameScriptingEngine gameScriptingEngine;
 	private final ClasspathScriptProvider classpathScriptProvider;
@@ -82,7 +78,7 @@ public class LuaScriptExecutorPool implements ScriptExecutorPool<LuaValue> {
 			}
 		}
 		
-		executors = new ArrayBlockingQueue<ScriptExecutor<LuaValue>>(poolSize);
+		executors = new ReadWriteBlockingQueue<>(poolSize);
 
 		for (int i = 0; i < poolSize; i++) {
 			executors.offer(new LuaScriptExecutor(this));

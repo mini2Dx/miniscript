@@ -27,6 +27,7 @@ subprojects {
 	apply plugin: "java"
 	apply plugin: "signing"
 	apply plugin: "maven"
+	apply plugin: "checkstyle"
 	
 	group = 'org.mini2Dx'
 	version = '1.6.0'
@@ -57,6 +58,12 @@ subprojects {
 	
 	configurations {
 		testOutput.extendsFrom (testCompile)
+	}
+
+	checkstyle {
+		configFile = project.file("${rootProject.projectDir}/checkstyle.xml")
+		toolVersion = "8.12"
+		sourceSets = [project.sourceSets.main]
 	}
 	
 	task javadocJar(type: Jar) {

@@ -23,24 +23,23 @@
  */
 package org.mini2Dx.miniscript.groovy;
 
-import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
-
+import groovy.lang.Script;
 import org.mini2Dx.miniscript.core.*;
 import org.mini2Dx.miniscript.core.exception.InsufficientCompilersException;
 import org.mini2Dx.miniscript.core.exception.NoSuchScriptException;
 import org.mini2Dx.miniscript.core.exception.ScriptExecutorUnavailableException;
+import org.mini2Dx.miniscript.core.util.ReadWriteBlockingQueue;
+import org.mini2Dx.miniscript.core.util.ReadWriteMap;
 
-import groovy.lang.Script;
+import java.util.Map;
+import java.util.concurrent.BlockingQueue;
 
 /**
  * An implementation of {@link ScriptExecutorPool} for Groovy-based scripts
  */
 public class GroovyScriptExecutorPool implements ScriptExecutorPool<Script> {
-	private final Map<Integer, GameScript<Script>> scripts = new ConcurrentHashMap<Integer, GameScript<Script>>();
-	private final Map<String, Integer> filepathToScriptId = new ConcurrentHashMap<String, Integer>();
+	private final Map<Integer, GameScript<Script>> scripts = new ReadWriteMap<>();
+	private final Map<String, Integer> filepathToScriptId = new ReadWriteMap<String, Integer>();
 	private final BlockingQueue<ScriptExecutor<Script>> executors;
 	private final GameScriptingEngine gameScriptingEngine;
 	private final SynchronizedObjectPool<GroovyEmbeddedScriptInvoker> embeddedScriptInvokerPool = new SynchronizedObjectPool<GroovyEmbeddedScriptInvoker>() {
@@ -52,7 +51,7 @@ public class GroovyScriptExecutorPool implements ScriptExecutorPool<Script> {
 
 	public GroovyScriptExecutorPool(GameScriptingEngine gameScriptingEngine, int poolSize) {
 		this.gameScriptingEngine = gameScriptingEngine;
-		executors = new ArrayBlockingQueue<ScriptExecutor<Script>>(poolSize);
+		executors = new ReadWriteBlockingQueue<>(poolSize);
 
 		for (int i = 0; i < poolSize; i++) {
 			executors.offer(new GroovyScriptExecutor(this));

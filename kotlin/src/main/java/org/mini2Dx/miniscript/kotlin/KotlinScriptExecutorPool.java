@@ -24,22 +24,22 @@
 package org.mini2Dx.miniscript.kotlin;
 
 import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.jetbrains.kotlin.cli.common.repl.KotlinJsr223JvmScriptEngineBase.CompiledKotlinScript;
 import org.mini2Dx.miniscript.core.*;
 import org.mini2Dx.miniscript.core.exception.InsufficientCompilersException;
 import org.mini2Dx.miniscript.core.exception.NoSuchScriptException;
 import org.mini2Dx.miniscript.core.exception.ScriptExecutorUnavailableException;
+import org.mini2Dx.miniscript.core.util.ReadWriteBlockingQueue;
+import org.mini2Dx.miniscript.core.util.ReadWriteMap;
 
 /**
  * An implementation of {@link ScriptExecutorPool} for Kotlin-based scripts
  */
 public class KotlinScriptExecutorPool implements ScriptExecutorPool<CompiledKotlinScript> {
-	private final Map<Integer, GameScript<CompiledKotlinScript>> scripts = new ConcurrentHashMap<Integer, GameScript<CompiledKotlinScript>>();
-	private final Map<String, Integer> filepathToScriptId = new ConcurrentHashMap<String, Integer>();
+	private final Map<Integer, GameScript<CompiledKotlinScript>> scripts = new ReadWriteMap<>();
+	private final Map<String, Integer> filepathToScriptId = new ReadWriteMap<String, Integer>();
 	private final BlockingQueue<ScriptExecutor<CompiledKotlinScript>> executors;
 	private final GameScriptingEngine gameScriptingEngine;
 	private final SynchronizedObjectPool<KotlinEmbeddedScriptInvoker> embeddedScriptInvokerPool = new SynchronizedObjectPool<KotlinEmbeddedScriptInvoker>() {
@@ -51,7 +51,7 @@ public class KotlinScriptExecutorPool implements ScriptExecutorPool<CompiledKotl
 
 	public KotlinScriptExecutorPool(GameScriptingEngine gameScriptingEngine, int poolSize) {
 		this.gameScriptingEngine = gameScriptingEngine;
-		executors = new ArrayBlockingQueue<ScriptExecutor<CompiledKotlinScript>>(poolSize);
+		executors = new ReadWriteBlockingQueue<>(poolSize);
 
 		for (int i = 0; i < poolSize; i++) {
 			executors.offer(new KotlinScriptExecutor(this));

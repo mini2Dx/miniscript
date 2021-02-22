@@ -27,19 +27,19 @@ import org.mini2Dx.miniscript.core.*;
 import org.mini2Dx.miniscript.core.exception.InsufficientCompilersException;
 import org.mini2Dx.miniscript.core.exception.NoSuchScriptException;
 import org.mini2Dx.miniscript.core.exception.ScriptExecutorUnavailableException;
+import org.mini2Dx.miniscript.core.util.ReadWriteBlockingQueue;
+import org.mini2Dx.miniscript.core.util.ReadWriteMap;
 import org.python.core.PyCode;
 
 import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * An implementation of {@link ScriptExecutorPool} for Python-based scripts
  */
 public class PythonScriptExecutorPool implements ScriptExecutorPool<PyCode> {
-	private final Map<Integer, GameScript<PyCode>> scripts = new ConcurrentHashMap<Integer, GameScript<PyCode>>();
-	private final Map<String, Integer> filepathToScriptId = new ConcurrentHashMap<String, Integer>();
+	private final Map<Integer, GameScript<PyCode>> scripts = new ReadWriteMap<>();
+	private final Map<String, Integer> filepathToScriptId = new ReadWriteMap<>();
 	private final BlockingQueue<ScriptExecutor<PyCode>> executors;
 	private final GameScriptingEngine gameScriptingEngine;
 	private final SynchronizedObjectPool<PythonEmbeddedScriptInvoker> embeddedScriptInvokerPool = new SynchronizedObjectPool<PythonEmbeddedScriptInvoker>() {
@@ -51,7 +51,7 @@ public class PythonScriptExecutorPool implements ScriptExecutorPool<PyCode> {
 
 	public PythonScriptExecutorPool(GameScriptingEngine gameScriptingEngine, int poolSize) {
 		this.gameScriptingEngine = gameScriptingEngine;
-		executors = new ArrayBlockingQueue<ScriptExecutor<PyCode>>(poolSize);
+		executors = new ReadWriteBlockingQueue<ScriptExecutor<PyCode>>(poolSize);
 
 		for (int i = 0; i < poolSize; i++) {
 			executors.offer(new PythonScriptExecutor(this));

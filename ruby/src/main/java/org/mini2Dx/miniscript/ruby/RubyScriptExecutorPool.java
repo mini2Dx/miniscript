@@ -23,11 +23,6 @@
  */
 package org.mini2Dx.miniscript.ruby;
 
-import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
-
 import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.embed.EmbedEvalUnit;
 import org.jruby.embed.LocalContextScope;
@@ -37,14 +32,19 @@ import org.mini2Dx.miniscript.core.*;
 import org.mini2Dx.miniscript.core.exception.InsufficientCompilersException;
 import org.mini2Dx.miniscript.core.exception.NoSuchScriptException;
 import org.mini2Dx.miniscript.core.exception.ScriptExecutorUnavailableException;
+import org.mini2Dx.miniscript.core.util.ReadWriteBlockingQueue;
+import org.mini2Dx.miniscript.core.util.ReadWriteMap;
+
+import java.util.Map;
+import java.util.concurrent.BlockingQueue;
 
 /**
  * An implementation of {@link ScriptExecutorPool} for Ruby-based scripts
  */
 public class RubyScriptExecutorPool implements ScriptExecutorPool<EmbedEvalUnit> {
-	private final Map<Long, ScriptingContainer> threadCompilers = new ConcurrentHashMap<Long, ScriptingContainer>();
-	private final Map<Integer, PerThreadGameScript<EmbedEvalUnit>> scripts = new ConcurrentHashMap<Integer, PerThreadGameScript<EmbedEvalUnit>>();
-	private final Map<String, Integer> filepathToScriptId = new ConcurrentHashMap<String, Integer>();
+	private final Map<Long, ScriptingContainer> threadCompilers = new ReadWriteMap<>();
+	private final Map<Integer, PerThreadGameScript<EmbedEvalUnit>> scripts = new ReadWriteMap<>();
+	private final Map<String, Integer> filepathToScriptId = new ReadWriteMap<String, Integer>();
 	private final BlockingQueue<ScriptExecutor<EmbedEvalUnit>> executors;
 	private final GameScriptingEngine gameScriptingEngine;
 	private final SynchronizedObjectPool<RubyEmbeddedScriptInvoker> embeddedScriptInvokerPool = new SynchronizedObjectPool<RubyEmbeddedScriptInvoker>() {
@@ -56,7 +56,7 @@ public class RubyScriptExecutorPool implements ScriptExecutorPool<EmbedEvalUnit>
 
 	public RubyScriptExecutorPool(GameScriptingEngine gameScriptingEngine, int poolSize) {
 		this.gameScriptingEngine = gameScriptingEngine;
-		executors = new ArrayBlockingQueue<ScriptExecutor<EmbedEvalUnit>>(poolSize);
+		executors = new ReadWriteBlockingQueue<>(poolSize);
 
 		for (int i = 0; i < poolSize; i++) {
 			executors.offer(new RubyScriptExecutor(this));
