@@ -21,7 +21,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.mini2Dx.miniscript.core;
+package org.mini2Dx.miniscript.core.threadpool;
+
+import org.mini2Dx.miniscript.core.ThreadPoolProvider;
 
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;

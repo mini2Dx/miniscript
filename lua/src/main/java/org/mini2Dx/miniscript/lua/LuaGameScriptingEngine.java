@@ -26,6 +26,7 @@ package org.mini2Dx.miniscript.lua;
 import org.mini2Dx.miniscript.core.ClasspathScriptProvider;
 import org.mini2Dx.miniscript.core.GameScriptingEngine;
 import org.mini2Dx.miniscript.core.ScriptExecutorPool;
+import org.mini2Dx.miniscript.core.ThreadPoolProvider;
 
 /**
  * An implementation of {@link GameScriptingEngine} for Lua scripts
@@ -37,6 +38,10 @@ public class LuaGameScriptingEngine extends GameScriptingEngine {
 	 */
 	public LuaGameScriptingEngine() {
 		super();
+	}
+
+	public LuaGameScriptingEngine(ThreadPoolProvider threadPoolProvider) {
+		super(threadPoolProvider);
 	}
 
 	/**
@@ -51,8 +56,16 @@ public class LuaGameScriptingEngine extends GameScriptingEngine {
 		super(maxConcurrentScripts);
 	}
 
+	public LuaGameScriptingEngine(int maxConcurrentScripts, ThreadPoolProvider threadPoolProvider) {
+		super(maxConcurrentScripts, threadPoolProvider);
+	}
+
 	public LuaGameScriptingEngine(ClasspathScriptProvider classpathScriptProvider, int maxConcurrentScripts) {
 		super(classpathScriptProvider, maxConcurrentScripts);
+	}
+
+	public LuaGameScriptingEngine(ClasspathScriptProvider classpathScriptProvider, int maxConcurrentScripts, ThreadPoolProvider threadPoolProvider) {
+		super(classpathScriptProvider, maxConcurrentScripts, threadPoolProvider);
 	}
 
 	/**
@@ -66,8 +79,16 @@ public class LuaGameScriptingEngine extends GameScriptingEngine {
 		super(sandboxed);
 	}
 
+	public LuaGameScriptingEngine(boolean sandboxed, ThreadPoolProvider threadPoolProvider) {
+		super(threadPoolProvider, sandboxed);
+	}
+
 	public LuaGameScriptingEngine(ClasspathScriptProvider classpathScriptProvider, boolean sandboxed) {
 		super(classpathScriptProvider, sandboxed);
+	}
+
+	public LuaGameScriptingEngine(ClasspathScriptProvider classpathScriptProvider, ThreadPoolProvider threadPoolProvider, boolean sandboxed) {
+		super(classpathScriptProvider, threadPoolProvider, sandboxed);
 	}
 
 	/**
@@ -82,6 +103,10 @@ public class LuaGameScriptingEngine extends GameScriptingEngine {
 	 */
 	public LuaGameScriptingEngine(int maxConcurrentScripts, boolean sandboxed) {
 		super(maxConcurrentScripts, sandboxed);
+	}
+
+	public LuaGameScriptingEngine(int maxConcurrentScripts, ThreadPoolProvider threadPoolProvider, boolean sandboxed) {
+		super(maxConcurrentScripts, threadPoolProvider, sandboxed);
 	}
 
 	public LuaGameScriptingEngine(ClasspathScriptProvider classpathScriptProvider, int maxConcurrentScripts, boolean sandboxed) {

@@ -28,6 +28,7 @@ import org.mini2Dx.lockprovider.jvm.JvmLocks;
 import org.mini2Dx.miniscript.core.exception.InsufficientCompilersException;
 import org.mini2Dx.miniscript.core.exception.NoSuchScriptException;
 import org.mini2Dx.miniscript.core.notification.ScriptNotification;
+import org.mini2Dx.miniscript.core.threadpool.DefaultThreadPoolProvider;
 import org.mini2Dx.miniscript.core.util.ReadWriteArrayQueue;
 import org.mini2Dx.miniscript.core.util.ReadWriteMap;
 import org.mini2Dx.miniscript.core.util.ReadWritePriorityQueue;

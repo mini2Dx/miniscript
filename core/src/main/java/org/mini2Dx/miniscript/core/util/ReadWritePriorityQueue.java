@@ -25,9 +25,13 @@ package org.mini2Dx.miniscript.core.util;
 
 import java.util.PriorityQueue;
 
-public class ReadWritePriorityQueue<E> extends AbstractConcurrentQueue<E> {
+public class ReadWritePriorityQueue<E> extends AbstractConcurrentBlockingQueue<E> {
 
 	public ReadWritePriorityQueue() {
-		super(new PriorityQueue<>());
+		this(Integer.MAX_VALUE);
+	}
+
+	public ReadWritePriorityQueue(int maxCapacity) {
+		super(maxCapacity, new PriorityQueue<>());
 	}
 }
