@@ -1,3 +1,6 @@
+[1.6.1]
+- Fix executor pools not using base concurrency classes. Add checkstyle rules.
+
 [1.6.0]
 - Use mini2Dx-lock-provider for concurrency
 
