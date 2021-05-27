@@ -33,7 +33,7 @@ public class ScheduledTask implements Comparable<ScheduledTask> {
 	private ScheduledTaskFuture future;
 
 	private Runnable runnable;
-	private long scheduledStartTime;
+	private long scheduledStartTimeNanos;
 
 	private long repeatInterval;
 	private TimeUnit repeatUnit;
@@ -48,7 +48,7 @@ public class ScheduledTask implements Comparable<ScheduledTask> {
 		disposed = true;
 
 		runnable = null;
-		scheduledStartTime = 0L;
+		scheduledStartTimeNanos = 0L;
 
 		repeatUnit = null;
 		repeatInterval = 0L;
@@ -58,25 +58,25 @@ public class ScheduledTask implements Comparable<ScheduledTask> {
 		POOL.add(this);
 	}
 
-	public static ScheduledTask allocate(Runnable runnable, long scheduledStartTime) {
+	public static ScheduledTask allocate(Runnable runnable, long scheduledStartTimeNanos) {
 		ScheduledTask task = POOL.poll();
 		if(task == null) {
 			task = new ScheduledTask();
 		}
 		task.disposed = false;
 		task.runnable = runnable;
-		task.scheduledStartTime = scheduledStartTime;
+		task.scheduledStartTimeNanos = scheduledStartTimeNanos;
 		return task;
 	}
 
-	public static ScheduledTask allocate(Runnable runnable, long scheduledStartTime, long repeatInterval, TimeUnit repeatUnit) {
+	public static ScheduledTask allocate(Runnable runnable, long scheduledStartTimeNanos, long repeatInterval, TimeUnit repeatUnit) {
 		ScheduledTask task = POOL.poll();
 		if(task == null) {
 			task = new ScheduledTask();
 		}
 		task.disposed = false;
 		task.runnable = runnable;
-		task.scheduledStartTime = scheduledStartTime;
+		task.scheduledStartTimeNanos = scheduledStartTimeNanos;
 		task.repeatUnit = repeatUnit;
 		task.repeatInterval = repeatInterval;
 		return task;
@@ -86,8 +86,8 @@ public class ScheduledTask implements Comparable<ScheduledTask> {
 		return runnable;
 	}
 
-	public long getScheduledStartTime() {
-		return scheduledStartTime;
+	public long getScheduledStartTimeNanos() {
+		return scheduledStartTimeNanos;
 	}
 
 	public boolean isRepeating() {
@@ -104,7 +104,7 @@ public class ScheduledTask implements Comparable<ScheduledTask> {
 
 	@Override
 	public int compareTo(ScheduledTask o) {
-		return Long.compare(scheduledStartTime, o.scheduledStartTime);
+		return Long.compare(scheduledStartTimeNanos, o.scheduledStartTimeNanos);
 	}
 
 	public ScheduledTaskFuture getFuture() {

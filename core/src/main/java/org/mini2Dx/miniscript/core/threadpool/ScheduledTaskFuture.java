@@ -120,7 +120,7 @@ public class ScheduledTaskFuture<T extends Object> implements ScheduledFuture<T>
 
 	public void setScheduledTask(ScheduledTask scheduledTask) {
 		this.scheduledTask = scheduledTask;
-		this.scheduledTimeNanos = scheduledTask.getScheduledStartTime();
+		this.scheduledTimeNanos = scheduledTask.getScheduledStartTimeNanos();
 	}
 
 	public void setExecutingThread(Thread thread) {

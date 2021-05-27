@@ -11,7 +11,8 @@ import java.util.concurrent.TimeUnit;
 
 public class AbstractConcurrentBlockingQueue<E> extends AbstractConcurrentQueue<E> implements BlockingQueue<E> {
 	private final int maxCapacity;
-	private final Object monitor = new Object();
+	protected final Object waitingForItemsMonitor = new Object();
+	protected final Object waitingForRemovalMonitor = new Object();
 
 	public AbstractConcurrentBlockingQueue(int maxCapacity, Queue<E> internalQueue) {
 		super(internalQueue);
@@ -21,8 +22,8 @@ public class AbstractConcurrentBlockingQueue<E> extends AbstractConcurrentQueue<
 	@Override
 	public E poll() {
 		final E result = super.poll();
-		synchronized(monitor) {
-			monitor.notifyAll();
+		synchronized(waitingForRemovalMonitor) {
+			waitingForRemovalMonitor.notify();
 		}
 		return result;
 	}
@@ -30,8 +31,8 @@ public class AbstractConcurrentBlockingQueue<E> extends AbstractConcurrentQueue<
 	@Override
 	public boolean remove(Object o) {
 		final boolean result = super.remove(o);
-		synchronized(monitor) {
-			monitor.notifyAll();
+		synchronized(waitingForRemovalMonitor) {
+			waitingForRemovalMonitor.notify();
 		}
 		return result;
 	}
@@ -39,8 +40,8 @@ public class AbstractConcurrentBlockingQueue<E> extends AbstractConcurrentQueue<
 	@Override
 	public boolean removeAll(Collection<?> c) {
 		final boolean result = super.removeAll(c);
-		synchronized(monitor) {
-			monitor.notifyAll();
+		synchronized(waitingForRemovalMonitor) {
+			waitingForRemovalMonitor.notify();
 		}
 		return result;
 	}
@@ -48,8 +49,8 @@ public class AbstractConcurrentBlockingQueue<E> extends AbstractConcurrentQueue<
 	@Override
 	public boolean offer(E e) {
 		final boolean result = super.offer(e);
-		synchronized(monitor) {
-			monitor.notifyAll();
+		synchronized(waitingForItemsMonitor) {
+			waitingForItemsMonitor.notify();
 		}
 		return result;
 	}
@@ -57,8 +58,8 @@ public class AbstractConcurrentBlockingQueue<E> extends AbstractConcurrentQueue<
 	@Override
 	public boolean add(E e) {
 		final boolean result = super.add(e);
-		synchronized(monitor) {
-			monitor.notifyAll();
+		synchronized(waitingForItemsMonitor) {
+			waitingForItemsMonitor.notify();
 		}
 		return result;
 	}
@@ -66,8 +67,8 @@ public class AbstractConcurrentBlockingQueue<E> extends AbstractConcurrentQueue<
 	@Override
 	public boolean addAll(Collection<? extends E> c) {
 		final boolean result = super.addAll(c);
-		synchronized(monitor) {
-			monitor.notifyAll();
+		synchronized(waitingForItemsMonitor) {
+			waitingForItemsMonitor.notify();
 		}
 		return result;
 	}
@@ -77,16 +78,16 @@ public class AbstractConcurrentBlockingQueue<E> extends AbstractConcurrentQueue<
 		lock.lockWrite();
 		while(size() >= maxCapacity) {
 			lock.unlockWrite();
-			synchronized(monitor) {
-				monitor.wait();
+			synchronized(waitingForRemovalMonitor) {
+				waitingForRemovalMonitor.wait();
 			}
 			lock.lockWrite();
 		}
 		super.offer(e);
 		lock.unlockWrite();
 
-		synchronized(monitor) {
-			monitor.notifyAll();
+		synchronized(waitingForItemsMonitor) {
+			waitingForItemsMonitor.notify();
 		}
 	}
 
@@ -95,8 +96,8 @@ public class AbstractConcurrentBlockingQueue<E> extends AbstractConcurrentQueue<
 		lock.lockWrite();
 		if(size() >= maxCapacity) {
 			lock.unlockWrite();
-			synchronized(monitor) {
-				monitor.wait(0L, (int) unit.toNanos(timeout));
+			synchronized(waitingForRemovalMonitor) {
+				waitingForRemovalMonitor.wait(0L, (int) unit.toNanos(timeout));
 			}
 			lock.lockWrite();
 		}
@@ -114,16 +115,16 @@ public class AbstractConcurrentBlockingQueue<E> extends AbstractConcurrentQueue<
 		lock.lockWrite();
 		while (isEmpty()) {
 			lock.unlockWrite();
-			synchronized(monitor) {
-				monitor.wait();
+			synchronized(waitingForItemsMonitor) {
+				waitingForItemsMonitor.wait();
 			}
 			lock.lockWrite();
 		}
 		final E result = super.remove();
 		lock.unlockWrite();
 
-		synchronized(monitor) {
-			monitor.notifyAll();
+		synchronized(waitingForRemovalMonitor) {
+			waitingForRemovalMonitor.notify();
 		}
 		return result;
 	}
@@ -133,13 +134,17 @@ public class AbstractConcurrentBlockingQueue<E> extends AbstractConcurrentQueue<
 		lock.lockWrite();
 		if (isEmpty()) {
 			lock.unlockWrite();
-			synchronized(monitor) {
-				monitor.wait(0L, (int) unit.toNanos(timeout));
+			synchronized(waitingForItemsMonitor) {
+				waitingForItemsMonitor.wait(0L, (int) unit.toNanos(timeout));
 			}
 			lock.lockWrite();
 		}
 		final E result = poll();
 		lock.unlockWrite();
+
+		synchronized(waitingForRemovalMonitor) {
+			waitingForRemovalMonitor.notify();
+		}
 		return result;
 	}
 
