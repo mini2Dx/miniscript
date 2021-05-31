@@ -10,12 +10,12 @@ import org.mini2Dx.miniscript.core.threadpool.ScheduledTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class DelayedReadWritePriorityQueueTest {
+public class ScheduledTaskQueueTest {
 	private static final int MAX_CAPACITY = 5;
 
 	@Test
 	public void testDelay() {
-		final DelayedReadWritePriorityQueue queue = new DelayedReadWritePriorityQueue(MAX_CAPACITY);
+		final ScheduledTaskQueue queue = new ScheduledTaskQueue(MAX_CAPACITY);
 		final long expectedStartTimeNanos = System.nanoTime() + TimeUnit.SECONDS.toNanos(2L);
 		queue.offer(ScheduledTask.allocate(() -> {
 
@@ -41,7 +41,7 @@ public class DelayedReadWritePriorityQueueTest {
 
 	@Test
 	public void testDelayWithEmptyQueue() {
-		final DelayedReadWritePriorityQueue queue = new DelayedReadWritePriorityQueue(MAX_CAPACITY);
+		final ScheduledTaskQueue queue = new ScheduledTaskQueue(MAX_CAPACITY);
 		final long expectedStartTimeNanos = System.nanoTime() + TimeUnit.SECONDS.toNanos(1L);
 
 		final AtomicLong result = new AtomicLong(-1L);

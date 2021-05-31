@@ -32,6 +32,7 @@ import org.mini2Dx.miniscript.core.threadpool.DefaultThreadPoolProvider;
 import org.mini2Dx.miniscript.core.util.ReadWriteArrayQueue;
 import org.mini2Dx.miniscript.core.util.ReadWriteMap;
 import org.mini2Dx.miniscript.core.util.ReadWritePriorityQueue;
+import org.mini2Dx.miniscript.core.util.ScriptInvocationQueue;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -55,8 +56,9 @@ public abstract class GameScriptingEngine implements Runnable {
 	public static Locks LOCK_PROVIDER = new JvmLocks();
 
 	private final ScriptInvocationPool scriptInvocationPool = new ScriptInvocationPool();
-	private final Queue<ScriptInvocation> scriptInvocations = new ReadWritePriorityQueue<>();
+	private final ScriptInvocationQueue scriptInvocationQueue = new ScriptInvocationQueue();
 	final Queue<ScriptNotification> scriptNotifications = new ReadWriteArrayQueue<ScriptNotification>();
+	private final InteractiveScriptListener interactiveScriptListener;
 
 	final Queue<GameFuture> queuedFutures = new ReadWriteArrayQueue<>();
 	final Map<Integer, GameFuture> runningFutures = new ReadWriteMap<Integer, GameFuture>();
@@ -112,6 +114,7 @@ public abstract class GameScriptingEngine implements Runnable {
 	 */
 	public GameScriptingEngine(ClasspathScriptProvider classpathScriptProvider, int maxConcurrentScripts) {
 		super();
+		interactiveScriptListener = new InteractiveScriptListener(this, scriptInvocationQueue);
 		scriptExecutorPool = createScriptExecutorPool(classpathScriptProvider, maxConcurrentScripts, isSandboxingSupported());
 
 		threadPoolProvider = new DefaultThreadPoolProvider(maxConcurrentScripts + 1);
@@ -120,6 +123,7 @@ public abstract class GameScriptingEngine implements Runnable {
 
 	public GameScriptingEngine(ClasspathScriptProvider classpathScriptProvider, int maxConcurrentScripts, ThreadPoolProvider threadPoolProvider) {
 		super();
+		interactiveScriptListener = new InteractiveScriptListener(this, scriptInvocationQueue);
 		scriptExecutorPool = createScriptExecutorPool(classpathScriptProvider, maxConcurrentScripts, isSandboxingSupported());
 
 		this.threadPoolProvider = threadPoolProvider;
@@ -184,6 +188,7 @@ public abstract class GameScriptingEngine implements Runnable {
 	public GameScriptingEngine(ClasspathScriptProvider classpathScriptProvider,
 	                           int maxConcurrentScripts, boolean sandboxed) {
 		super();
+		interactiveScriptListener = new InteractiveScriptListener(this, scriptInvocationQueue);
 		scriptExecutorPool = createScriptExecutorPool(classpathScriptProvider, maxConcurrentScripts, sandboxed);
 
 		threadPoolProvider = new DefaultThreadPoolProvider(maxConcurrentScripts + 1);
@@ -193,6 +198,7 @@ public abstract class GameScriptingEngine implements Runnable {
 	public GameScriptingEngine(ClasspathScriptProvider classpathScriptProvider,
 	                           int maxConcurrentScripts, ThreadPoolProvider threadPoolProvider, boolean sandboxed) {
 		super();
+		interactiveScriptListener = new InteractiveScriptListener(this, scriptInvocationQueue);
 		scriptExecutorPool = createScriptExecutorPool(classpathScriptProvider, maxConcurrentScripts, sandboxed);
 
 		this.threadPoolProvider = threadPoolProvider;
@@ -298,20 +304,31 @@ public abstract class GameScriptingEngine implements Runnable {
 		long startTime = System.currentTimeMillis();
 		ScriptInvocation scriptInvocation = null;
 		try {
-			while ((scriptInvocation = scriptInvocations.poll()) != null) {
+			while ((scriptInvocation = scriptInvocationQueue.poll()) != null) {
 				if(shuttingDown.get()) {
 					continue;
 				}
+				final ScriptInvocationListener invocationListener;
+				if(scriptInvocation.isInteractive()) {
+					interactiveScriptListener.track(scriptInvocation.getScriptId(), scriptInvocation.getInvocationListener());
+					invocationListener = interactiveScriptListener;
+				} else {
+					invocationListener = scriptInvocation.getInvocationListener();
+				}
+
 				ScriptExecutionTask<?> executionTask = scriptExecutorPool.execute(scriptInvocation.getScriptId(),
-						scriptInvocation.getScriptBindings(), scriptInvocation.getInvocationListener());
+						scriptInvocation.getScriptBindings(), invocationListener);
 				Future<?> taskFuture = threadPoolProvider.submit(executionTask);
 				executionTask.setTaskFuture(taskFuture);
 				runningScripts.put(executionTask.getTaskId(), executionTask);
 				scriptInvocation.release();
 			}
 		} catch (NoSuchScriptException e) {
-			if(scriptInvocation != null && scriptInvocation.getInvocationListener() != null) {
-				scriptInvocation.getInvocationListener().onScriptException(scriptInvocation.getScriptId(), e);
+			if(scriptInvocation != null) {
+				if(scriptInvocation.getInvocationListener() != null) {
+					scriptInvocation.getInvocationListener().onScriptException(scriptInvocation.getScriptId(), e);
+				}
+				interactiveScriptListener.onScriptException(scriptInvocation.getScriptId(), e);
 			} else {
 				e.printStackTrace();
 			}
@@ -532,7 +549,23 @@ public abstract class GameScriptingEngine implements Runnable {
 	 */
 	public void invokeCompiledScript(int scriptId, ScriptBindings scriptBindings,
 									 ScriptInvocationListener invocationListener, int priority) {
-		scriptInvocations.offer(scriptInvocationPool.allocate(scriptId, scriptBindings, invocationListener, priority));
+		invokeCompiledScript(scriptId, scriptBindings, invocationListener, priority, false);
+	}
+
+	/**
+	 * Queues a compiled script for execution in the engine's thread pool
+	 *
+	 * @param scriptId
+	 *            The id of the script to run
+	 * @param scriptBindings
+	 *            The variable bindings for the script
+	 * @param invocationListener
+	 *            A {@link ScriptInvocationListener} to list for invocation results
+	 * @param priority The script execution priority (higher value = higher priority)
+	 */
+	public void invokeCompiledScript(int scriptId, ScriptBindings scriptBindings,
+	                                 ScriptInvocationListener invocationListener, int priority, boolean interactive) {
+		scriptInvocationQueue.offer(scriptInvocationPool.allocate(scriptId, scriptBindings, invocationListener, priority, interactive));
 	}
 
 	/**

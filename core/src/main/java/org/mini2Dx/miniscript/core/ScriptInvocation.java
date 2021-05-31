@@ -33,6 +33,7 @@ public class ScriptInvocation implements Comparable<ScriptInvocation> {
 	private ScriptBindings scriptBindings;
 	private ScriptInvocationListener invocationListener;
 	private int priority;
+	private boolean interactive;
 	
 	ScriptInvocation(ScriptInvocationPool invocationPool) {
 		this.invocationPool = invocationPool;
@@ -70,8 +71,17 @@ public class ScriptInvocation implements Comparable<ScriptInvocation> {
 		this.priority = priority;
 	}
 
+	public boolean isInteractive() {
+		return interactive;
+	}
+
+	public void setInteractive(boolean interactive) {
+		this.interactive = interactive;
+	}
+
 	public void release() {
 		priority = 0;
+		interactive = false;
 		invocationPool.release(this);
 	}
 

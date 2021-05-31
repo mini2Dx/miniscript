@@ -24,7 +24,7 @@
 package org.mini2Dx.miniscript.core.threadpool;
 
 import org.mini2Dx.miniscript.core.ThreadPoolProvider;
-import org.mini2Dx.miniscript.core.util.DelayedReadWritePriorityQueue;
+import org.mini2Dx.miniscript.core.util.ScheduledTaskQueue;
 
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledFuture;
@@ -38,7 +38,7 @@ public class KavaThreadPoolProvider implements Runnable, ThreadPoolProvider {
 	private final AtomicBoolean running = new AtomicBoolean(true);
 	private final Thread [] threads;
 
-	private final DelayedReadWritePriorityQueue scheduledTaskQueue = new DelayedReadWritePriorityQueue();
+	private final ScheduledTaskQueue scheduledTaskQueue = new ScheduledTaskQueue();
 
 	public KavaThreadPoolProvider() {
 		this(Runtime.getRuntime().availableProcessors() + 1);

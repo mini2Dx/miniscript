@@ -7,13 +7,13 @@ import org.mini2Dx.miniscript.core.threadpool.ScheduledTask;
 
 import java.util.concurrent.TimeUnit;
 
-public class DelayedReadWritePriorityQueue extends ReadWritePriorityQueue<ScheduledTask> {
+public class ScheduledTaskQueue extends ReadWritePriorityQueue<ScheduledTask> {
 
-	public DelayedReadWritePriorityQueue() {
+	public ScheduledTaskQueue() {
 		this(Integer.MAX_VALUE);
 	}
 
-	public DelayedReadWritePriorityQueue(int maxCapacity) {
+	public ScheduledTaskQueue(int maxCapacity) {
 		super(maxCapacity);
 	}
 
