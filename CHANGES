@@ -1,3 +1,6 @@
+[1.7.0]
+- Prevent game future execution by checking for script skipping in constructor
+
 [1.6.3]
 - Fix KavaThreadPoolProvider not scheduling future tasks correctly. Reduce CPU usage.
 

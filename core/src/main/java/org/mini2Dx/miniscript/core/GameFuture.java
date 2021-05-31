@@ -59,6 +59,11 @@ public abstract class GameFuture {
 		}
 		futureId = ID_GENERATOR.incrementAndGet();
 		gameScriptingEngine.submitGameFuture(this);
+
+		if (Thread.interrupted()) {
+			scriptSkipped.set(true);
+			throw new ScriptSkippedException();
+		}
 	}
 
 	/**
@@ -126,6 +131,10 @@ public abstract class GameFuture {
 				return;
 			}
 			if (scriptSkipped.get()) {
+				throw new ScriptSkippedException();
+			}
+			if (Thread.interrupted()) {
+				scriptSkipped.set(true);
 				throw new ScriptSkippedException();
 			}
 			try {
