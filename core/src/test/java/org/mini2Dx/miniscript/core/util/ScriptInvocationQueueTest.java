@@ -25,7 +25,6 @@ public class ScriptInvocationQueueTest implements ScriptInvocationListener {
 			invocationQueue.offer(createInvocation(i % 10 == 0 ? INTERACTIVE_SCRIPT_ID : i, i % 10 == 0));
 		}
 
-
 		final CountDownLatch countDownLatch = new CountDownLatch(threads.length);
 
 		for(int i = 0; i < threads.length; i++) {
@@ -57,6 +56,12 @@ public class ScriptInvocationQueueTest implements ScriptInvocationListener {
 		while(!invocationQueue.isEmpty()) {
 			Assert.assertTrue(interactiveScriptsRunning.get() <= 1);
 		}
+		for(int i = 0; i < threads.length; i++) {
+			try {
+				threads[i].join();
+			} catch (InterruptedException e) {}
+		}
+		Assert.assertFalse(invocationQueue.isInteractiveScriptRunnung());
 	}
 
 	private ScriptInvocation createInvocation(int scriptId, boolean interactive) {

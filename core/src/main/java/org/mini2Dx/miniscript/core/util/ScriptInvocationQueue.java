@@ -47,7 +47,9 @@ public class ScriptInvocationQueue extends AbstractConcurrentBlockingQueue<Scrip
 		interactiveScriptLock.lockWrite();
 		if(!interactiveScriptRunning.get()) {
 			result = interactiveScriptQueue.poll();
-			interactiveScriptRunning.set(true);
+			if(result != null) {
+				interactiveScriptRunning.set(true);
+			}
 		}
 		interactiveScriptLock.unlockWrite();
 		return result;
@@ -81,5 +83,9 @@ public class ScriptInvocationQueue extends AbstractConcurrentBlockingQueue<Scrip
 		interactiveScriptLock.lockWrite();
 		interactiveScriptRunning.set(false);
 		interactiveScriptLock.unlockWrite();
+	}
+
+	public boolean isInteractiveScriptRunnung() {
+		return interactiveScriptRunning.get();
 	}
 }

@@ -1,3 +1,6 @@
+[1.7.1]
+- Fix interactive script running flag always being set to true. Update unit test.
+
 [1.7.0]
 - Prevent game future execution by checking for script skipping in constructor
 - Allow scripts to be marked as player interactive to restrict one interactive script running at a time
