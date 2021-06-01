@@ -41,6 +41,7 @@ public class ScriptInvocationQueueTest implements ScriptInvocationListener {
 					}
 					if(scriptInvocation.isInteractive()) {
 						interactiveScriptsRunning.incrementAndGet();
+						Assert.assertTrue(invocationQueue.isInteractiveScriptRunnung());
 					}
 					try {
 						Thread.sleep(10);

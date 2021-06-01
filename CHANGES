@@ -1,5 +1,6 @@
 [1.7.1]
 - Fix interactive script running flag always being set to true. Update unit test.
+- Reduce lock contention when interactive script queue is empty
 
 [1.7.0]
 - Prevent game future execution by checking for script skipping in constructor

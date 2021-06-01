@@ -37,9 +37,13 @@ public class ScriptInvocationQueue extends AbstractConcurrentBlockingQueue<Scrip
 	private ScriptInvocation pollInteractiveScript() {
 		interactiveScriptLock.lockRead();
 		boolean scriptRunning = interactiveScriptRunning.get();
+		boolean queueEmpty = interactiveScriptQueue.isEmpty();
 		interactiveScriptLock.unlockRead();
 
 		if(scriptRunning) {
+			return null;
+		}
+		if(queueEmpty) {
 			return null;
 		}
 
