@@ -1,3 +1,9 @@
+[1.8.0]
+- Add methods to get total scripts queued for execution
+- Compiled script invocations now return a task ID so that individual invokes can be cancelled
+- Add methods to cancel queued scripts by script or task ID
+- Add methods to skip running scripts by task ID
+
 [1.7.1]
 - Fix interactive script running flag always being set to true. Update unit test.
 - Reduce lock contention when interactive script queue is empty

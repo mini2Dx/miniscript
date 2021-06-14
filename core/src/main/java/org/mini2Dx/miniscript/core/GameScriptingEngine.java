@@ -55,6 +55,8 @@ public abstract class GameScriptingEngine implements Runnable {
 
 	public static Locks LOCK_PROVIDER = new JvmLocks();
 
+	private static final int DEFAULT_MAX_CONCURRENT_SCRIPTS = 2;
+
 	private final ScriptInvocationPool scriptInvocationPool = new ScriptInvocationPool();
 	private final ScriptInvocationQueue scriptInvocationQueue = new ScriptInvocationQueue();
 	final Queue<ScriptNotification> scriptNotifications = new ReadWriteArrayQueue<ScriptNotification>();
@@ -66,6 +68,8 @@ public abstract class GameScriptingEngine implements Runnable {
 	private final Set<Integer> completedFutures = new HashSet<Integer>();
 	private final Set<Integer> completedScripts = new HashSet<Integer>();
 
+	private final List<String> tmpRunningScripts = new ArrayList<>();
+
 	private final ThreadPoolProvider threadPoolProvider;
 	private final ScriptExecutorPool<?> scriptExecutorPool;
 
@@ -76,15 +80,15 @@ public abstract class GameScriptingEngine implements Runnable {
 
 	/**
 	 * Constructs a scripting engine backed by a thread pool with the maximum
-	 * amount of concurrent scripts set to the amount of processors + 1.
+	 * amount of concurrent scripts set to 2.
 	 * Sandboxing is enabled if the implementation supports it.
 	 */
 	public GameScriptingEngine() {
-		this(Runtime.getRuntime().availableProcessors() + 1);
+		this(DEFAULT_MAX_CONCURRENT_SCRIPTS);
 	}
 
 	public GameScriptingEngine(ThreadPoolProvider threadPoolProvider) {
-		this(Runtime.getRuntime().availableProcessors() + 1, threadPoolProvider);
+		this(DEFAULT_MAX_CONCURRENT_SCRIPTS, threadPoolProvider);
 	}
 
 	/**
@@ -118,7 +122,7 @@ public abstract class GameScriptingEngine implements Runnable {
 		scriptExecutorPool = createScriptExecutorPool(classpathScriptProvider, maxConcurrentScripts, isSandboxingSupported());
 
 		threadPoolProvider = new DefaultThreadPoolProvider(maxConcurrentScripts + 1);
-		init();
+		init(maxConcurrentScripts);
 	}
 
 	public GameScriptingEngine(ClasspathScriptProvider classpathScriptProvider, int maxConcurrentScripts, ThreadPoolProvider threadPoolProvider) {
@@ -127,7 +131,7 @@ public abstract class GameScriptingEngine implements Runnable {
 		scriptExecutorPool = createScriptExecutorPool(classpathScriptProvider, maxConcurrentScripts, isSandboxingSupported());
 
 		this.threadPoolProvider = threadPoolProvider;
-		init();
+		init(maxConcurrentScripts);
 	}
 
 	/**
@@ -147,16 +151,16 @@ public abstract class GameScriptingEngine implements Runnable {
 
 	/**
 	 * Constructs a scripting engine backed by a thread pool with the maximum
-	 * amount of concurrent scripts set to the amount of processors + 1.
+	 * amount of concurrent scripts set to 2.
 	 * @param classpathScriptProvider The auto-generated {@link ClasspathScriptProvider} for the game
 	 * @param sandboxed True if script sandboxing should be enabled
 	 */
 	public GameScriptingEngine(ClasspathScriptProvider classpathScriptProvider, boolean sandboxed) {
-		this(classpathScriptProvider,Runtime.getRuntime().availableProcessors() + 1, sandboxed);
+		this(classpathScriptProvider,DEFAULT_MAX_CONCURRENT_SCRIPTS, sandboxed);
 	}
 
 	public GameScriptingEngine(ClasspathScriptProvider classpathScriptProvider, ThreadPoolProvider threadPoolProvider, boolean sandboxed) {
-		this(classpathScriptProvider,Runtime.getRuntime().availableProcessors() + 1, threadPoolProvider, sandboxed);
+		this(classpathScriptProvider,DEFAULT_MAX_CONCURRENT_SCRIPTS, threadPoolProvider, sandboxed);
 	}
 
 	/**
@@ -192,7 +196,7 @@ public abstract class GameScriptingEngine implements Runnable {
 		scriptExecutorPool = createScriptExecutorPool(classpathScriptProvider, maxConcurrentScripts, sandboxed);
 
 		threadPoolProvider = new DefaultThreadPoolProvider(maxConcurrentScripts + 1);
-		init();
+		init(maxConcurrentScripts);
 	}
 
 	public GameScriptingEngine(ClasspathScriptProvider classpathScriptProvider,
@@ -202,11 +206,13 @@ public abstract class GameScriptingEngine implements Runnable {
 		scriptExecutorPool = createScriptExecutorPool(classpathScriptProvider, maxConcurrentScripts, sandboxed);
 
 		this.threadPoolProvider = threadPoolProvider;
-		init();
+		init(maxConcurrentScripts);
 	}
 
-	private void init() {
-		threadPoolProvider.submit(this);
+	private void init(int maxConcurrentScripts) {
+		for(int i = 0; i < maxConcurrentScripts; i++) {
+			threadPoolProvider.submit(this);
+		}
 		threadPoolProvider.scheduleAtFixedRate(new Runnable() {
 			@Override
 			public void run() {
@@ -240,6 +246,13 @@ public abstract class GameScriptingEngine implements Runnable {
 			cleanupTask = null;
 		}
 		threadPoolProvider.shutdown(interruptScripts);
+
+		if(!interruptScripts) {
+			return;
+		}
+		cancelAllQueuedScripts();
+		skipAllQueuedGameFutures();
+		skipAllScripts();
 	}
 
 	/**
@@ -316,8 +329,8 @@ public abstract class GameScriptingEngine implements Runnable {
 					invocationListener = scriptInvocation.getInvocationListener();
 				}
 
-				ScriptExecutionTask<?> executionTask = scriptExecutorPool.execute(scriptInvocation.getScriptId(),
-						scriptInvocation.getScriptBindings(), invocationListener);
+				ScriptExecutionTask<?> executionTask = scriptExecutorPool.execute(scriptInvocation.getTaskId(),
+						scriptInvocation.getScriptId(), scriptInvocation.getScriptBindings(), invocationListener);
 				Future<?> taskFuture = threadPoolProvider.submit(executionTask);
 				executionTask.setTaskFuture(taskFuture);
 				runningScripts.put(executionTask.getTaskId(), executionTask);
@@ -382,7 +395,7 @@ public abstract class GameScriptingEngine implements Runnable {
 	}
 
 	/**
-	 * Skips a currently running script
+	 * Skips all running instances of a script
 	 * 
 	 * @param scriptId
 	 *            The ID of the script to skip
@@ -394,6 +407,24 @@ public abstract class GameScriptingEngine implements Runnable {
 				continue;
 			}
 			if (scriptExecutionTask.getScriptId() != scriptId) {
+				continue;
+			}
+			scriptExecutionTask.skipScript();
+		}
+	}
+
+	/**
+	 * Skips a specific running instance of a script
+	 *
+	 * @param taskId The ID of the task to skip
+	 */
+	public void skipScriptByTaskId(int taskId) {
+		for(int otherTaskId : runningScripts.keySet()) {
+			if(taskId != otherTaskId) {
+				continue;
+			}
+			ScriptExecutionTask<?> scriptExecutionTask = runningScripts.get(taskId);
+			if (scriptExecutionTask == null) {
 				continue;
 			}
 			scriptExecutionTask.skipScript();
@@ -434,6 +465,61 @@ public abstract class GameScriptingEngine implements Runnable {
 	 */
 	public void cancelAllQueuedGameFutures() {
 		queuedFutures.clear();
+	}
+
+	/**
+	 * Removes all currently queued {@link GameFuture}s without sending skipFuture event
+	 */
+	public void cancelAllQueuedScripts() {
+		scriptInvocationQueue.clear();
+	}
+
+	/**
+	 * Removes all currently queued scripts with a given script ID
+	 */
+	public void cancelQueuedScript(int scriptId) {
+		scriptInvocationQueue.cancelByScriptId(scriptId);
+	}
+
+	/**
+	 * Removes a specific queued script by its task ID
+	 */
+	public void cancelQueuedScriptByTaskId(int taskId) {
+		scriptInvocationQueue.cancelByTaskId(taskId);
+	}
+
+	/**
+	 * Cancels a queued script or skips it if it is currently running
+	 * @param scriptId The script ID
+	 */
+	public void skipOrCancelScript(int scriptId) {
+		try {
+			skipScript(scriptId);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		try {
+			cancelQueuedScript(scriptId);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Cancels a specific invocation of a script by its task ID, or skips it if it is currently running
+	 * @param taskId The task ID
+	 */
+	public void skipOrCancelScriptByTaskId(int taskId) {
+		try {
+			skipScriptByTaskId(taskId);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		try {
+			cancelQueuedScriptByTaskId(taskId);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	/**
@@ -515,9 +601,10 @@ public abstract class GameScriptingEngine implements Runnable {
 	 *            The id of the script to run
 	 * @param scriptBindings
 	 *            The variable bindings for the script
+	 * @return The unique task ID for this invocation
 	 */
-	public void invokeCompiledScript(int scriptId, ScriptBindings scriptBindings) {
-		invokeCompiledScript(scriptId, scriptBindings, null);
+	public int invokeCompiledScript(int scriptId, ScriptBindings scriptBindings) {
+		return invokeCompiledScript(scriptId, scriptBindings, null);
 	}
 
 	/**
@@ -530,10 +617,11 @@ public abstract class GameScriptingEngine implements Runnable {
 	 * @param invocationListener
 	 *            A {@link ScriptInvocationListener} to list for invocation
 	 *            results
+	 * @return The unique task ID for this invocation
 	 */
-	public void invokeCompiledScript(int scriptId, ScriptBindings scriptBindings,
+	public int invokeCompiledScript(int scriptId, ScriptBindings scriptBindings,
 			ScriptInvocationListener invocationListener) {
-		invokeCompiledScript(scriptId, scriptBindings, invocationListener, 0);
+		return invokeCompiledScript(scriptId, scriptBindings, invocationListener, 0);
 	}
 
 	/**
@@ -546,10 +634,11 @@ public abstract class GameScriptingEngine implements Runnable {
 	 * @param invocationListener
 	 *            A {@link ScriptInvocationListener} to list for invocation results
 	 * @param priority The script execution priority (higher value = higher priority)
+	 * @return The unique task ID for this invocation
 	 */
-	public void invokeCompiledScript(int scriptId, ScriptBindings scriptBindings,
+	public int invokeCompiledScript(int scriptId, ScriptBindings scriptBindings,
 									 ScriptInvocationListener invocationListener, int priority) {
-		invokeCompiledScript(scriptId, scriptBindings, invocationListener, priority, false);
+		return invokeCompiledScript(scriptId, scriptBindings, invocationListener, priority, false);
 	}
 
 	/**
@@ -562,10 +651,13 @@ public abstract class GameScriptingEngine implements Runnable {
 	 * @param invocationListener
 	 *            A {@link ScriptInvocationListener} to list for invocation results
 	 * @param priority The script execution priority (higher value = higher priority)
+	 * @return The unique task ID for this invocation
 	 */
-	public void invokeCompiledScript(int scriptId, ScriptBindings scriptBindings,
+	public int invokeCompiledScript(int scriptId, ScriptBindings scriptBindings,
 	                                 ScriptInvocationListener invocationListener, int priority, boolean interactive) {
-		scriptInvocationQueue.offer(scriptInvocationPool.allocate(scriptId, scriptBindings, invocationListener, priority, interactive));
+		final ScriptInvocation invocation = scriptInvocationPool.allocate(scriptId, scriptBindings, invocationListener, priority, interactive);
+		scriptInvocationQueue.offer(invocation);
+		return invocation.getTaskId();
 	}
 
 	/**
@@ -631,14 +723,13 @@ public abstract class GameScriptingEngine implements Runnable {
 	 * 
 	 * Warning: If no {@link ScriptExecutor}s are available this will block
 	 * until one is available
-	 * 
-	 * @param scriptId
-	 *            The script id
-	 * @param scriptBindings
-	 *            The variable bindings for the script
+	 *
+	 * @param taskId The task id
+	 * @param scriptId The script id
+	 * @param scriptBindings The variable bindings for the script
 	 */
-	public void invokeCompiledScriptSync(int scriptId, ScriptBindings scriptBindings) {
-		invokeCompiledScriptSync(scriptId, scriptBindings, null);
+	public void invokeCompiledScriptSync(int taskId, int scriptId, ScriptBindings scriptBindings) {
+		invokeCompiledScriptSync(taskId, scriptId, scriptBindings, null);
 	}
 
 	/**
@@ -646,20 +737,61 @@ public abstract class GameScriptingEngine implements Runnable {
 	 * 
 	 * Warning: If no {@link ScriptExecutor}s are available this will block
 	 * until one is available
-	 * 
-	 * @param scriptId
-	 *            The script id
-	 * @param scriptBindings
-	 *            The variable bindings for the script
+	 *
+	 * @param taskId The task id
+	 * @param scriptId The script id
+	 * @param scriptBindings The variable bindings for the script
 	 * @param invocationListener
 	 *            A {@link ScriptInvocationListener} to list for invocation
 	 *            results
 	 */
-	public void invokeCompiledScriptSync(int scriptId, ScriptBindings scriptBindings,
+	public void invokeCompiledScriptSync(int taskId, int scriptId, ScriptBindings scriptBindings,
 										 ScriptInvocationListener invocationListener) {
-		ScriptExecutionTask<?> executionTask = scriptExecutorPool.execute(scriptId, scriptBindings, invocationListener);
+		ScriptExecutionTask<?> executionTask = scriptExecutorPool.execute(taskId, scriptId, scriptBindings, invocationListener);
 		runningScripts.put(executionTask.getTaskId(), executionTask);
 		executionTask.run();
+	}
+
+	/**
+	 * Returns the list of currently running scripts.
+	 *
+	 * Note: This list reference is re-used on every invocation of this method
+	 * @return An empty list if nothing running
+	 */
+	public List<String> getRunningScripts() {
+		tmpRunningScripts.clear();
+		for(int taskId : runningScripts.keySet()) {
+			ScriptExecutionTask<?> scriptExecutionTask = runningScripts.get(taskId);
+			if (scriptExecutionTask == null) {
+				continue;
+			}
+			tmpRunningScripts.add(scriptExecutorPool.getCompiledScriptPath(scriptExecutionTask.getScriptId()));
+		}
+		return tmpRunningScripts;
+	}
+
+	/**
+	 * Returns the total scripts (interactive + non-interactive) queued
+	 * @return 0 if none
+	 */
+	public int getTotalScriptsQueued() {
+		return scriptInvocationQueue.size();
+	}
+
+	/**
+	 * Returns the total interactive scripts queued
+	 * @return 0 if none
+	 */
+	public int getTotalInteractiveScriptsQueued() {
+		return scriptInvocationQueue.getInteractiveScriptsQueued();
+	}
+
+	/**
+	 * Returns the total non-interactive scripts queued
+	 * @return 0 if none
+	 */
+	public int getTotalNonInteractiveScriptsQueued() {
+		return scriptInvocationQueue.getNonInteractiveScriptsQueued();
 	}
 
 	void submitGameFuture(GameFuture gameFuture) {

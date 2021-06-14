@@ -48,6 +48,7 @@ public class LuaScriptExecutorPool implements ScriptExecutorPool<LuaValue> {
 	private final Map<Long, Globals> threadCompilers = new ReadWriteMap<>();
 	private final Map<Integer, GameScript<LuaValue>> scripts = new ReadWriteMap<Integer, GameScript<LuaValue>>();
 	private final Map<String, Integer> filepathToScriptId = new ReadWriteMap<String, Integer>();
+	private final Map<Integer, String> scriptIdToFilepath = new ReadWriteMap<Integer, String>();
 	private final BlockingQueue<ScriptExecutor<LuaValue>> executors;
 	private final GameScriptingEngine gameScriptingEngine;
 	private final ClasspathScriptProvider classpathScriptProvider;
@@ -74,7 +75,9 @@ public class LuaScriptExecutorPool implements ScriptExecutorPool<LuaValue> {
 				PerThreadClasspathGameScript testing = new PerThreadClasspathGameScript<LuaValue>((LuaValue) classpathScriptProvider.getClasspathScript(i));
 				int key = testing.getId();
 				scripts.put(key, testing);
-				filepathToScriptId.put(classpathScriptProvider.getFilepath(key), key);
+				String filepath = classpathScriptProvider.getFilepath(key);
+				filepathToScriptId.put(filepath, key);
+				scriptIdToFilepath.put(key, filepath);
 			}
 		}
 		
@@ -105,15 +108,21 @@ public class LuaScriptExecutorPool implements ScriptExecutorPool<LuaValue> {
 	}
 
 	@Override
+	public String getCompiledScriptPath(int scriptId) {
+		return scriptIdToFilepath.get(scriptId);
+	}
+
+	@Override
 	public int preCompileScript(String filepath, String scriptContent) throws InsufficientCompilersException {
 		PerThreadGameScript<LuaValue> script = new PerThreadGameScript<LuaValue>(scriptContent);
 		scripts.put(script.getId(), script);
 		filepathToScriptId.put(filepath, script.getId());
+		scriptIdToFilepath.put(script.getId(), filepath);
 		return script.getId();
 	}
 
 	@Override
-	public ScriptExecutionTask<?> execute(int scriptId, ScriptBindings scriptBindings,
+	public ScriptExecutionTask<?> execute(int taskId, int scriptId, ScriptBindings scriptBindings,
 			ScriptInvocationListener invocationListener) {
 		ScriptExecutor<LuaValue> executor = allocateExecutor();
 		if (executor == null) {
@@ -123,7 +132,8 @@ public class LuaScriptExecutorPool implements ScriptExecutorPool<LuaValue> {
 			executor.release();
 			throw new NoSuchScriptException(scriptId);
 		}
-		return new ScriptExecutionTask<LuaValue>(gameScriptingEngine, executor, scriptId, scripts.get(scriptId),
+		return new ScriptExecutionTask<LuaValue>(taskId,
+				gameScriptingEngine, executor, scriptId, scripts.get(scriptId),
 				scriptBindings, invocationListener);
 	}
 

@@ -40,7 +40,7 @@ public class PythonGameScriptingEngineTest extends AbstractGameScriptingEngineTe
 
 	@Override
 	protected GameScriptingEngine createScriptingEngine() {
-		return new PythonGameScriptingEngine();
+		return new PythonGameScriptingEngine(1);
 	}
 
 	@Override

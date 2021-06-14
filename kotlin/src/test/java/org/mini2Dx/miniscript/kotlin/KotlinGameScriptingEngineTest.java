@@ -41,7 +41,7 @@ public class KotlinGameScriptingEngineTest extends AbstractGameScriptingEngineTe
 
 	@Override
 	protected GameScriptingEngine createScriptingEngine() {
-		return new org.mini2Dx.miniscript.kotlin.KotlinGameScriptingEngine();
+		return new org.mini2Dx.miniscript.kotlin.KotlinGameScriptingEngine(1);
 	}
 
 	@Override

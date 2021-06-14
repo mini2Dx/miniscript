@@ -34,9 +34,11 @@ public interface ScriptExecutorPool<S> {
 
 	public int getCompiledScriptId(String filepath);
 
+	public String getCompiledScriptPath(int scriptId);
+
 	public int preCompileScript(String filepath, String scriptContent) throws InsufficientCompilersException;
 
-	public ScriptExecutionTask<?> execute(int scriptId, ScriptBindings scriptBindings,
+	public ScriptExecutionTask<?> execute(int taskId, int scriptId, ScriptBindings scriptBindings,
 			ScriptInvocationListener invocationListener);
 
 	public void release(ScriptExecutor<S> executor);

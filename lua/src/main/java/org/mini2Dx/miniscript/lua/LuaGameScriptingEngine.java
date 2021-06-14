@@ -34,7 +34,7 @@ import org.mini2Dx.miniscript.core.ThreadPoolProvider;
 public class LuaGameScriptingEngine extends GameScriptingEngine {
 	/**
 	 * Constructs a scripting engine backed by a thread pool with the maximum
-	 * amount of concurrent scripts set to the amount of processors + 1;
+	 * amount of concurrent scripts set to 2;
 	 */
 	public LuaGameScriptingEngine() {
 		super();
@@ -70,7 +70,7 @@ public class LuaGameScriptingEngine extends GameScriptingEngine {
 
 	/**
 	 * Constructs a scripting engine backed by a thread pool with the maximum
-	 * amount of concurrent scripts set to the amount of processors + 1.
+	 * amount of concurrent scripts set to 2.
 	 * 
 	 * @param sandboxed
 	 *            True if script sandboxing should be enabled

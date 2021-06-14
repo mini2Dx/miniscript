@@ -11,6 +11,7 @@ import org.mini2Dx.miniscript.core.ScriptInvocation;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Predicate;
 
 public class ScriptInvocationQueue extends AbstractConcurrentBlockingQueue<ScriptInvocation> {
 	private final AtomicBoolean interactiveScriptRunning = new AtomicBoolean(false);
@@ -83,6 +84,32 @@ public class ScriptInvocationQueue extends AbstractConcurrentBlockingQueue<Scrip
 		return size() == 0;
 	}
 
+	@Override
+	public void clear() {
+		interactiveScriptLock.lockWrite();
+		interactiveScriptQueue.clear();
+		interactiveScriptLock.unlockWrite();
+		super.clear();
+	}
+
+	public void cancelByScriptId(int scriptId) {
+		interactiveScriptQueue.removeIf(new Predicate<ScriptInvocation>() {
+			@Override
+			public boolean test(ScriptInvocation scriptInvocation) {
+				return scriptInvocation.getScriptId() == scriptId;
+			}
+		});
+	}
+
+	public void cancelByTaskId(int taskId) {
+		interactiveScriptQueue.removeIf(new Predicate<ScriptInvocation>() {
+			@Override
+			public boolean test(ScriptInvocation scriptInvocation) {
+				return scriptInvocation.getTaskId() == taskId;
+			}
+		});
+	}
+
 	public void clearInteractiveScriptStatus() {
 		interactiveScriptLock.lockWrite();
 		interactiveScriptRunning.set(false);
@@ -91,5 +118,16 @@ public class ScriptInvocationQueue extends AbstractConcurrentBlockingQueue<Scrip
 
 	public boolean isInteractiveScriptRunnung() {
 		return interactiveScriptRunning.get();
+	}
+
+	public int getInteractiveScriptsQueued() {
+		interactiveScriptLock.lockRead();
+		final int result = interactiveScriptQueue.size();
+		interactiveScriptLock.unlockRead();
+		return result;
+	}
+
+	public int getNonInteractiveScriptsQueued() {
+		return super.size();
 	}
 }

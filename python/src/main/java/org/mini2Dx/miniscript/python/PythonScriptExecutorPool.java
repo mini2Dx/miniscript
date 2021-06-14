@@ -40,6 +40,7 @@ import java.util.concurrent.BlockingQueue;
 public class PythonScriptExecutorPool implements ScriptExecutorPool<PyCode> {
 	private final Map<Integer, GameScript<PyCode>> scripts = new ReadWriteMap<>();
 	private final Map<String, Integer> filepathToScriptId = new ReadWriteMap<>();
+	private final Map<Integer, String> scriptIdToFilepath = new ReadWriteMap<Integer, String>();
 	private final BlockingQueue<ScriptExecutor<PyCode>> executors;
 	private final GameScriptingEngine gameScriptingEngine;
 	private final SynchronizedObjectPool<PythonEmbeddedScriptInvoker> embeddedScriptInvokerPool = new SynchronizedObjectPool<PythonEmbeddedScriptInvoker>() {
@@ -64,6 +65,11 @@ public class PythonScriptExecutorPool implements ScriptExecutorPool<PyCode> {
 	}
 
 	@Override
+	public String getCompiledScriptPath(int scriptId) {
+		return scriptIdToFilepath.get(scriptId);
+	}
+
+	@Override
 	public int preCompileScript(String filepath, String scriptContent) throws InsufficientCompilersException {
 		ScriptExecutor<PyCode> executor = executors.poll();
 		if (executor == null) {
@@ -73,11 +79,12 @@ public class PythonScriptExecutorPool implements ScriptExecutorPool<PyCode> {
 		executor.release();
 		scripts.put(script.getId(), script);
 		filepathToScriptId.put(filepath, script.getId());
+		scriptIdToFilepath.put(script.getId(), filepath);
 		return script.getId();
 	}
 
 	@Override
-	public ScriptExecutionTask<?> execute(int scriptId, ScriptBindings scriptBindings,
+	public ScriptExecutionTask<?> execute(int taskId, int scriptId, ScriptBindings scriptBindings,
 			ScriptInvocationListener invocationListener) {
 		ScriptExecutor<PyCode> executor = allocateExecutor();
 		if (executor == null) {
@@ -87,8 +94,8 @@ public class PythonScriptExecutorPool implements ScriptExecutorPool<PyCode> {
 			executor.release();
 			throw new NoSuchScriptException(scriptId);
 		}
-		return new ScriptExecutionTask<PyCode>(gameScriptingEngine, executor, scriptId, scripts.get(scriptId), scriptBindings,
-				invocationListener);
+		return new ScriptExecutionTask<PyCode>(taskId, gameScriptingEngine, executor, scriptId,
+				scripts.get(scriptId), scriptBindings, invocationListener);
 	}
 
 	@Override

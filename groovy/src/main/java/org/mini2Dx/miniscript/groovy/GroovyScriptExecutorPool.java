@@ -40,6 +40,7 @@ import java.util.concurrent.BlockingQueue;
 public class GroovyScriptExecutorPool implements ScriptExecutorPool<Script> {
 	private final Map<Integer, GameScript<Script>> scripts = new ReadWriteMap<>();
 	private final Map<String, Integer> filepathToScriptId = new ReadWriteMap<String, Integer>();
+	private final Map<Integer, String> scriptIdToFilepath = new ReadWriteMap<Integer, String>();
 	private final BlockingQueue<ScriptExecutor<Script>> executors;
 	private final GameScriptingEngine gameScriptingEngine;
 	private final SynchronizedObjectPool<GroovyEmbeddedScriptInvoker> embeddedScriptInvokerPool = new SynchronizedObjectPool<GroovyEmbeddedScriptInvoker>() {
@@ -73,6 +74,11 @@ public class GroovyScriptExecutorPool implements ScriptExecutorPool<Script> {
 	}
 
 	@Override
+	public String getCompiledScriptPath(int scriptId) {
+		return scriptIdToFilepath.get(scriptId);
+	}
+
+	@Override
 	public int preCompileScript(String filepath, String scriptContent) throws InsufficientCompilersException {
 		ScriptExecutor<Script> executor = executors.poll();
 		if (executor == null) {
@@ -82,11 +88,12 @@ public class GroovyScriptExecutorPool implements ScriptExecutorPool<Script> {
 		executor.release();
 		scripts.put(script.getId(), script);
 		filepathToScriptId.put(filepath, script.getId());
+		scriptIdToFilepath.put(script.getId(), filepath);
 		return script.getId();
 	}
 
 	@Override
-	public ScriptExecutionTask<?> execute(int scriptId, ScriptBindings scriptBindings,
+	public ScriptExecutionTask<?> execute(int taskId, int scriptId, ScriptBindings scriptBindings,
 			ScriptInvocationListener invocationListener) {
 		ScriptExecutor<Script> executor = allocateExecutor();
 		if (executor == null) {
@@ -96,8 +103,8 @@ public class GroovyScriptExecutorPool implements ScriptExecutorPool<Script> {
 			executor.release();
 			throw new NoSuchScriptException(scriptId);
 		}
-		return new ScriptExecutionTask<Script>(gameScriptingEngine, executor, scriptId, scripts.get(scriptId), scriptBindings,
-				invocationListener);
+		return new ScriptExecutionTask<Script>(taskId, gameScriptingEngine, executor, scriptId,
+				scripts.get(scriptId), scriptBindings, invocationListener);
 	}
 
 	private ScriptExecutor<Script> allocateExecutor() {

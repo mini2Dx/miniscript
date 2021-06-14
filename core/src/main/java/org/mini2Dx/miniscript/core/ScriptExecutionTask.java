@@ -30,14 +30,11 @@ import org.mini2Dx.miniscript.core.notification.ScriptSuccessNotification;
 
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Executes a script
  */
 public class ScriptExecutionTask<S> implements Runnable {
-	private static final AtomicInteger ID_GENERATOR = new AtomicInteger(0);
-
 	private final int taskId;
 	private final int scriptId;
 	private final GameScriptingEngine scriptingEngine;
@@ -49,16 +46,15 @@ public class ScriptExecutionTask<S> implements Runnable {
 	private final AtomicBoolean completed = new AtomicBoolean(false);
 	private Future<?> taskFuture;
 
-	public ScriptExecutionTask(GameScriptingEngine gameScriptingEngine, ScriptExecutor<S> executor,
-			int scriptId, GameScript<S> script, ScriptBindings scriptBindings, ScriptInvocationListener scriptInvocationListener) {
+	public ScriptExecutionTask(int taskId, GameScriptingEngine gameScriptingEngine, ScriptExecutor<S> executor,
+							   int scriptId, GameScript<S> script, ScriptBindings scriptBindings, ScriptInvocationListener scriptInvocationListener) {
+		this.taskId = taskId;
 		this.scriptingEngine = gameScriptingEngine;
 		this.executor = executor;
 		this.scriptId = scriptId;
 		this.script = script;
 		this.scriptBindings = scriptBindings;
 		this.scriptInvocationListener = scriptInvocationListener;
-
-		taskId = ID_GENERATOR.incrementAndGet();
 	}
 
 	@Override

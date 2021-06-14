@@ -28,7 +28,8 @@ package org.mini2Dx.miniscript.core;
  */
 public class ScriptInvocation implements Comparable<ScriptInvocation> {
 	private final ScriptInvocationPool invocationPool;
-	
+
+	private int taskId;
 	private int scriptId;
 	private ScriptBindings scriptBindings;
 	private ScriptInvocationListener invocationListener;
@@ -79,7 +80,16 @@ public class ScriptInvocation implements Comparable<ScriptInvocation> {
 		this.interactive = interactive;
 	}
 
+	public int getTaskId() {
+		return taskId;
+	}
+
+	public void setTaskId(int taskId) {
+		this.taskId = taskId;
+	}
+
 	public void release() {
+		taskId = 0;
 		priority = 0;
 		interactive = false;
 		invocationPool.release(this);

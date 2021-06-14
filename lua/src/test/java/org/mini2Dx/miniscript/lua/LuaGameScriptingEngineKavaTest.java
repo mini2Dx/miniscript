@@ -30,6 +30,6 @@ public class LuaGameScriptingEngineKavaTest extends LuaGameScriptingEngineTest {
 
 	@Override
 	protected GameScriptingEngine createScriptingEngine() {
-		return new LuaGameScriptingEngine(false, new KavaThreadPoolProvider());
+		return new LuaGameScriptingEngine(1, new KavaThreadPoolProvider(), false);
 	}
 }

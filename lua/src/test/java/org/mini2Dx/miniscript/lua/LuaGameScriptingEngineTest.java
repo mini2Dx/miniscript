@@ -40,7 +40,7 @@ public class LuaGameScriptingEngineTest extends AbstractGameScriptingEngineTest 
 
 	@Override
 	protected GameScriptingEngine createScriptingEngine() {
-		return new LuaGameScriptingEngine(false);
+		return new LuaGameScriptingEngine(1,false);
 	}
 	
 	@Override

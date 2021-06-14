@@ -121,7 +121,7 @@ public abstract class AbstractGameScriptingEngineTest {
 	@Test
 	public void testInvokeScriptLocally() throws Exception {
 		final int expectedScriptId = scriptingEngine.compileScript(getDefaultScript());
-		scriptingEngine.invokeCompiledScriptSync(expectedScriptId, scriptBindings, new ScriptInvocationListener() {
+		scriptingEngine.invokeCompiledScriptSync(-1, expectedScriptId, scriptBindings, new ScriptInvocationListener() {
 			
 			@Override
 			public void onScriptSuccess(int scriptId, ScriptExecutionResult executionResult) {
@@ -333,8 +333,8 @@ public abstract class AbstractGameScriptingEngineTest {
 	@Test
 	public void testSkipScript() throws Exception {
 		final int expectedScriptId = scriptingEngine.compileScript(getWaitForCompletionScript());
-		scriptingEngine.invokeCompiledScript(expectedScriptId, scriptBindings);
-		scriptingEngine.invokeCompiledScript(expectedScriptId, scriptBindings, new ScriptInvocationListener() {
+		final int taskId1 = scriptingEngine.invokeCompiledScript(expectedScriptId, scriptBindings);
+		final int taskId2 = scriptingEngine.invokeCompiledScript(expectedScriptId, scriptBindings, new ScriptInvocationListener() {
 			
 			@Override
 			public void onScriptSuccess(int scriptId, ScriptExecutionResult executionResult) {
@@ -383,6 +383,68 @@ public abstract class AbstractGameScriptingEngineTest {
 		Assert.assertEquals(true, gameFuture.waitOccurred());
 		Assert.assertEquals(false, gameFuture.isFutureSkipped());
 		Assert.assertEquals(true, gameFuture.isScriptSkipped());
+		Assert.assertNotEquals(taskId1, taskId2);
+	}
+
+	@Test
+	public void testSkipScriptByTaskId() throws Exception {
+		final int expectedScriptId = scriptingEngine.compileScript(getWaitForCompletionScript());
+		final int taskId1 = scriptingEngine.invokeCompiledScript(expectedScriptId, scriptBindings);
+		final int taskId2 = scriptingEngine.invokeCompiledScript(expectedScriptId, scriptBindings, new ScriptInvocationListener() {
+
+			@Override
+			public void onScriptSuccess(int scriptId, ScriptExecutionResult executionResult) {
+				scriptResult.set(ScriptResult.SUCCESS);
+				scriptExecuted.set(true);
+			}
+
+			@Override
+			public void onScriptSkipped(int scriptId) {
+				scriptResult.set(ScriptResult.SKIPPED);
+				scriptExecuted.set(true);
+			}
+
+			@Override
+			public void onScriptException(int scriptId, Exception e) {
+				e.printStackTrace();
+				scriptResult.set(ScriptResult.EXCEPTION);
+				scriptExecuted.set(true);
+			}
+
+			@Override
+			public boolean callOnGameThread() {
+				return true;
+			}
+		});
+		final long timeout = 20000L;
+		long timer = 0L;
+		while(!scriptExecuted.get() && timer < timeout) {
+			long startTime = System.currentTimeMillis();
+			scriptingEngine.update(1f);
+			try {
+				Thread.sleep(1000);
+			} catch (Exception e) {}
+			timer += System.currentTimeMillis() - startTime;
+
+			if(timer >= 5000L) {
+				scriptingEngine.skipScriptByTaskId(taskId1);
+			}
+			if(timer >= 15000L) {
+				scriptingEngine.skipScriptByTaskId(taskId2);
+			}
+		}
+		if(timer >= timeout) {
+			Assert.fail("Timed out after " + timeout + "ms wait for script");
+		}
+
+		Assert.assertEquals(ScriptResult.SKIPPED, scriptResult.get());
+		Assert.assertEquals(true, gameFuture.isUpdated());
+		Assert.assertEquals(true, gameFuture.waitOccurred());
+		Assert.assertEquals(false, gameFuture.isFutureSkipped());
+		Assert.assertEquals(true, gameFuture.isScriptSkipped());
+
+		scriptingEngine.skipScriptByTaskId(taskId1);
+		Assert.assertNotEquals(taskId1, taskId2);
 	}
 
 	@Test

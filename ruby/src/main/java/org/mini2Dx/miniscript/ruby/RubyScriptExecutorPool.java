@@ -45,6 +45,7 @@ public class RubyScriptExecutorPool implements ScriptExecutorPool<EmbedEvalUnit>
 	private final Map<Long, ScriptingContainer> threadCompilers = new ReadWriteMap<>();
 	private final Map<Integer, PerThreadGameScript<EmbedEvalUnit>> scripts = new ReadWriteMap<>();
 	private final Map<String, Integer> filepathToScriptId = new ReadWriteMap<String, Integer>();
+	private final Map<Integer, String> scriptIdToFilepath = new ReadWriteMap<Integer, String>();
 	private final BlockingQueue<ScriptExecutor<EmbedEvalUnit>> executors;
 	private final GameScriptingEngine gameScriptingEngine;
 	private final SynchronizedObjectPool<RubyEmbeddedScriptInvoker> embeddedScriptInvokerPool = new SynchronizedObjectPool<RubyEmbeddedScriptInvoker>() {
@@ -69,15 +70,21 @@ public class RubyScriptExecutorPool implements ScriptExecutorPool<EmbedEvalUnit>
 	}
 
 	@Override
+	public String getCompiledScriptPath(int scriptId) {
+		return scriptIdToFilepath.get(scriptId);
+	}
+
+	@Override
 	public int preCompileScript(String filepath, String scriptContent) throws InsufficientCompilersException {
 		PerThreadGameScript<EmbedEvalUnit> script = new PerThreadGameScript<EmbedEvalUnit>(scriptContent);
 		scripts.put(script.getId(), script);
 		filepathToScriptId.put(filepath, script.getId());
+		scriptIdToFilepath.put(script.getId(), filepath);
 		return script.getId();
 	}
 
 	@Override
-	public ScriptExecutionTask<?> execute(int scriptId, ScriptBindings scriptBindings,
+	public ScriptExecutionTask<?> execute(int taskId, int scriptId, ScriptBindings scriptBindings,
 			ScriptInvocationListener invocationListener) {
 		ScriptExecutor<EmbedEvalUnit> executor = allocateExecutor();
 		if (executor == null) {
@@ -87,7 +94,7 @@ public class RubyScriptExecutorPool implements ScriptExecutorPool<EmbedEvalUnit>
 			executor.release();
 			throw new NoSuchScriptException(scriptId);
 		}
-		return new ScriptExecutionTask<EmbedEvalUnit>(gameScriptingEngine, executor, scriptId, scripts.get(scriptId),
+		return new ScriptExecutionTask<EmbedEvalUnit>(taskId, gameScriptingEngine, executor, scriptId, scripts.get(scriptId),
 				scriptBindings, invocationListener);
 	}
 

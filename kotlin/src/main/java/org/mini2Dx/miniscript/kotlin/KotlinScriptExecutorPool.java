@@ -40,6 +40,7 @@ import org.mini2Dx.miniscript.core.util.ReadWriteMap;
 public class KotlinScriptExecutorPool implements ScriptExecutorPool<CompiledKotlinScript> {
 	private final Map<Integer, GameScript<CompiledKotlinScript>> scripts = new ReadWriteMap<>();
 	private final Map<String, Integer> filepathToScriptId = new ReadWriteMap<String, Integer>();
+	private final Map<Integer, String> scriptIdToFilepath = new ReadWriteMap<Integer, String>();
 	private final BlockingQueue<ScriptExecutor<CompiledKotlinScript>> executors;
 	private final GameScriptingEngine gameScriptingEngine;
 	private final SynchronizedObjectPool<KotlinEmbeddedScriptInvoker> embeddedScriptInvokerPool = new SynchronizedObjectPool<KotlinEmbeddedScriptInvoker>() {
@@ -72,6 +73,11 @@ public class KotlinScriptExecutorPool implements ScriptExecutorPool<CompiledKotl
 		return filepathToScriptId.getOrDefault(filepath, -1);
 	}
 
+	@Override
+	public String getCompiledScriptPath(int scriptId) {
+		return scriptIdToFilepath.get(scriptId);
+	}
+
 	GameScript<CompiledKotlinScript> getScript(int id) {
 		return scripts.get(id);
 	}
@@ -86,11 +92,12 @@ public class KotlinScriptExecutorPool implements ScriptExecutorPool<CompiledKotl
 		executor.release();
 		scripts.put(script.getId(), script);
 		filepathToScriptId.put(filepath, script.getId());
+		scriptIdToFilepath.put(script.getId(), filepath);
 		return script.getId();
 	}
 
 	@Override
-	public ScriptExecutionTask<?> execute(int scriptId, ScriptBindings scriptBindings,
+	public ScriptExecutionTask<?> execute(int taskId, int scriptId, ScriptBindings scriptBindings,
 			ScriptInvocationListener invocationListener) {
 		ScriptExecutor<CompiledKotlinScript> executor = allocateExecutor();
 		if (executor == null) {
@@ -100,7 +107,7 @@ public class KotlinScriptExecutorPool implements ScriptExecutorPool<CompiledKotl
 			executor.release();
 			throw new NoSuchScriptException(scriptId);
 		}
-		return new ScriptExecutionTask<CompiledKotlinScript>(gameScriptingEngine, executor,
+		return new ScriptExecutionTask<CompiledKotlinScript>(taskId, gameScriptingEngine, executor,
 				scriptId, scripts.get(scriptId), scriptBindings, invocationListener);
 	}
 

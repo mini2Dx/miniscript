@@ -40,7 +40,7 @@ public class GroovyGameScriptingEngineTest extends AbstractGameScriptingEngineTe
 
 	@Override
 	protected GameScriptingEngine createScriptingEngine() {
-		return new GroovyGameScriptingEngine();
+		return new GroovyGameScriptingEngine(1);
 	}
 
 	@Override

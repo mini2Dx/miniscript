@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.mini2Dx.miniscript.core.GameScript;
 import org.mini2Dx.miniscript.core.GameScriptingEngine;
@@ -44,6 +45,7 @@ import org.mini2Dx.miniscript.core.exception.ScriptExecutorUnavailableException;
 public class DummyScriptExecutorPool implements ScriptExecutorPool<DummyScript> {
 	private final Map<Integer, GameScript<DummyScript>> scripts = new ConcurrentHashMap<Integer, GameScript<DummyScript>>();
 	private final Map<String, Integer> filepathsToScriptIds = new ConcurrentHashMap<String, Integer>();
+	private final Map<Integer, String> scriptIdsToFilepaths = new ConcurrentHashMap<Integer, String>();
 	private final BlockingQueue<ScriptExecutor<DummyScript>> executors;
 	private final GameScriptingEngine gameScriptingEngine;
 
@@ -66,6 +68,7 @@ public class DummyScriptExecutorPool implements ScriptExecutorPool<DummyScript> 
 		executor.release();
 		scripts.put(script.getId(), script);
 		filepathsToScriptIds.put(filepath, script.getId());
+		scriptIdsToFilepaths.put(script.getId(), filepath);
 		return script.getId();
 	}
 
@@ -75,13 +78,18 @@ public class DummyScriptExecutorPool implements ScriptExecutorPool<DummyScript> 
 	}
 
 	@Override
-	public ScriptExecutionTask<?> execute(int scriptId, ScriptBindings scriptBindings,
+	public String getCompiledScriptPath(int scriptId) {
+		return scriptIdsToFilepaths.get(scriptId);
+	}
+
+	@Override
+	public ScriptExecutionTask<?> execute(int taskId, int scriptId, ScriptBindings scriptBindings,
 			ScriptInvocationListener invocationListener) {
 		ScriptExecutor<DummyScript> executor = allocateExecutor();
 		if (executor == null) {
 			throw new ScriptExecutorUnavailableException(scriptId);
 		}
-		return new ScriptExecutionTask<DummyScript>(gameScriptingEngine, executor, scriptId,
+		return new ScriptExecutionTask<DummyScript>(taskId, gameScriptingEngine, executor, scriptId,
 				scripts.get(scriptId), scriptBindings, invocationListener);
 	}
 

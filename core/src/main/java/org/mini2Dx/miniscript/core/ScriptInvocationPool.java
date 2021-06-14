@@ -26,12 +26,14 @@ package org.mini2Dx.miniscript.core;
 import org.mini2Dx.miniscript.core.util.ReadWriteArrayQueue;
 
 import java.util.Queue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Provides a pool of reusable {@link ScriptInvocation} instances to reduce
  * object allocation
  */
 public class ScriptInvocationPool {
+	private final AtomicInteger ID_GENERATOR = new AtomicInteger(0);
 	private final Queue<ScriptInvocation> pool = new ReadWriteArrayQueue<>();
 	
 	/**
@@ -54,6 +56,7 @@ public class ScriptInvocationPool {
 		result.setInvocationListener(invocationListener);
 		result.setPriority(priority);
 		result.setInteractive(interactive);
+		result.setTaskId(ID_GENERATOR.incrementAndGet());
 		return result;
 	}
 	

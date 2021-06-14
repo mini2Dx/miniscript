@@ -41,7 +41,7 @@ public class RubyGameScriptingEngineTest extends AbstractGameScriptingEngineTest
 
 	@Override
 	protected GameScriptingEngine createScriptingEngine() {
-		return new RubyGameScriptingEngine();
+		return new RubyGameScriptingEngine(1);
 	}
 
 	@Override
