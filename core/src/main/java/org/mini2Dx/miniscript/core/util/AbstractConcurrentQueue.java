@@ -157,6 +157,13 @@ public abstract class AbstractConcurrentQueue<E> implements Queue<E> {
 
 	@Override
 	public E poll() {
+		lock.lockRead();
+		if(internalQueue.isEmpty()) {
+			lock.unlockRead();
+			return null;
+		}
+		lock.unlockRead();
+
 		lock.lockWrite();
 		try {
 			return internalQueue.poll();
@@ -177,6 +184,13 @@ public abstract class AbstractConcurrentQueue<E> implements Queue<E> {
 
 	@Override
 	public E peek() {
+		lock.lockRead();
+		if(internalQueue.isEmpty()) {
+			lock.unlockRead();
+			return null;
+		}
+		lock.unlockRead();
+
 		lock.lockRead();
 		try {
 			return internalQueue.peek();
