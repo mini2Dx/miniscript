@@ -56,6 +56,7 @@ public class ScriptInvocationPool {
 		result.setInvocationListener(invocationListener);
 		result.setPriority(priority);
 		result.setInteractive(interactive);
+		result.setInvokeTimestamp(System.nanoTime());
 		result.setTaskId(ID_GENERATOR.incrementAndGet());
 		return result;
 	}

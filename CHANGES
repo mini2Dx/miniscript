@@ -1,3 +1,6 @@
+[1.8.1]
+- Fix scripts in same priority group not being ordered by invoke order
+
 [1.8.0]
 - Add methods to get total scripts queued for execution
 - Compiled script invocations now return a task ID so that individual invokes can be cancelled

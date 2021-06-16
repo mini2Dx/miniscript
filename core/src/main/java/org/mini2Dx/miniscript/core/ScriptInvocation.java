@@ -34,6 +34,7 @@ public class ScriptInvocation implements Comparable<ScriptInvocation> {
 	private ScriptBindings scriptBindings;
 	private ScriptInvocationListener invocationListener;
 	private int priority;
+	private long invokeTimestamp;
 	private boolean interactive;
 	
 	ScriptInvocation(ScriptInvocationPool invocationPool) {
@@ -88,15 +89,28 @@ public class ScriptInvocation implements Comparable<ScriptInvocation> {
 		this.taskId = taskId;
 	}
 
+	public long getInvokeTimestamp() {
+		return invokeTimestamp;
+	}
+
+	public void setInvokeTimestamp(long invokeTimestamp) {
+		this.invokeTimestamp = invokeTimestamp;
+	}
+
 	public void release() {
 		taskId = 0;
 		priority = 0;
+		invokeTimestamp = 0L;
 		interactive = false;
 		invocationPool.release(this);
 	}
 
 	@Override
 	public int compareTo(ScriptInvocation o) {
-		return Integer.compare(o.priority, priority);
+		final int priorityCompare = Integer.compare(o.priority, priority);
+		if(priorityCompare == 0) {
+			return Long.compare(invokeTimestamp, o.invokeTimestamp);
+		}
+		return priorityCompare;
 	}
 }

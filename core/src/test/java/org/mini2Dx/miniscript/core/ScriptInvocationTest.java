@@ -76,6 +76,49 @@ public class ScriptInvocationTest {
 	}
 
 	@Test
+	public void testSamePriorityMultiple() {
+		final List<ScriptInvocation> expectedResults = new ArrayList<>();
+
+		int taskId = 0;
+
+		for(int priority = 0; priority < 10; priority++) {
+			List<ScriptInvocation> invocations = new ArrayList<>();
+
+			for(int i = 0; i < 10; i++) {
+				final ScriptInvocation invocation = new ScriptInvocation(null);
+				invocation.setTaskId(taskId);
+				invocation.setPriority(priority);
+				invocation.setInvokeTimestamp(System.nanoTime());
+				queue.offer(invocation);
+				invocations.add(invocation);
+				taskId++;
+			}
+
+			Collections.reverse(invocations);
+			expectedResults.addAll(invocations);
+		}
+
+		Collections.reverse(expectedResults);
+
+		long previousTimestamp = Long.MIN_VALUE;
+		for(int priority = 0; priority < 10; priority++) {
+			previousTimestamp = Long.MIN_VALUE;
+
+			for(int i = 0; i < 10; i++) {
+				final ScriptInvocation expected = expectedResults.remove(0);
+				final ScriptInvocation actual = queue.poll();
+
+				Assert.assertTrue(actual.getInvokeTimestamp() > previousTimestamp);
+				previousTimestamp = actual.getInvokeTimestamp();
+
+				Assert.assertEquals(9 - priority, actual.getPriority());
+				Assert.assertEquals(expected.getPriority(), actual.getPriority());
+				Assert.assertEquals(expected.getTaskId(), actual.getTaskId());
+			}
+		}
+	}
+
+	@Test
 	public void testPriority() {
 		final Random random = new Random();
 		final List<Integer> unordered = new ArrayList<>();
