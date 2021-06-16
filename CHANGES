@@ -1,5 +1,6 @@
 [1.8.1]
 - Fix scripts in same priority group not being ordered by invoke order
+- Reduce lock contention in concurrent queue poll and peek
 
 [1.8.0]
 - Add methods to get total scripts queued for execution
