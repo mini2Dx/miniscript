@@ -94,7 +94,7 @@ public class GroovyScriptExecutorPool implements ScriptExecutorPool<Script> {
 
 	@Override
 	public ScriptExecutionTask<?> execute(int taskId, int scriptId, ScriptBindings scriptBindings,
-			ScriptInvocationListener invocationListener) {
+			ScriptInvocationListener invocationListener, boolean syncCall) {
 		ScriptExecutor<Script> executor = allocateExecutor();
 		if (executor == null) {
 			throw new ScriptExecutorUnavailableException(scriptId);
@@ -104,7 +104,7 @@ public class GroovyScriptExecutorPool implements ScriptExecutorPool<Script> {
 			throw new NoSuchScriptException(scriptId);
 		}
 		return new ScriptExecutionTask<Script>(taskId, gameScriptingEngine, executor, scriptId,
-				scripts.get(scriptId), scriptBindings, invocationListener);
+				scripts.get(scriptId), scriptBindings, invocationListener, syncCall);
 	}
 
 	private ScriptExecutor<Script> allocateExecutor() {

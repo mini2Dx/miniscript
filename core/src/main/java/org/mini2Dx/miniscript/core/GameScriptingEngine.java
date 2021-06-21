@@ -330,7 +330,7 @@ public abstract class GameScriptingEngine implements Runnable {
 				}
 
 				ScriptExecutionTask<?> executionTask = scriptExecutorPool.execute(scriptInvocation.getTaskId(),
-						scriptInvocation.getScriptId(), scriptInvocation.getScriptBindings(), invocationListener);
+						scriptInvocation.getScriptId(), scriptInvocation.getScriptBindings(), invocationListener, false);
 				Future<?> taskFuture = threadPoolProvider.submit(executionTask);
 				executionTask.setTaskFuture(taskFuture);
 				runningScripts.put(executionTask.getTaskId(), executionTask);
@@ -747,7 +747,7 @@ public abstract class GameScriptingEngine implements Runnable {
 	 */
 	public void invokeCompiledScriptSync(int taskId, int scriptId, ScriptBindings scriptBindings,
 										 ScriptInvocationListener invocationListener) {
-		ScriptExecutionTask<?> executionTask = scriptExecutorPool.execute(taskId, scriptId, scriptBindings, invocationListener);
+		ScriptExecutionTask<?> executionTask = scriptExecutorPool.execute(taskId, scriptId, scriptBindings, invocationListener, true);
 		runningScripts.put(executionTask.getTaskId(), executionTask);
 		executionTask.run();
 	}
@@ -792,6 +792,14 @@ public abstract class GameScriptingEngine implements Runnable {
 	 */
 	public int getTotalNonInteractiveScriptsQueued() {
 		return scriptInvocationQueue.getNonInteractiveScriptsQueued();
+	}
+
+	/**
+	 * Returns true if interactive script is running
+	 * @return
+	 */
+	public boolean isInteractiveScriptRunning() {
+		return scriptInvocationQueue.isInteractiveScriptRunnung();
 	}
 
 	void submitGameFuture(GameFuture gameFuture) {

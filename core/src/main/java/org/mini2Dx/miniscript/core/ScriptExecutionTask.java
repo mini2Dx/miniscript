@@ -24,6 +24,7 @@
 package org.mini2Dx.miniscript.core;
 
 import org.mini2Dx.miniscript.core.exception.ScriptSkippedException;
+import org.mini2Dx.miniscript.core.notification.ScriptBeginNotification;
 import org.mini2Dx.miniscript.core.notification.ScriptExceptionNotification;
 import org.mini2Dx.miniscript.core.notification.ScriptSkippedNotification;
 import org.mini2Dx.miniscript.core.notification.ScriptSuccessNotification;
@@ -42,12 +43,14 @@ public class ScriptExecutionTask<S> implements Runnable {
 	private final GameScript<S> script;
 	private final ScriptBindings scriptBindings;
 	private final ScriptInvocationListener scriptInvocationListener;
+	private final boolean syncCall;
 
 	private final AtomicBoolean completed = new AtomicBoolean(false);
 	private Future<?> taskFuture;
 
 	public ScriptExecutionTask(int taskId, GameScriptingEngine gameScriptingEngine, ScriptExecutor<S> executor,
-							   int scriptId, GameScript<S> script, ScriptBindings scriptBindings, ScriptInvocationListener scriptInvocationListener) {
+							   int scriptId, GameScript<S> script, ScriptBindings scriptBindings,
+							   ScriptInvocationListener scriptInvocationListener, boolean syncCall) {
 		this.taskId = taskId;
 		this.scriptingEngine = gameScriptingEngine;
 		this.executor = executor;
@@ -55,11 +58,27 @@ public class ScriptExecutionTask<S> implements Runnable {
 		this.script = script;
 		this.scriptBindings = scriptBindings;
 		this.scriptInvocationListener = scriptInvocationListener;
+		this.syncCall = syncCall;
 	}
 
 	@Override
 	public void run() {
 		try {
+			if(scriptInvocationListener != null) {
+				if(scriptInvocationListener.callOnGameThread() && !syncCall) {
+					final ScriptBeginNotification beginNotification = new ScriptBeginNotification(scriptInvocationListener, scriptId);
+					scriptingEngine.scriptNotifications.offer(beginNotification);
+
+					while(!beginNotification.isProcessed()) {
+						synchronized(beginNotification) {
+							beginNotification.wait();
+						}
+					}
+				} else {
+					scriptInvocationListener.onScriptBegin(scriptId);
+				}
+			}
+
 			ScriptExecutionResult executionResult = executor.execute(scriptId, script, scriptBindings,
 					scriptInvocationListener != null);
 			if (scriptInvocationListener != null) {

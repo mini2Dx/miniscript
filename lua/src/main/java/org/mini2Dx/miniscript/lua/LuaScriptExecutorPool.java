@@ -123,7 +123,7 @@ public class LuaScriptExecutorPool implements ScriptExecutorPool<LuaValue> {
 
 	@Override
 	public ScriptExecutionTask<?> execute(int taskId, int scriptId, ScriptBindings scriptBindings,
-			ScriptInvocationListener invocationListener) {
+			ScriptInvocationListener invocationListener, boolean syncCall) {
 		ScriptExecutor<LuaValue> executor = allocateExecutor();
 		if (executor == null) {
 			throw new ScriptExecutorUnavailableException(scriptId);
@@ -134,7 +134,7 @@ public class LuaScriptExecutorPool implements ScriptExecutorPool<LuaValue> {
 		}
 		return new ScriptExecutionTask<LuaValue>(taskId,
 				gameScriptingEngine, executor, scriptId, scripts.get(scriptId),
-				scriptBindings, invocationListener);
+				scriptBindings, invocationListener, syncCall);
 	}
 
 	@Override

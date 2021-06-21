@@ -30,6 +30,15 @@ package org.mini2Dx.miniscript.core;
  */
 public interface ScriptInvocationListener {
 	/**
+	 * Called just before a script begins execution. Note: If callOnGameThread() is true,
+	 * the script will not begin until this callback is processed on the game thread
+	 * @param scriptId The script id
+	 */
+	public default void onScriptBegin(int scriptId) {
+
+	}
+
+	/**
 	 * Called when a script successfully completes
 	 * 
 	 * @param scriptId

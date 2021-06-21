@@ -85,7 +85,7 @@ public class RubyScriptExecutorPool implements ScriptExecutorPool<EmbedEvalUnit>
 
 	@Override
 	public ScriptExecutionTask<?> execute(int taskId, int scriptId, ScriptBindings scriptBindings,
-			ScriptInvocationListener invocationListener) {
+			ScriptInvocationListener invocationListener, boolean syncCall) {
 		ScriptExecutor<EmbedEvalUnit> executor = allocateExecutor();
 		if (executor == null) {
 			throw new ScriptExecutorUnavailableException(scriptId);
@@ -95,7 +95,7 @@ public class RubyScriptExecutorPool implements ScriptExecutorPool<EmbedEvalUnit>
 			throw new NoSuchScriptException(scriptId);
 		}
 		return new ScriptExecutionTask<EmbedEvalUnit>(taskId, gameScriptingEngine, executor, scriptId, scripts.get(scriptId),
-				scriptBindings, invocationListener);
+				scriptBindings, invocationListener, syncCall);
 	}
 
 	@Override

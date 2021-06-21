@@ -84,13 +84,13 @@ public class DummyScriptExecutorPool implements ScriptExecutorPool<DummyScript> 
 
 	@Override
 	public ScriptExecutionTask<?> execute(int taskId, int scriptId, ScriptBindings scriptBindings,
-			ScriptInvocationListener invocationListener) {
+			ScriptInvocationListener invocationListener, boolean syncCall) {
 		ScriptExecutor<DummyScript> executor = allocateExecutor();
 		if (executor == null) {
 			throw new ScriptExecutorUnavailableException(scriptId);
 		}
 		return new ScriptExecutionTask<DummyScript>(taskId, gameScriptingEngine, executor, scriptId,
-				scripts.get(scriptId), scriptBindings, invocationListener);
+				scripts.get(scriptId), scriptBindings, invocationListener, syncCall);
 	}
 
 	@Override

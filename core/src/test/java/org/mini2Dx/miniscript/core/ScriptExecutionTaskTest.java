@@ -38,7 +38,7 @@ public class ScriptExecutionTaskTest {
 	public void testRunExecutesScript() {
 		DummyScript script = new DummyScript("");
 		ScriptExecutionTask<DummyScript> task = new ScriptExecutionTask<DummyScript>(0, new DummyGameScriptingEngine(),
-				new DummyScriptExecutor(null), 0, new GlobalGameScript<DummyScript>(script), new ScriptBindings(), null);
+				new DummyScriptExecutor(null), 0, new GlobalGameScript<DummyScript>(script), new ScriptBindings(), null, true);
 		task.run();
 		Assert.assertEquals(true, script.isExecuted());
 	}

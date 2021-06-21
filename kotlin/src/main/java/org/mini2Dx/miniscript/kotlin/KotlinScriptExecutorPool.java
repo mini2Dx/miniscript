@@ -98,7 +98,7 @@ public class KotlinScriptExecutorPool implements ScriptExecutorPool<CompiledKotl
 
 	@Override
 	public ScriptExecutionTask<?> execute(int taskId, int scriptId, ScriptBindings scriptBindings,
-			ScriptInvocationListener invocationListener) {
+			ScriptInvocationListener invocationListener, boolean syncCall) {
 		ScriptExecutor<CompiledKotlinScript> executor = allocateExecutor();
 		if (executor == null) {
 			throw new ScriptExecutorUnavailableException(scriptId);
@@ -108,7 +108,7 @@ public class KotlinScriptExecutorPool implements ScriptExecutorPool<CompiledKotl
 			throw new NoSuchScriptException(scriptId);
 		}
 		return new ScriptExecutionTask<CompiledKotlinScript>(taskId, gameScriptingEngine, executor,
-				scriptId, scripts.get(scriptId), scriptBindings, invocationListener);
+				scriptId, scripts.get(scriptId), scriptBindings, invocationListener, syncCall);
 	}
 
 	private ScriptExecutor<CompiledKotlinScript> allocateExecutor() {

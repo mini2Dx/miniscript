@@ -36,13 +36,13 @@ public class LuaScriptExecutorPoolTest implements ScriptInvocationListener {
 
 		ScriptBindings scriptBindings = new ScriptBindings();
 
-		ScriptExecutionTask scriptExecutionTask = luaScriptExecutorPool.execute(0,0, scriptBindings, this);
+		ScriptExecutionTask scriptExecutionTask = luaScriptExecutorPool.execute(0,0, scriptBindings, this, true);
 		Assert.assertEquals(0, scriptExecutionTask.getScriptId());
-		scriptExecutionTask = luaScriptExecutorPool.execute(1, 1, scriptBindings, this);
+		scriptExecutionTask = luaScriptExecutorPool.execute(1, 1, scriptBindings, this, true);
 		Assert.assertEquals(1, scriptExecutionTask.getScriptId());
-		scriptExecutionTask = luaScriptExecutorPool.execute(2, 2, scriptBindings, this);
+		scriptExecutionTask = luaScriptExecutorPool.execute(2, 2, scriptBindings, this, true);
 		Assert.assertEquals(2, scriptExecutionTask.getScriptId());
-		scriptExecutionTask = luaScriptExecutorPool.execute(2, 3, scriptBindings, this);
+		scriptExecutionTask = luaScriptExecutorPool.execute(2, 3, scriptBindings, this, true);
 		Assert.assertEquals(3, scriptExecutionTask.getScriptId());
 	}
 

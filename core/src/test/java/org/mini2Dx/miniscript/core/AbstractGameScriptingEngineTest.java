@@ -220,7 +220,62 @@ public abstract class AbstractGameScriptingEngineTest {
 		Assert.assertEquals(false, gameFuture.isFutureSkipped());
 		Assert.assertEquals(false, gameFuture.isScriptSkipped());
 	}
-	
+
+	@Test
+	public void testInvokeScriptBeginNotificationOnGameThread() throws Exception {
+		final int expectedScriptId = scriptingEngine.compileScript(getDefaultScript());
+		final AtomicBoolean notificationReceived = new AtomicBoolean(false);
+
+		scriptingEngine.invokeCompiledScript(expectedScriptId, scriptBindings, new ScriptInvocationListener() {
+
+			@Override
+			public void onScriptBegin(int scriptId) {
+				notificationReceived.set(true);
+			}
+
+			@Override
+			public void onScriptSuccess(int scriptId, ScriptExecutionResult executionResult) {
+				if(scriptId != expectedScriptId) {
+					scriptResult.set(ScriptResult.INCORRECT_SCRIPT_ID);
+					scriptExecuted.set(true);
+				} else if(!checkExpectedScriptResults(executionResult)) {
+					scriptResult.set(ScriptResult.INCORRECT_VARIABLES);
+					scriptExecuted.set(true);
+				} else {
+					scriptResult.set(ScriptResult.SUCCESS);
+					scriptExecuted.set(true);
+				}
+			}
+
+			@Override
+			public void onScriptSkipped(int scriptId) {
+				scriptResult.set(ScriptResult.SKIPPED);
+				scriptExecuted.set(true);
+			}
+
+			@Override
+			public void onScriptException(int scriptId, Exception e) {
+				e.printStackTrace();
+				scriptResult.set(ScriptResult.EXCEPTION);
+				scriptExecuted.set(true);
+			}
+
+			@Override
+			public boolean callOnGameThread() {
+				return true;
+			}
+		});
+		while(!scriptExecuted.get()) {
+			scriptingEngine.update(1f);
+		}
+		Assert.assertEquals(ScriptResult.SUCCESS, scriptResult.get());
+		Assert.assertEquals(true, gameFuture.isUpdated());
+		Assert.assertEquals(false, gameFuture.waitOccurred());
+		Assert.assertEquals(false, gameFuture.isFutureSkipped());
+		Assert.assertEquals(false, gameFuture.isScriptSkipped());
+		Assert.assertEquals(true, notificationReceived.get());
+	}
+
 	@Test
 	public void testWaitForCompletion() throws Exception {
 		final int expectedScriptId = scriptingEngine.compileScript(getWaitForCompletionScript());

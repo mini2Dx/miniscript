@@ -85,7 +85,7 @@ public class PythonScriptExecutorPool implements ScriptExecutorPool<PyCode> {
 
 	@Override
 	public ScriptExecutionTask<?> execute(int taskId, int scriptId, ScriptBindings scriptBindings,
-			ScriptInvocationListener invocationListener) {
+			ScriptInvocationListener invocationListener, boolean syncCall) {
 		ScriptExecutor<PyCode> executor = allocateExecutor();
 		if (executor == null) {
 			throw new ScriptExecutorUnavailableException(scriptId);
@@ -95,7 +95,7 @@ public class PythonScriptExecutorPool implements ScriptExecutorPool<PyCode> {
 			throw new NoSuchScriptException(scriptId);
 		}
 		return new ScriptExecutionTask<PyCode>(taskId, gameScriptingEngine, executor, scriptId,
-				scripts.get(scriptId), scriptBindings, invocationListener);
+				scripts.get(scriptId), scriptBindings, invocationListener, syncCall);
 	}
 
 	@Override
