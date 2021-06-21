@@ -1,3 +1,6 @@
+[1.8.2]
+- Add (optional) onScriptBegin method to ScriptInvocationListener
+
 [1.8.1]
 - Fix scripts in same priority group not being ordered by invoke order
 - Reduce lock contention in concurrent queue poll and peek
