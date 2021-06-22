@@ -1,3 +1,6 @@
+[1.8.3]
+- Fix interactive scripts not triggering onScriptBegin
+
 [1.8.2]
 - Add (optional) onScriptBegin method to ScriptInvocationListener
 

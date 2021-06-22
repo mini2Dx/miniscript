@@ -3,8 +3,7 @@
  */
 package org.mini2Dx.miniscript.core;
 
-import org.mini2Dx.miniscript.core.ScriptExecutionResult;
-import org.mini2Dx.miniscript.core.ScriptInvocationListener;
+import org.mini2Dx.miniscript.core.notification.ScriptBeginNotification;
 import org.mini2Dx.miniscript.core.notification.ScriptExceptionNotification;
 import org.mini2Dx.miniscript.core.notification.ScriptSkippedNotification;
 import org.mini2Dx.miniscript.core.notification.ScriptSuccessNotification;
@@ -28,6 +27,21 @@ public class InteractiveScriptListener implements ScriptInvocationListener {
 	public void track(int scriptId, ScriptInvocationListener invocationListener) {
 		this.scriptId.set(scriptId);
 		this.invocationListener.set(invocationListener);
+	}
+
+	@Override
+	public void onScriptBegin(int scriptId) {
+		final ScriptInvocationListener invocationListener = this.invocationListener.get();
+		if(scriptId == this.scriptId.get()) {
+			if(invocationListener != null) {
+				if (invocationListener.callOnGameThread()) {
+					scriptingEngine.scriptNotifications.offer(
+							new ScriptBeginNotification(invocationListener, scriptId));
+				} else {
+					invocationListener.onScriptBegin(scriptId);
+				}
+			}
+		}
 	}
 
 	@Override
