@@ -33,7 +33,7 @@ import java.util.Queue;
 public abstract class AbstractConcurrentQueue<E> implements Queue<E> {
 	protected final ReadWriteLock lock = GameScriptingEngine.LOCK_PROVIDER.newReadWriteLock();
 
-	private final Queue<E> internalQueue;
+	protected final Queue<E> internalQueue;
 
 	public AbstractConcurrentQueue(Queue<E> internalQueue) {
 		this.internalQueue = internalQueue;

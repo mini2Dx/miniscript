@@ -489,6 +489,20 @@ public abstract class GameScriptingEngine implements Runnable {
 	}
 
 	/**
+	 * Clears all interactive scripts queued
+	 */
+	public void cancelAllQueuedInteractiveScripts() {
+		scriptInvocationQueue.clearInteractiveScriptQueue();
+	}
+
+	/**
+	 * Clears all non-interactive scripts queued
+	 */
+	public void cancelAllQueuedNonInteractiveScripts() {
+		scriptInvocationQueue.clearNonInteractiveScriptQueue();
+	}
+
+	/**
 	 * Cancels a queued script or skips it if it is currently running
 	 * @param scriptId The script ID
 	 */

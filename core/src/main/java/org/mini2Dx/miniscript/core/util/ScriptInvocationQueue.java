@@ -93,21 +93,55 @@ public class ScriptInvocationQueue extends AbstractConcurrentBlockingQueue<Scrip
 	}
 
 	public void cancelByScriptId(int scriptId) {
+		interactiveScriptLock.lockWrite();
 		interactiveScriptQueue.removeIf(new Predicate<ScriptInvocation>() {
 			@Override
 			public boolean test(ScriptInvocation scriptInvocation) {
 				return scriptInvocation.getScriptId() == scriptId;
 			}
 		});
+		interactiveScriptLock.unlockWrite();
+
+		lock.lockWrite();
+		internalQueue.removeIf(new Predicate<ScriptInvocation>() {
+			@Override
+			public boolean test(ScriptInvocation scriptInvocation) {
+				return scriptInvocation.getScriptId() == scriptId;
+			}
+		});
+		lock.unlockWrite();
 	}
 
 	public void cancelByTaskId(int taskId) {
+		interactiveScriptLock.lockWrite();
 		interactiveScriptQueue.removeIf(new Predicate<ScriptInvocation>() {
 			@Override
 			public boolean test(ScriptInvocation scriptInvocation) {
 				return scriptInvocation.getTaskId() == taskId;
 			}
 		});
+		interactiveScriptLock.unlockWrite();
+
+		lock.lockWrite();
+		internalQueue.removeIf(new Predicate<ScriptInvocation>() {
+			@Override
+			public boolean test(ScriptInvocation scriptInvocation) {
+				return scriptInvocation.getTaskId() == taskId;
+			}
+		});
+		lock.unlockWrite();
+	}
+
+	public void clearInteractiveScriptQueue() {
+		interactiveScriptLock.lockWrite();
+		interactiveScriptQueue.clear();
+		interactiveScriptLock.unlockWrite();
+	}
+
+	public void clearNonInteractiveScriptQueue() {
+		lock.lockWrite();
+		internalQueue.clear();
+		lock.unlockWrite();
 	}
 
 	public void clearInteractiveScriptStatus() {
