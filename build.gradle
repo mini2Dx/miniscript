@@ -30,7 +30,7 @@ subprojects {
 	apply plugin: "checkstyle"
 	
 	group = 'org.mini2Dx'
-	version = '1.8.4'
+	version = '1.8.5'
 
 	repositories {
 		mavenLocal()
