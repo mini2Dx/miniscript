@@ -27,7 +27,9 @@ import org.mini2Dx.lockprovider.Locks;
 import org.mini2Dx.lockprovider.jvm.JvmLocks;
 import org.mini2Dx.miniscript.core.exception.InsufficientCompilersException;
 import org.mini2Dx.miniscript.core.exception.NoSuchScriptException;
+import org.mini2Dx.miniscript.core.notification.ScriptCancelledNotification;
 import org.mini2Dx.miniscript.core.notification.ScriptNotification;
+import org.mini2Dx.miniscript.core.notification.ScriptSkippedNotification;
 import org.mini2Dx.miniscript.core.threadpool.DefaultThreadPoolProvider;
 import org.mini2Dx.miniscript.core.util.ReadWriteArrayQueue;
 import org.mini2Dx.miniscript.core.util.ReadWriteMap;
@@ -471,35 +473,110 @@ public abstract class GameScriptingEngine implements Runnable {
 	 * Removes all currently queued {@link GameFuture}s without sending skipFuture event
 	 */
 	public void cancelAllQueuedScripts() {
-		scriptInvocationQueue.clear();
+		cancelAllQueuedScripts(true);
+	}
+
+	/**
+	 * Removes all currently queued {@link GameFuture}s without sending skipFuture event
+	 * @param notifyListeners If true will notify invocation listeners of script cancellation
+	 */
+	public void cancelAllQueuedScripts(boolean notifyListeners) {
+		if(!notifyListeners) {
+			scriptInvocationQueue.clear();
+			return;
+		}
+
+		final List<ScriptInvocation> scriptInvocations = new ArrayList<>();
+		scriptInvocationQueue.clear(scriptInvocations);
+		notifyScriptCancelled(scriptInvocations);
 	}
 
 	/**
 	 * Removes all currently queued scripts with a given script ID
 	 */
 	public void cancelQueuedScript(int scriptId) {
-		scriptInvocationQueue.cancelByScriptId(scriptId);
+		cancelQueuedScript(scriptId, true);
 	}
 
 	/**
 	 * Removes a specific queued script by its task ID
 	 */
 	public void cancelQueuedScriptByTaskId(int taskId) {
-		scriptInvocationQueue.cancelByTaskId(taskId);
+		cancelQueuedScriptByTaskId(taskId, true);
+	}
+
+	/**
+	 * Removes all currently queued scripts with a given script ID
+	 * @param notifyListeners If true will notify invocation listeners of script cancellation
+	 */
+	public void cancelQueuedScript(int scriptId, boolean notifyListeners) {
+		final List<ScriptInvocation> scriptInvocations = new ArrayList<>();
+		scriptInvocationQueue.cancelByScriptId(scriptId, scriptInvocations);
+		if(!notifyListeners) {
+			scriptInvocations.clear();
+			return;
+		}
+
+		notifyScriptCancelled(scriptInvocations);
+	}
+
+	/**
+	 * Removes a specific queued script by its task ID
+	 * @param notifyListeners If true will notify invocation listeners of script cancellation
+	 */
+	public void cancelQueuedScriptByTaskId(int taskId, boolean notifyListeners) {
+		final List<ScriptInvocation> scriptInvocations = new ArrayList<>();
+		scriptInvocationQueue.cancelByTaskId(taskId, scriptInvocations);
+		if(!notifyListeners) {
+			scriptInvocations.clear();
+			return;
+		}
+
+		notifyScriptCancelled(scriptInvocations);
 	}
 
 	/**
 	 * Clears all interactive scripts queued
 	 */
 	public void cancelAllQueuedInteractiveScripts() {
-		scriptInvocationQueue.clearInteractiveScriptQueue();
+		cancelAllQueuedInteractiveScripts(true);
 	}
 
 	/**
 	 * Clears all non-interactive scripts queued
 	 */
 	public void cancelAllQueuedNonInteractiveScripts() {
-		scriptInvocationQueue.clearNonInteractiveScriptQueue();
+		cancelAllQueuedNonInteractiveScripts(true);
+	}
+
+	/**
+	 * Clears all interactive scripts queued
+	 * @param notifyListeners If true will send the scriptSkipped event any listener associated with a cancelled invoke
+	 */
+	public void cancelAllQueuedInteractiveScripts(boolean notifyListeners) {
+		if(!notifyListeners) {
+			scriptInvocationQueue.clearInteractiveScriptQueue();
+			return;
+		}
+
+		final List<ScriptInvocation> scriptInvocations = new ArrayList<>();
+		scriptInvocationQueue.clearInteractiveScriptQueue(scriptInvocations);
+		notifyScriptCancelled(scriptInvocations);
+	}
+
+	/**
+	 * Clears all non-interactive scripts queued
+	 * @param notifyListeners If true will send the scriptSkipped event any listener associated with a cancelled invoke
+	 */
+	public void cancelAllQueuedNonInteractiveScripts(boolean notifyListeners) {
+		if(!notifyListeners) {
+			scriptInvocationQueue.clearNonInteractiveScriptQueue();
+			return;
+		}
+
+		final List<ScriptInvocation> scriptInvocations = new ArrayList<>();
+		scriptInvocationQueue.clearNonInteractiveScriptQueue(scriptInvocations);
+		notifyScriptCancelled(scriptInvocations);
 	}
 
 	/**
@@ -835,4 +912,19 @@ public abstract class GameScriptingEngine implements Runnable {
 	}
 
 
+	private void notifyScriptCancelled(List<ScriptInvocation> scriptInvocations) {
+		for(ScriptInvocation invocation : scriptInvocations) {
+			if(invocation.getInvocationListener() == null) {
+				return;
+			}
+			final ScriptInvocationListener invocationListener = invocation.getInvocationListener();
+			if(invocationListener.callOnGameThread()) {
+				scriptNotifications
+						.offer(new ScriptCancelledNotification(invocationListener, invocation.getScriptId()));
+			} else {
+				invocationListener.onScriptCancelled(invocation.getScriptId());
+			}
+		}
+		scriptInvocations.clear();
+	}
 }

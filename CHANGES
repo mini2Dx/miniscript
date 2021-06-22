@@ -1,3 +1,6 @@
+[1.8.5]
+- Add methods to clear interactive and non-interactive script queues
+
 [1.8.4]
 - Fix regression in 1.8.3. Updated unit tests.
 

@@ -8,6 +8,7 @@ import org.mini2Dx.lockprovider.ReentrantLock;
 import org.mini2Dx.miniscript.core.GameScriptingEngine;
 import org.mini2Dx.miniscript.core.ScriptInvocation;
 
+import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -92,12 +93,28 @@ public class ScriptInvocationQueue extends AbstractConcurrentBlockingQueue<Scrip
 		super.clear();
 	}
 
-	public void cancelByScriptId(int scriptId) {
+	public void clear(List<ScriptInvocation> results) {
+		interactiveScriptLock.lockWrite();
+		results.addAll(interactiveScriptQueue);
+		interactiveScriptQueue.clear();
+		interactiveScriptLock.unlockWrite();
+
+		lock.lockWrite();
+		results.addAll(internalQueue);
+		internalQueue.clear();
+		lock.unlockWrite();
+	}
+
+	public void cancelByScriptId(int scriptId, List<ScriptInvocation> results) {
 		interactiveScriptLock.lockWrite();
 		interactiveScriptQueue.removeIf(new Predicate<ScriptInvocation>() {
 			@Override
 			public boolean test(ScriptInvocation scriptInvocation) {
-				return scriptInvocation.getScriptId() == scriptId;
+				if(scriptInvocation.getScriptId() == scriptId) {
+					results.add(scriptInvocation);
+					return true;
+				}
+				return false;
 			}
 		});
 		interactiveScriptLock.unlockWrite();
@@ -106,18 +123,26 @@ public class ScriptInvocationQueue extends AbstractConcurrentBlockingQueue<Scrip
 		internalQueue.removeIf(new Predicate<ScriptInvocation>() {
 			@Override
 			public boolean test(ScriptInvocation scriptInvocation) {
-				return scriptInvocation.getScriptId() == scriptId;
+				if(scriptInvocation.getScriptId() == scriptId) {
+					results.add(scriptInvocation);
+					return true;
+				}
+				return false;
 			}
 		});
 		lock.unlockWrite();
 	}
 
-	public void cancelByTaskId(int taskId) {
+	public void cancelByTaskId(int taskId, List<ScriptInvocation> results) {
 		interactiveScriptLock.lockWrite();
 		interactiveScriptQueue.removeIf(new Predicate<ScriptInvocation>() {
 			@Override
 			public boolean test(ScriptInvocation scriptInvocation) {
-				return scriptInvocation.getTaskId() == taskId;
+				if(scriptInvocation.getTaskId() == taskId) {
+					results.add(scriptInvocation);
+					return true;
+				}
+				return false;
 			}
 		});
 		interactiveScriptLock.unlockWrite();
@@ -126,7 +151,11 @@ public class ScriptInvocationQueue extends AbstractConcurrentBlockingQueue<Scrip
 		internalQueue.removeIf(new Predicate<ScriptInvocation>() {
 			@Override
 			public boolean test(ScriptInvocation scriptInvocation) {
-				return scriptInvocation.getTaskId() == taskId;
+				if(scriptInvocation.getTaskId() == taskId) {
+					results.add(scriptInvocation);
+					return true;
+				}
+				return false;
 			}
 		});
 		lock.unlockWrite();
@@ -140,6 +169,20 @@ public class ScriptInvocationQueue extends AbstractConcurrentBlockingQueue<Scrip
 
 	public void clearNonInteractiveScriptQueue() {
 		lock.lockWrite();
+		internalQueue.clear();
+		lock.unlockWrite();
+	}
+
+	public void clearInteractiveScriptQueue(List<ScriptInvocation> results) {
+		interactiveScriptLock.lockWrite();
+		results.addAll(interactiveScriptQueue);
+		interactiveScriptQueue.clear();
+		interactiveScriptLock.unlockWrite();
+	}
+
+	public void clearNonInteractiveScriptQueue(List<ScriptInvocation> results) {
+		lock.lockWrite();
+		results.addAll(internalQueue);
 		internalQueue.clear();
 		lock.unlockWrite();
 	}

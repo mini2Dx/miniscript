@@ -367,6 +367,77 @@ public abstract class AbstractGameScriptingEngineTest {
 	}
 
 	@Test
+	public void testScriptCancelNotification() throws Exception {
+		scriptingEngine.invokeCompiledScript(scriptingEngine.compileScript(getWaitForCompletionScript()), scriptBindings);
+		scriptingEngine.invokeCompiledScript(scriptingEngine.compileScript(getWaitForCompletionScript()), scriptBindings);
+
+		final int expectedScriptId = scriptingEngine.compileScript(getDefaultScript());
+		final AtomicInteger cancelledScriptId = new AtomicInteger(-1);
+
+		scriptingEngine.invokeCompiledScript(expectedScriptId, scriptBindings, new ScriptInvocationListener() {
+
+			@Override
+			public void onScriptSuccess(int scriptId, ScriptExecutionResult executionResult) {
+				if(scriptId != expectedScriptId) {
+					scriptResult.set(ScriptResult.INCORRECT_SCRIPT_ID);
+					scriptExecuted.set(true);
+				} else if(!checkExpectedScriptResults(executionResult)) {
+					scriptResult.set(ScriptResult.INCORRECT_VARIABLES);
+					scriptExecuted.set(true);
+				} else {
+					scriptResult.set(ScriptResult.SUCCESS);
+					scriptExecuted.set(true);
+				}
+			}
+
+			@Override
+			public void onScriptCancelled(int scriptId) {
+				cancelledScriptId.set(scriptId);
+				scriptResult.set(ScriptResult.CANCELLED);
+				scriptExecuted.set(true);
+			}
+
+			@Override
+			public void onScriptSkipped(int scriptId) {
+				scriptResult.set(ScriptResult.SKIPPED);
+				scriptExecuted.set(true);
+			}
+
+			@Override
+			public void onScriptException(int scriptId, Exception e) {
+				e.printStackTrace();
+				scriptResult.set(ScriptResult.EXCEPTION);
+				scriptExecuted.set(true);
+			}
+
+			@Override
+			public boolean callOnGameThread() {
+				return true;
+			}
+		}, 0, false);
+
+		long timer = 0L;
+		while(!scriptExecuted.get()) {
+			long startTime = System.currentTimeMillis();
+			scriptingEngine.update(1f);
+			try {
+				Thread.sleep(10);
+			} catch (Exception e) {}
+			timer += System.currentTimeMillis() - startTime;
+
+			if(timer >= 1000L) {
+				scriptingEngine.cancelQueuedScript(expectedScriptId);
+			}
+		}
+		Assert.assertEquals(ScriptResult.CANCELLED, scriptResult.get());
+		Assert.assertEquals(true, gameFuture.isUpdated());
+		Assert.assertEquals(true, gameFuture.waitOccurred());
+		Assert.assertEquals(false, gameFuture.isFutureSkipped());
+		Assert.assertEquals(false, gameFuture.isScriptSkipped());
+		Assert.assertEquals(expectedScriptId, cancelledScriptId.get());
+	}
+
+	@Test
 	public void testWaitForCompletion() throws Exception {
 		final int expectedScriptId = scriptingEngine.compileScript(getWaitForCompletionScript());
 		scriptingEngine.invokeCompiledScript(expectedScriptId, scriptBindings, new ScriptInvocationListener() {

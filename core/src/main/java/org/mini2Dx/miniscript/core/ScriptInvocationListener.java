@@ -39,6 +39,14 @@ public interface ScriptInvocationListener {
 	}
 
 	/**
+	 * Called when a script is cancelled while in the invoke queue.
+	 *
+	 * @param scriptId The script id
+	 */
+	public default void onScriptCancelled(int scriptId) {
+	}
+
+	/**
 	 * Called when a script successfully completes
 	 * 
 	 * @param scriptId
@@ -49,7 +57,7 @@ public interface ScriptInvocationListener {
 	public void onScriptSuccess(int scriptId, ScriptExecutionResult executionResult);
 
 	/**
-	 * Called when a script is skipped
+	 * Called when a script is skipped during execution
 	 * 
 	 * @param scriptId
 	 *            The script id
