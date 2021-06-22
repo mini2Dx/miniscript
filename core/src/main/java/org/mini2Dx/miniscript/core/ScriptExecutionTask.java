@@ -65,17 +65,11 @@ public class ScriptExecutionTask<S> implements Runnable {
 	public void run() {
 		try {
 			if(scriptInvocationListener != null) {
-				if(scriptInvocationListener.callOnGameThread() && !syncCall) {
-					final ScriptBeginNotification beginNotification = new ScriptBeginNotification(scriptInvocationListener, scriptId);
-					scriptingEngine.scriptNotifications.offer(beginNotification);
-
-					while(!beginNotification.isProcessed()) {
-						synchronized(beginNotification) {
-							beginNotification.wait();
-						}
-					}
+				if(scriptInvocationListener instanceof InteractiveScriptListener) {
+					final ScriptInvocationListener actualListener = ((InteractiveScriptListener) scriptInvocationListener).getInvocationListener();
+					invokeOnScriptBegin(actualListener);
 				} else {
-					scriptInvocationListener.onScriptBegin(scriptId);
+					invokeOnScriptBegin(scriptInvocationListener);
 				}
 			}
 
@@ -113,6 +107,24 @@ public class ScriptExecutionTask<S> implements Runnable {
 		// Clear interrupted bit
 		Thread.interrupted();
 		completed.set(true);
+	}
+
+	private void invokeOnScriptBegin(ScriptInvocationListener listener) throws InterruptedException {
+		if(listener == null) {
+			return;
+		}
+		if(listener.callOnGameThread() && !syncCall) {
+			final ScriptBeginNotification beginNotification = new ScriptBeginNotification(listener, scriptId);
+			scriptingEngine.scriptNotifications.offer(beginNotification);
+
+			while(!beginNotification.isProcessed()) {
+				synchronized(beginNotification) {
+					beginNotification.wait();
+				}
+			}
+		} else {
+			listener.onScriptBegin(scriptId);
+		}
 	}
 
 	public void skipScript() {

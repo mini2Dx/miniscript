@@ -25,6 +25,7 @@ package org.mini2Dx.miniscript.core;
 
 import java.io.InputStream;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -225,12 +226,19 @@ public abstract class AbstractGameScriptingEngineTest {
 	public void testInvokeScriptBeginNotificationOnGameThread() throws Exception {
 		final int expectedScriptId = scriptingEngine.compileScript(getDefaultScript());
 		final AtomicBoolean notificationReceived = new AtomicBoolean(false);
+		final AtomicLong notificationThreadId = new AtomicLong(-1);
+		final AtomicBoolean beginResult = new AtomicBoolean(false);
 
 		scriptingEngine.invokeCompiledScript(expectedScriptId, scriptBindings, new ScriptInvocationListener() {
 
 			@Override
 			public void onScriptBegin(int scriptId) {
+				try {
+					Thread.sleep(500);
+				} catch (Exception e) {}
+				scriptBindings.put("beginNotificationResult", true);
 				notificationReceived.set(true);
+				notificationThreadId.set(Thread.currentThread().getId());
 			}
 
 			@Override
@@ -244,6 +252,9 @@ public abstract class AbstractGameScriptingEngineTest {
 				} else {
 					scriptResult.set(ScriptResult.SUCCESS);
 					scriptExecuted.set(true);
+
+					//Ensure begin is processed before execution
+					beginResult.set(executionResult.containsKey("beginNotificationResult"));
 				}
 			}
 
@@ -266,6 +277,12 @@ public abstract class AbstractGameScriptingEngineTest {
 			}
 		});
 		while(!scriptExecuted.get()) {
+			if(!notificationReceived.get()) {
+				try {
+					Thread.sleep(100);
+				} catch (Exception e) {}
+			}
+
 			scriptingEngine.update(1f);
 		}
 		Assert.assertEquals(ScriptResult.SUCCESS, scriptResult.get());
@@ -274,6 +291,79 @@ public abstract class AbstractGameScriptingEngineTest {
 		Assert.assertEquals(false, gameFuture.isFutureSkipped());
 		Assert.assertEquals(false, gameFuture.isScriptSkipped());
 		Assert.assertEquals(true, notificationReceived.get());
+		Assert.assertEquals(Thread.currentThread().getId(), notificationThreadId.get());
+	}
+
+	@Test
+	public void testInvokeInteractiveScriptBeginNotificationOnGameThread() throws Exception {
+		final int expectedScriptId = scriptingEngine.compileScript(getDefaultScript());
+		final AtomicBoolean notificationReceived = new AtomicBoolean(false);
+		final AtomicLong notificationThreadId = new AtomicLong(-1);
+		final AtomicBoolean beginResult = new AtomicBoolean(false);
+
+		scriptingEngine.invokeCompiledScript(expectedScriptId, scriptBindings, new ScriptInvocationListener() {
+
+			@Override
+			public void onScriptBegin(int scriptId) {
+				try {
+					Thread.sleep(500);
+				} catch (Exception e) {}
+				scriptBindings.put("beginNotificationResult", true);
+				notificationReceived.set(true);
+				notificationThreadId.set(Thread.currentThread().getId());
+			}
+
+			@Override
+			public void onScriptSuccess(int scriptId, ScriptExecutionResult executionResult) {
+				if(scriptId != expectedScriptId) {
+					scriptResult.set(ScriptResult.INCORRECT_SCRIPT_ID);
+					scriptExecuted.set(true);
+				} else if(!checkExpectedScriptResults(executionResult)) {
+					scriptResult.set(ScriptResult.INCORRECT_VARIABLES);
+					scriptExecuted.set(true);
+				} else {
+					scriptResult.set(ScriptResult.SUCCESS);
+					scriptExecuted.set(true);
+
+					//Ensure begin is processed before execution
+					beginResult.set(executionResult.containsKey("beginNotificationResult"));
+				}
+			}
+
+			@Override
+			public void onScriptSkipped(int scriptId) {
+				scriptResult.set(ScriptResult.SKIPPED);
+				scriptExecuted.set(true);
+			}
+
+			@Override
+			public void onScriptException(int scriptId, Exception e) {
+				e.printStackTrace();
+				scriptResult.set(ScriptResult.EXCEPTION);
+				scriptExecuted.set(true);
+			}
+
+			@Override
+			public boolean callOnGameThread() {
+				return true;
+			}
+		}, 0, true);
+		while(!scriptExecuted.get()) {
+			if(!notificationReceived.get()) {
+				try {
+					Thread.sleep(100);
+				} catch (Exception e) {}
+			}
+
+			scriptingEngine.update(1f);
+		}
+		Assert.assertEquals(ScriptResult.SUCCESS, scriptResult.get());
+		Assert.assertEquals(true, gameFuture.isUpdated());
+		Assert.assertEquals(false, gameFuture.waitOccurred());
+		Assert.assertEquals(false, gameFuture.isFutureSkipped());
+		Assert.assertEquals(false, gameFuture.isScriptSkipped());
+		Assert.assertEquals(true, notificationReceived.get());
+		Assert.assertEquals(Thread.currentThread().getId(), notificationThreadId.get());
 	}
 
 	@Test

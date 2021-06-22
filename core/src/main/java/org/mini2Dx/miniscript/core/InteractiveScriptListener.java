@@ -97,6 +97,10 @@ public class InteractiveScriptListener implements ScriptInvocationListener {
 		}
 	}
 
+	public ScriptInvocationListener getInvocationListener() {
+		return invocationListener.get();
+	}
+
 	@Override
 	public boolean callOnGameThread() {
 		return false;
