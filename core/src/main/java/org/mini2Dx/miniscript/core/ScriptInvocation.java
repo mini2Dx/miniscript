@@ -102,6 +102,7 @@ public class ScriptInvocation implements Comparable<ScriptInvocation> {
 		priority = 0;
 		invokeTimestamp = 0L;
 		interactive = false;
+		invocationListener = null;
 		invocationPool.release(this);
 	}
 
