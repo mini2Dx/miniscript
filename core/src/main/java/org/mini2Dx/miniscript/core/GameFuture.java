@@ -105,8 +105,10 @@ public abstract class GameFuture {
 		}
 	}
 
-	private void complete() {
-		completed.set(true);
+	protected void complete() {
+		if(completed.getAndSet(true)) {
+			return;
+		}
 		synchronized (this) {
 			notifyAll();
 		}

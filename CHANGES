@@ -1,3 +1,6 @@
+[1.8.6]
+- Change GameFuture.complete() to protected visibility
+
 [1.8.5]
 - Add methods to clear interactive and non-interactive script queues
 
