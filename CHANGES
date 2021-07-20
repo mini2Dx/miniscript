@@ -1,3 +1,6 @@
+[1.8.7]
+- Reduce lock contention on game thread when queuing GameFutures
+
 [1.8.6]
 - Change GameFuture.complete() to protected visibility
 

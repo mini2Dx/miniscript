@@ -64,9 +64,9 @@ public abstract class GameScriptingEngine implements Runnable {
 	final Queue<ScriptNotification> scriptNotifications = new ReadWriteArrayQueue<ScriptNotification>();
 	private final InteractiveScriptListener interactiveScriptListener;
 
-	final Queue<GameFuture> queuedFutures = new ReadWriteArrayQueue<>();
-	final Map<Integer, GameFuture> runningFutures = new ReadWriteMap<Integer, GameFuture>();
-	private final Map<Integer, ScriptExecutionTask<?>> runningScripts = new ReadWriteMap<Integer, ScriptExecutionTask<?>>();
+	final ReadWriteArrayQueue<GameFuture> queuedFutures = new ReadWriteArrayQueue<>();
+	final ReadWriteMap<Integer, GameFuture> runningFutures = new ReadWriteMap<Integer, GameFuture>();
+	private final ReadWriteMap<Integer, ScriptExecutionTask<?>> runningScripts = new ReadWriteMap<Integer, ScriptExecutionTask<?>>();
 	private final Set<Integer> completedFutures = new HashSet<Integer>();
 	private final Set<Integer> completedScripts = new HashSet<Integer>();
 
@@ -77,6 +77,8 @@ public abstract class GameScriptingEngine implements Runnable {
 
 	private ScheduledFuture cleanupTask;
 	private boolean cancelReallocatedFutures = true;
+
+	private Thread gameThread = null;
 
 	private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
 
@@ -282,6 +284,10 @@ public abstract class GameScriptingEngine implements Runnable {
 	 *            The time (in seconds) since the last frame update
 	 */
 	public void update(float delta) {
+		if(gameThread == null) {
+			gameThread = Thread.currentThread();
+		}
+
 		for (GameFuture gameFuture : runningFutures.values()) {
 			gameFuture.evaluate(delta);
 		}
@@ -894,7 +900,11 @@ public abstract class GameScriptingEngine implements Runnable {
 	}
 
 	void submitGameFuture(GameFuture gameFuture) {
-		queuedFutures.offer(gameFuture);
+		if(gameThread != null && gameThread == Thread.currentThread()) {
+			queuedFutures.offer(gameFuture);
+		} else {
+			queuedFutures.lazyOffer(gameFuture);
+		}
 	}
 
 	/**

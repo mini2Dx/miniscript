@@ -145,6 +145,17 @@ public abstract class AbstractConcurrentQueue<E> implements Queue<E> {
 		return add(e);
 	}
 
+	public boolean lazyOffer(E e) {
+		while(!lock.tryLockWrite()) {
+			try {
+				Thread.sleep(0, 100);
+			} catch (Exception ex) {}
+		}
+		final boolean result = internalQueue.add(e);
+		lock.unlockWrite();
+		return result;
+	}
+
 	@Override
 	public E remove() {
 		lock.lockWrite();
