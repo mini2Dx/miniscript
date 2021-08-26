@@ -104,7 +104,10 @@ public class ReadWriteMap<K, V> implements Map<K, V> {
 		final Set<K> result = keySet.get();
 		try {
 			result.clear();
-			result.addAll(internalMap.keySet());
+			//addAll allocates arrays unnecessarily
+			internalMap.keySet().forEach((key) -> {
+				result.add(key);
+			});
 		} finally {
 			lock.unlockRead();
 		}
@@ -117,7 +120,10 @@ public class ReadWriteMap<K, V> implements Map<K, V> {
 		final Collection<V> result = values.get();
 		try {
 			result.clear();
-			result.addAll(internalMap.values());
+			//addAll allocates arrays unnecessarily
+			internalMap.values().forEach((val) -> {
+				result.add(val);
+			});
 		} finally {
 			lock.unlockRead();
 		}
@@ -130,7 +136,10 @@ public class ReadWriteMap<K, V> implements Map<K, V> {
 		final Set<Entry<K, V>> result = entrySet.get();
 		try {
 			result.clear();
-			result.addAll(internalMap.entrySet());
+			//addAll allocates arrays unnecessarily
+			internalMap.entrySet().forEach((entry) -> {
+				result.add(entry);
+			});
 		} finally {
 			lock.unlockRead();
 		}

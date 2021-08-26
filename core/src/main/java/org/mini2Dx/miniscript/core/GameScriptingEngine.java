@@ -215,7 +215,7 @@ public abstract class GameScriptingEngine implements Runnable {
 
 	private void init(int maxConcurrentScripts) {
 		for(int i = 0; i < maxConcurrentScripts; i++) {
-			threadPoolProvider.submit(this);
+			threadPoolProvider.scheduleAtFixedRate(this, 16L, 16L, TimeUnit.MILLISECONDS);
 		}
 		threadPoolProvider.scheduleAtFixedRate(new Runnable() {
 			@Override
@@ -288,8 +288,9 @@ public abstract class GameScriptingEngine implements Runnable {
 			gameThread = Thread.currentThread();
 		}
 
-		for (GameFuture gameFuture : runningFutures.values()) {
-			gameFuture.evaluate(delta);
+		final List<GameFuture> gameFutures = (List<GameFuture>) runningFutures.values();
+		for (int i = 0; i < gameFutures.size(); i++) {
+			gameFutures.get(i).evaluate(delta);
 		}
 
 		while (!queuedFutures.isEmpty()) {
@@ -358,13 +359,6 @@ public abstract class GameScriptingEngine implements Runnable {
 		}
 		if(shuttingDown.get()) {
 			return;
-		}
-
-		long duration = System.currentTimeMillis() - startTime;
-		if (duration >= 16L) {
-			threadPoolProvider.submit(this);
-		} else {
-			threadPoolProvider.schedule(this, 16L - duration, TimeUnit.MILLISECONDS);
 		}
 	}
 

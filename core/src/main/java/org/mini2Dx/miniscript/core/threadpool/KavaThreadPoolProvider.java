@@ -98,6 +98,7 @@ public class KavaThreadPoolProvider implements Runnable, ThreadPoolProvider {
 
 	@Override
 	public void run() {
+		final Thread currentThread = Thread.currentThread();
 		while(running.get()) {
 			final ScheduledTask scheduledTask;
 			try {
@@ -114,7 +115,7 @@ public class KavaThreadPoolProvider implements Runnable, ThreadPoolProvider {
 			}
 			try {
 				final ScheduledTaskFuture future = scheduledTask.getFuture();
-				future.setExecutingThread(Thread.currentThread());
+				future.setExecutingThread(currentThread);
 				final Runnable runnable = scheduledTask.getRunnable();
 				if(runnable != null && !future.isCancelled()) {
 					runnable.run();
@@ -125,7 +126,7 @@ public class KavaThreadPoolProvider implements Runnable, ThreadPoolProvider {
 				final ScheduledTaskFuture future = scheduledTask.getFuture();
 				if(scheduledTask.isRepeating() && !future.isCancelled()) {
 					final ScheduledTask nextTask = ScheduledTask.allocate(scheduledTask.getRunnable(),
-							System.nanoTime() + scheduledTask.getRepeatUnit().toNanos(scheduledTask.getRepeatInterval()),
+							scheduledTask.getScheduledStartTimeNanos() + scheduledTask.getRepeatUnit().toNanos(scheduledTask.getRepeatInterval()),
 							scheduledTask.getRepeatInterval(), scheduledTask.getRepeatUnit());
 
 					nextTask.setFuture(future);
