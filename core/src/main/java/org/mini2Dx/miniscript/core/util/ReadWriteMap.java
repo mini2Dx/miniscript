@@ -30,6 +30,24 @@ public class ReadWriteMap<K, V> implements Map<K, V> {
 			return new HashSet<>();
 		}
 	};
+	private final ThreadLocal<ToSetConsumer<K>> keyConsumer = new ThreadLocal<ToSetConsumer<K>>() {
+		@Override
+		protected ToSetConsumer<K> initialValue() {
+			return new ToSetConsumer<K>();
+		}
+	};
+	private final ThreadLocal<ToCollectionConsumer<V>> valueConsumer = new ThreadLocal<ToCollectionConsumer<V>>() {
+		@Override
+		protected ToCollectionConsumer<V> initialValue() {
+			return new ToCollectionConsumer<V>();
+		}
+	};
+	private final ThreadLocal<ToSetConsumer<Entry<K, V>>> entryConsumer = new ThreadLocal<ToSetConsumer<Entry<K, V>>>() {
+		@Override
+		protected ToSetConsumer<Entry<K, V>> initialValue() {
+			return new ToSetConsumer<Entry<K, V>>();
+		}
+	};
 
 	@Override
 	public int size() {
@@ -105,9 +123,9 @@ public class ReadWriteMap<K, V> implements Map<K, V> {
 		try {
 			result.clear();
 			//addAll allocates arrays unnecessarily
-			internalMap.keySet().forEach((key) -> {
-				result.add(key);
-			});
+			final ToSetConsumer<K> consumer = keyConsumer.get();
+			consumer.setSet(result);
+			internalMap.keySet().forEach(consumer);
 		} finally {
 			lock.unlockRead();
 		}
@@ -121,9 +139,9 @@ public class ReadWriteMap<K, V> implements Map<K, V> {
 		try {
 			result.clear();
 			//addAll allocates arrays unnecessarily
-			internalMap.values().forEach((val) -> {
-				result.add(val);
-			});
+			final ToCollectionConsumer<V> consumer = valueConsumer.get();
+			consumer.setCollection(result);
+			internalMap.values().forEach(consumer);
 		} finally {
 			lock.unlockRead();
 		}
@@ -137,9 +155,9 @@ public class ReadWriteMap<K, V> implements Map<K, V> {
 		try {
 			result.clear();
 			//addAll allocates arrays unnecessarily
-			internalMap.entrySet().forEach((entry) -> {
-				result.add(entry);
-			});
+			final ToSetConsumer<Entry<K, V>> consumer = entryConsumer.get();
+			consumer.setSet(result);
+			internalMap.entrySet().forEach(consumer);
 		} finally {
 			lock.unlockRead();
 		}
