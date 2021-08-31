@@ -31,10 +31,7 @@ import org.mini2Dx.miniscript.core.notification.ScriptCancelledNotification;
 import org.mini2Dx.miniscript.core.notification.ScriptNotification;
 import org.mini2Dx.miniscript.core.notification.ScriptSkippedNotification;
 import org.mini2Dx.miniscript.core.threadpool.DefaultThreadPoolProvider;
-import org.mini2Dx.miniscript.core.util.ReadWriteArrayQueue;
-import org.mini2Dx.miniscript.core.util.ReadWriteMap;
-import org.mini2Dx.miniscript.core.util.ReadWritePriorityQueue;
-import org.mini2Dx.miniscript.core.util.ScriptInvocationQueue;
+import org.mini2Dx.miniscript.core.util.*;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -65,10 +62,10 @@ public abstract class GameScriptingEngine implements Runnable {
 	private final InteractiveScriptListener interactiveScriptListener;
 
 	final ReadWriteArrayQueue<GameFuture> queuedFutures = new ReadWriteArrayQueue<>();
-	final ReadWriteMap<Integer, GameFuture> runningFutures = new ReadWriteMap<Integer, GameFuture>();
-	private final ReadWriteMap<Integer, ScriptExecutionTask<?>> runningScripts = new ReadWriteMap<Integer, ScriptExecutionTask<?>>();
-	private final Set<Integer> completedFutures = new HashSet<Integer>();
-	private final Set<Integer> completedScripts = new HashSet<Integer>();
+	final ReadWriteIntMap<GameFuture> runningFutures = new ReadWriteIntMap<GameFuture>();
+	private final ReadWriteIntMap<ScriptExecutionTask<?>> runningScripts = new ReadWriteIntMap<ScriptExecutionTask<?>>();
+	private final IntSet completedFutures = new IntSet();
+	private final IntSet completedScripts = new IntSet();
 
 	private final List<String> tmpRunningScripts = new ArrayList<>();
 
@@ -288,9 +285,11 @@ public abstract class GameScriptingEngine implements Runnable {
 			gameThread = Thread.currentThread();
 		}
 
-		final List<GameFuture> gameFutures = (List<GameFuture>) runningFutures.values();
-		for (int i = 0; i < gameFutures.size(); i++) {
-			gameFutures.get(i).evaluate(delta);
+		for (GameFuture gameFuture : runningFutures.values()) {
+			if(gameFuture == null) {
+				continue;
+			}
+			gameFuture.evaluate(delta);
 		}
 
 		while (!queuedFutures.isEmpty()) {
@@ -364,11 +363,16 @@ public abstract class GameScriptingEngine implements Runnable {
 
 	private void cleanupCompletedFutures() {
 		for (GameFuture gameFuture : runningFutures.values()) {
+			if(gameFuture == null) {
+				continue;
+			}
 			if (gameFuture.isReadyForGC()) {
 				completedFutures.add(gameFuture.getFutureId());
 			}
 		}
-		for (int futureId : completedFutures) {
+		final IntSet.IntSetIterator iterator = completedFutures.iterator();
+		while(iterator.hasNext) {
+			final int futureId = iterator.next();
 			runningFutures.remove(futureId);
 		}
 		completedFutures.clear();
@@ -376,12 +380,17 @@ public abstract class GameScriptingEngine implements Runnable {
 
 	private void cleanupCompletedScripts() {
 		for (ScriptExecutionTask<?> scriptExecutionTask : runningScripts.values()) {
+			if(scriptExecutionTask == null) {
+				continue;
+			}
 			if (scriptExecutionTask.isFinished()) {
 				scriptExecutionTask.cleanup();
 				completedScripts.add(scriptExecutionTask.getTaskId());
 			}
 		}
-		for (int taskId : completedScripts) {
+		final IntSet.IntSetIterator iterator = completedScripts.iterator();
+		while(iterator.hasNext) {
+			final int taskId = iterator.next();
 			runningScripts.remove(taskId);
 		}
 		completedScripts.clear();
@@ -392,6 +401,9 @@ public abstract class GameScriptingEngine implements Runnable {
 	 */
 	public void skipAllScripts() {
 		for (ScriptExecutionTask<?> scriptExecutionTask : runningScripts.values()) {
+			if(scriptExecutionTask == null) {
+				continue;
+			}
 			scriptExecutionTask.skipScript();
 		}
 	}
@@ -403,7 +415,9 @@ public abstract class GameScriptingEngine implements Runnable {
 	 *            The ID of the script to skip
 	 */
 	public void skipScript(int scriptId) {
-		for(int taskId : runningScripts.keySet()) {
+		final IntMap.Keys keys = runningScripts.keys();
+		while(keys.hasNext) {
+			final int taskId = keys.next();
 			ScriptExecutionTask<?> scriptExecutionTask = runningScripts.get(taskId);
 			if (scriptExecutionTask == null) {
 				continue;
@@ -421,7 +435,9 @@ public abstract class GameScriptingEngine implements Runnable {
 	 * @param taskId The ID of the task to skip
 	 */
 	public void skipScriptByTaskId(int taskId) {
-		for(int otherTaskId : runningScripts.keySet()) {
+		final IntMap.Keys keys = runningScripts.keys();
+		while(keys.hasNext) {
+			final int otherTaskId = keys.next();
 			if(taskId != otherTaskId) {
 				continue;
 			}
@@ -438,6 +454,9 @@ public abstract class GameScriptingEngine implements Runnable {
 	 */
 	public void skipAllRunningGameFutures() {
 		for (GameFuture gameFuture : runningFutures.values()) {
+			if(gameFuture == null) {
+				continue;
+			}
 			gameFuture.skipFuture();
 		}
 	}
@@ -851,7 +870,9 @@ public abstract class GameScriptingEngine implements Runnable {
 	 */
 	public List<String> getRunningScripts() {
 		tmpRunningScripts.clear();
-		for(int taskId : runningScripts.keySet()) {
+		final IntMap.Keys keys = runningScripts.keys();
+		while(keys.hasNext) {
+			final int taskId = keys.next();
 			ScriptExecutionTask<?> scriptExecutionTask = runningScripts.get(taskId);
 			if (scriptExecutionTask == null) {
 				continue;
