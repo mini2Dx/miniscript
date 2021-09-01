@@ -1,3 +1,6 @@
+[1.8.8]
+- Reduce Integer boxing
+
 [1.8.7]
 - Reduce memory allocations
 - Reduce lock contention on game thread when queuing GameFutures
