@@ -542,8 +542,11 @@ public abstract class AbstractGameScriptingEngineTest {
 		Assert.assertEquals(ScriptResult.SUCCESS, scriptResult.get());
 		Assert.assertEquals(false, gameFuture.isUpdated());
 		Assert.assertEquals(true, gameFuture.waitOccurred());
-		Assert.assertEquals(true, gameFuture.isFutureSkipped());
+		Assert.assertEquals(false, gameFuture.isCompleted());
 		Assert.assertEquals(false, gameFuture.isScriptSkipped());
+		Assert.assertEquals(true, gameFuture.isReadyForGC());
+		Assert.assertEquals(true, gameFuture.isFutureSkipped());
+		Assert.assertEquals(true, gameFuture.isFutureSkippedCalled());
 	}
 	
 	@Test
@@ -598,7 +601,10 @@ public abstract class AbstractGameScriptingEngineTest {
 		Assert.assertEquals(true, gameFuture.isUpdated());
 		Assert.assertEquals(true, gameFuture.waitOccurred());
 		Assert.assertEquals(false, gameFuture.isFutureSkipped());
+		Assert.assertEquals(false, gameFuture.isCompleted());
+		Assert.assertEquals(true, gameFuture.isReadyForGC());
 		Assert.assertEquals(true, gameFuture.isScriptSkipped());
+		Assert.assertEquals(true, gameFuture.isScriptSkippedCalled());
 		Assert.assertNotEquals(taskId1, taskId2);
 	}
 
@@ -657,7 +663,11 @@ public abstract class AbstractGameScriptingEngineTest {
 		Assert.assertEquals(true, gameFuture.isUpdated());
 		Assert.assertEquals(true, gameFuture.waitOccurred());
 		Assert.assertEquals(false, gameFuture.isFutureSkipped());
+		Assert.assertEquals(false, gameFuture.isFutureSkippedCalled());
+		Assert.assertEquals(false, gameFuture.isCompleted());
+		Assert.assertEquals(true, gameFuture.isReadyForGC());
 		Assert.assertEquals(true, gameFuture.isScriptSkipped());
+		Assert.assertEquals(true, gameFuture.isScriptSkippedCalled());
 
 		scriptingEngine.skipScriptByTaskId(taskId1);
 		Assert.assertNotEquals(taskId1, taskId2);
@@ -722,6 +732,7 @@ public abstract class AbstractGameScriptingEngineTest {
 		Assert.assertEquals(true, gameFuture.waitOccurred());
 		Assert.assertEquals(false, gameFuture.isFutureSkipped());
 		Assert.assertEquals(false, gameFuture.isScriptSkipped());
+		Assert.assertEquals(true, gameFuture.isCompleted());
 		Assert.assertEquals(1, gameFuture.getUpdateCount());
 	}
 

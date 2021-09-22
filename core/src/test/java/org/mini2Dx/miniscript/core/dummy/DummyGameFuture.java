@@ -77,11 +77,11 @@ public class DummyGameFuture extends GameFuture {
 		return updated;
 	}
 
-	public boolean isFutureSkipped() {
+	public boolean isFutureSkippedCalled() {
 		return futureSkipped;
 	}
 
-	public boolean isScriptSkipped() {
+	public boolean isScriptSkippedCalled() {
 		return scriptSkipped;
 	}
 	

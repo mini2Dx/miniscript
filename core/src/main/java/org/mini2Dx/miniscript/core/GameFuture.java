@@ -1,15 +1,15 @@
 /**
  * The MIT License (MIT)
- * 
+ *
  * Copyright (c) 2016 Thomas Cashman
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
  *
@@ -33,12 +33,17 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public abstract class GameFuture {
 	private static final AtomicInteger ID_GENERATOR = new AtomicInteger(0);
-	
+
+	private static final int STATE_NONE = 0;
+	private static final int STATE_FUTURE_SKIPPED = 1;
+	private static final int STATE_FUTURE_SKIPPED_GC_READY = STATE_FUTURE_SKIPPED * 10;
+	private static final int STATE_SCRIPT_SKIPPED = 2;
+	private static final int STATE_SCRIPT_SKIPPED_GC_READY = STATE_SCRIPT_SKIPPED * 10;
+	private static final int STATE_COMPLETED = 3;
+	private static final int STATE_COMPLETED_GC_READY = STATE_COMPLETED * 10;
+
 	private final int futureId;
-	private final AtomicBoolean futureSkipped = new AtomicBoolean(false);
-	private final AtomicBoolean scriptSkipped = new AtomicBoolean(false);
-	private final AtomicBoolean completed = new AtomicBoolean(false);
-	private final AtomicBoolean readyForGC = new AtomicBoolean(false);
+	private final AtomicInteger state = new AtomicInteger(STATE_NONE);
 
 	/**
 	 * Constructor using {@link GameScriptingEngine#MOST_RECENT_INSTANCE}
@@ -49,7 +54,7 @@ public abstract class GameFuture {
 
 	/**
 	 * Constructor
-	 * 
+	 *
 	 * @param gameScriptingEngine
 	 *            The {@link GameScriptingEngine} this future belongs to
 	 */
@@ -61,14 +66,14 @@ public abstract class GameFuture {
 		gameScriptingEngine.submitGameFuture(this);
 
 		if (Thread.interrupted()) {
-			scriptSkipped.set(true);
+			state.compareAndSet(STATE_NONE, STATE_SCRIPT_SKIPPED);
 			throw new ScriptSkippedException();
 		}
 	}
 
 	/**
 	 * Update the {@link GameFuture}
-	 * 
+	 *
 	 * @param delta
 	 *            The amount of time (in seconds) since the last frame
 	 * @return True if the {@link GameFuture} has completed
@@ -86,27 +91,27 @@ public abstract class GameFuture {
 	protected abstract void onScriptSkipped();
 
 	void evaluate(float delta) {
-		if(readyForGC.get()) {
+		if(isReadyForGC()) {
 			return;
 		}
-		if(scriptSkipped.get()) {
+		if(isScriptSkipped()) {
 			onScriptSkipped();
-			readyForGC.set(true);
+			state.compareAndSet(STATE_SCRIPT_SKIPPED, STATE_SCRIPT_SKIPPED_GC_READY);
 			return;
 		}
-		if(futureSkipped.get()) {
+		if(isFutureSkipped()) {
 			onFutureSkipped();
-			readyForGC.set(true);
+			state.compareAndSet(STATE_FUTURE_SKIPPED, STATE_FUTURE_SKIPPED_GC_READY);
 			return;
 		}
 		if (update(delta)) {
 			complete();
-			readyForGC.set(true);
+			state.compareAndSet(STATE_COMPLETED, STATE_COMPLETED_GC_READY);
 		}
 	}
 
 	protected void complete() {
-		if(completed.getAndSet(true)) {
+		if(!state.compareAndSet(STATE_NONE, STATE_COMPLETED)) {
 			return;
 		}
 		synchronized (this) {
@@ -115,7 +120,7 @@ public abstract class GameFuture {
 	}
 
 	public void skipFuture() {
-		futureSkipped.set(true);
+		state.compareAndSet(STATE_NONE, STATE_FUTURE_SKIPPED);
 		synchronized (this) {
 			notifyAll();
 		}
@@ -123,20 +128,20 @@ public abstract class GameFuture {
 
 	/**
 	 * Can be called in a script to wait for this {@link GameFuture} to complete
-	 * 
+	 *
 	 * @throws ScriptSkippedException
 	 *             Thrown when the script is skipped
 	 */
 	public void waitForCompletion() throws ScriptSkippedException {
-		while (!completed.get()) {
-			if (futureSkipped.get()) {
+		while (!isCompleted()) {
+			if (isFutureSkipped()) {
 				return;
 			}
-			if (scriptSkipped.get()) {
+			if (isScriptSkipped()) {
 				throw new ScriptSkippedException();
 			}
 			if (Thread.interrupted()) {
-				scriptSkipped.set(true);
+				state.compareAndSet(STATE_NONE, STATE_SCRIPT_SKIPPED);
 				throw new ScriptSkippedException();
 			}
 			try {
@@ -144,7 +149,7 @@ public abstract class GameFuture {
 					wait();
 				}
 			} catch (InterruptedException e) {
-				scriptSkipped.set(true);
+				state.compareAndSet(STATE_NONE, STATE_SCRIPT_SKIPPED);
 				throw new ScriptSkippedException();
 			}
 		}
@@ -160,38 +165,59 @@ public abstract class GameFuture {
 
 	/**
 	 * Returns if this {@link GameFuture} is complete
-	 * 
+	 *
 	 * @return True if this completed without being skipped
 	 */
 	public boolean isCompleted() {
-		return completed.get();
+		switch (state.get()) {
+		case STATE_COMPLETED:
+		case STATE_COMPLETED_GC_READY:
+			return true;
+		}
+		return false;
 	}
 
 	/**
 	 * Returns if this {@link GameFuture} was skipped
-	 * 
+	 *
 	 * @return True if this {@link GameFuture} was skipped
 	 */
 	public boolean isFutureSkipped() {
-		return futureSkipped.get();
+		switch (state.get()) {
+		case STATE_FUTURE_SKIPPED:
+		case STATE_FUTURE_SKIPPED_GC_READY:
+			return true;
+		}
+		return false;
 	}
 
 	/**
 	 * Returns if the script was skipped
-	 * 
+	 *
 	 * @return True if this {@link GameFuture} was waiting for completion when
 	 *         the script was skipped
 	 */
 	public boolean isScriptSkipped() {
-		return scriptSkipped.get();
+		switch (state.get()) {
+		case STATE_SCRIPT_SKIPPED:
+		case STATE_SCRIPT_SKIPPED_GC_READY:
+			return true;
+		}
+		return false;
 	}
-	
+
 	/**
 	 * Returns if the {@link GameFuture} is ready for cleanup
 	 * @return True if ready for cleanup
 	 */
 	public boolean isReadyForGC() {
-		return readyForGC.get();
+		switch (state.get()) {
+		case STATE_COMPLETED_GC_READY:
+		case STATE_FUTURE_SKIPPED_GC_READY:
+		case STATE_SCRIPT_SKIPPED_GC_READY:
+			return true;
+		}
+		return false;
 	}
 
 	/**
