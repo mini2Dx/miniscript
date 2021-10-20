@@ -25,6 +25,8 @@ package org.mini2Dx.miniscript.core.notification;
 
 import org.mini2Dx.miniscript.core.ScriptInvocationListener;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 /**
  *
  */
@@ -32,6 +34,7 @@ public class ScriptExceptionNotification implements ScriptNotification {
 	private final ScriptInvocationListener invocationListener;
 	private final int scriptId;
 	private final Exception exception;
+	private final AtomicBoolean notified = new AtomicBoolean(false);
 
 	public ScriptExceptionNotification(ScriptInvocationListener invocationListener, int scriptId, Exception exception) {
 		this.invocationListener = invocationListener;
@@ -41,7 +44,24 @@ public class ScriptExceptionNotification implements ScriptNotification {
 
 	@Override
 	public void process() {
-		invocationListener.onScriptException(scriptId, exception);
+		try {
+			invocationListener.onScriptException(scriptId, exception);
+		} finally {
+			notified.set(true);
+		}
+
+		synchronized(this) {
+			notifyAll();
+		}
 	}
 
+	public void waitForNotification() {
+		while(!notified.get()) {
+			synchronized(this) {
+				try {
+					wait();
+				} catch (InterruptedException e) {}
+			}
+		}
+	}
 }

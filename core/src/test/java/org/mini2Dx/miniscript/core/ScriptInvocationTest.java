@@ -76,6 +76,30 @@ public class ScriptInvocationTest {
 	}
 
 	@Test
+	public void testSamePriorityWithTimestamp() {
+		final ScriptInvocation invocation1 = new ScriptInvocation(null);
+		final ScriptInvocation invocation2 = new ScriptInvocation(null);
+
+		invocation1.setPriority(0);
+		invocation2.setPriority(0);
+
+		invocation1.setInvokeTimestamp(System.nanoTime());
+		invocation2.setInvokeTimestamp(invocation1.getInvokeTimestamp() - 1);
+
+		queue.offer(invocation1);
+		queue.offer(invocation2);
+
+		Assert.assertEquals(invocation2, queue.poll());
+		Assert.assertEquals(invocation1, queue.poll());
+
+		queue.offer(invocation2);
+		queue.offer(invocation1);
+
+		Assert.assertEquals(invocation2, queue.poll());
+		Assert.assertEquals(invocation1, queue.poll());
+	}
+
+	@Test
 	public void testSamePriorityMultiple() {
 		final List<ScriptInvocation> expectedResults = new ArrayList<>();
 

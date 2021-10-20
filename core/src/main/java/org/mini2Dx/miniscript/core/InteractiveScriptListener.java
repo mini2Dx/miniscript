@@ -13,6 +13,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class InteractiveScriptListener implements ScriptInvocationListener {
+	/**
+	 * When true sends notifications then allows next interaction script.
+	 * Defaults to false which allows next interaction script then notifies.
+	 */
+	public static boolean NOTIFY_THEN_ALLOW_INTERACTION = false;
+	/**
+	 * When true waits for game thread notifications to be processed before proceeding
+	 */
+	public static boolean WAIT_FOR_GAME_THREAD_NOTIFICATIONS = false;
+
 	private final AtomicInteger scriptId = new AtomicInteger();
 	private final AtomicReference<ScriptInvocationListener> invocationListener = new AtomicReference<>();
 
@@ -32,69 +42,112 @@ public class InteractiveScriptListener implements ScriptInvocationListener {
 	@Override
 	public void onScriptBegin(int scriptId) {
 		final ScriptInvocationListener invocationListener = this.invocationListener.get();
-		if(scriptId == this.scriptId.get()) {
-			if(invocationListener != null) {
-				if (invocationListener.callOnGameThread()) {
-					scriptingEngine.scriptNotifications.offer(
-							new ScriptBeginNotification(invocationListener, scriptId));
-				} else {
-					invocationListener.onScriptBegin(scriptId);
-				}
-			}
+		if(scriptId != this.scriptId.get()) {
+			return;
+		}
+		if(invocationListener == null) {
+			return;
+		}
+		if (invocationListener.callOnGameThread()) {
+			scriptingEngine.scriptNotifications.offer(
+					new ScriptBeginNotification(invocationListener, scriptId));
+		} else {
+			invocationListener.onScriptBegin(scriptId);
 		}
 	}
 
 	@Override
 	public void onScriptSuccess(int scriptId, ScriptExecutionResult executionResult) {
 		final ScriptInvocationListener invocationListener = this.invocationListener.get();
-		if(scriptId == this.scriptId.get()) {
-			invocationQueue.clearInteractiveScriptStatus();
+		if(scriptId != this.scriptId.get()) {
+			return;
+		}
+		clearInteractionStatusBeforeNotification();
 
+		try {
 			if (invocationListener != null) {
 				if (invocationListener.callOnGameThread()) {
-					scriptingEngine.scriptNotifications.offer(
-							new ScriptSuccessNotification(invocationListener, scriptId, executionResult));
+					final ScriptSuccessNotification notification = new ScriptSuccessNotification(
+							invocationListener, scriptId, executionResult);
+					scriptingEngine.scriptNotifications.offer(notification);
+					if(WAIT_FOR_GAME_THREAD_NOTIFICATIONS) {
+						notification.waitForNotification();
+					}
 				} else {
 					invocationListener.onScriptSuccess(scriptId, executionResult);
 				}
 			}
+		} finally {
+			clearInteractionStatusAfterNotification();
 		}
 	}
 
 	@Override
 	public void onScriptSkipped(int scriptId) {
 		final ScriptInvocationListener invocationListener = this.invocationListener.get();
-		if(scriptId == this.scriptId.get()) {
-			invocationQueue.clearInteractiveScriptStatus();
+		if(scriptId != this.scriptId.get()) {
+			return;
+		}
+		clearInteractionStatusBeforeNotification();
 
+		try {
 			if (invocationListener != null) {
 				if (invocationListener.callOnGameThread()) {
-					scriptingEngine.scriptNotifications
-							.offer(new ScriptSkippedNotification(invocationListener, scriptId));
+					final ScriptSkippedNotification notification =
+							new ScriptSkippedNotification(invocationListener, scriptId);
+					scriptingEngine.scriptNotifications.offer(notification);
+					if(WAIT_FOR_GAME_THREAD_NOTIFICATIONS) {
+						notification.waitForNotification();
+					}
 				} else {
 					invocationListener.onScriptSkipped(scriptId);
 				}
 			}
+		} finally {
+			clearInteractionStatusAfterNotification();
 		}
 	}
 
 	@Override
 	public void onScriptException(int scriptId, Exception e) {
 		final ScriptInvocationListener invocationListener = this.invocationListener.get();
-		if(scriptId == this.scriptId.get()) {
-			invocationQueue.clearInteractiveScriptStatus();
+		if(scriptId != this.scriptId.get()) {
+			return;
+		}
+		clearInteractionStatusBeforeNotification();
 
+		try {
 			if (invocationListener != null) {
 				if (invocationListener.callOnGameThread()) {
-					scriptingEngine.scriptNotifications
-							.offer(new ScriptExceptionNotification(invocationListener, scriptId, e));
+					ScriptExceptionNotification notification =
+							new ScriptExceptionNotification(invocationListener, scriptId, e);
+					scriptingEngine.scriptNotifications.offer(notification);
+					if(WAIT_FOR_GAME_THREAD_NOTIFICATIONS) {
+						notification.waitForNotification();
+					}
 				} else {
 					invocationListener.onScriptException(scriptId, e);
 				}
 			} else {
 				e.printStackTrace();
 			}
+		} finally {
+			clearInteractionStatusAfterNotification();
 		}
+	}
+
+	private void clearInteractionStatusBeforeNotification() {
+		if(NOTIFY_THEN_ALLOW_INTERACTION) {
+			return;
+		}
+		invocationQueue.clearInteractiveScriptStatus();
+	}
+
+	private void clearInteractionStatusAfterNotification() {
+		if(!NOTIFY_THEN_ALLOW_INTERACTION) {
+			return;
+		}
+		invocationQueue.clearInteractiveScriptStatus();
 	}
 
 	public ScriptInvocationListener getInvocationListener() {

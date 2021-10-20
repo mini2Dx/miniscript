@@ -25,12 +25,15 @@ package org.mini2Dx.miniscript.core.notification;
 
 import org.mini2Dx.miniscript.core.ScriptInvocationListener;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 /**
  *
  */
 public class ScriptSkippedNotification implements ScriptNotification {
 	private final ScriptInvocationListener invocationListener;
 	private final int scriptId;
+	private final AtomicBoolean notified = new AtomicBoolean(false);
 	
 	public ScriptSkippedNotification(ScriptInvocationListener invocationListener, int scriptId) {
 		this.invocationListener = invocationListener;
@@ -39,6 +42,24 @@ public class ScriptSkippedNotification implements ScriptNotification {
 
 	@Override
 	public void process() {
-		invocationListener.onScriptSkipped(scriptId);
+		try {
+			invocationListener.onScriptSkipped(scriptId);
+		} finally {
+			notified.set(true);
+		}
+
+		synchronized(this) {
+			notifyAll();
+		}
+	}
+
+	public void waitForNotification() {
+		while(!notified.get()) {
+			synchronized(this) {
+				try {
+					wait();
+				} catch (InterruptedException e) {}
+			}
+		}
 	}
 }
