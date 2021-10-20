@@ -1,3 +1,6 @@
+[1.8.10]
+- Add options to InteractiveScriptListener to configure how interactive script notifications are handled
+
 [1.8.9]
 - Reduce AtomicBoolean allocations per GameFuture
 
