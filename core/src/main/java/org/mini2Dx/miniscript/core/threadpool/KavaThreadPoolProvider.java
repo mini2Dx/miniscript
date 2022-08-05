@@ -91,9 +91,16 @@ public class KavaThreadPoolProvider implements Runnable, ThreadPoolProvider {
 		if (!interruptThreads) {
 			return;
 		}
-		for (int i = 0; i < threads.length; i++) {
-			threads[i].interrupt();
-		}
+		new Thread(() -> {
+			for (int i = 0; i < threads.length; i++) {
+				threads[i].interrupt();
+
+				//NativeAOT workaround
+				try {
+					Thread.sleep(100);
+				} catch(Exception e) {}
+			}
+		}).start();
 	}
 
 	@Override
