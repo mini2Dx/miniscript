@@ -1,3 +1,6 @@
+[1.8.11]
+- Workaround NativeAOT recursive lock issue on Unix
+
 [1.8.10]
 - Add options to InteractiveScriptListener to configure how interactive script notifications are handled
 
