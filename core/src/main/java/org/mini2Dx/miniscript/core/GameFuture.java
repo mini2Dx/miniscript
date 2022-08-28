@@ -42,6 +42,11 @@ public abstract class GameFuture {
 	private static final int STATE_COMPLETED = 3;
 	private static final int STATE_COMPLETED_GC_READY = STATE_COMPLETED * 10;
 
+	/**
+	 * Set a value if you want waitForCompletion to wake up and check status
+	 */
+	public static long WAIT_TIMEOUT_MILLIS = 0;
+
 	private final int futureId;
 	private final AtomicInteger state = new AtomicInteger(STATE_NONE);
 
@@ -148,7 +153,11 @@ public abstract class GameFuture {
 			}
 			try {
 				synchronized (this) {
-					wait();
+					if(WAIT_TIMEOUT_MILLIS <= 0) {
+						wait();
+					} else {
+						wait(WAIT_TIMEOUT_MILLIS);
+					}
 				}
 			} catch (InterruptedException e) {
 				state.compareAndSet(STATE_NONE, STATE_SCRIPT_SKIPPED);
