@@ -93,11 +93,10 @@ public class KavaThreadPoolProvider implements Runnable, ThreadPoolProvider {
 		}
 		new Thread(() -> {
 			for (int i = 0; i < threads.length; i++) {
-				threads[i].interrupt();
-
 				//NativeAOT workaround
 				try {
-					Thread.sleep(100);
+					threads[i].interrupt();
+					Thread.sleep(10);
 				} catch(Exception e) {}
 			}
 		}).start();
