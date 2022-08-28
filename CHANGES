@@ -1,3 +1,6 @@
+[1.8.12]
+- Don't notify future threads if already skipped
+
 [1.8.11]
 - Workaround NativeAOT recursive lock issue on Unix
 
