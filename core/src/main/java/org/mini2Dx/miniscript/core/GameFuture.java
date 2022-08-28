@@ -120,7 +120,9 @@ public abstract class GameFuture {
 	}
 
 	public void skipFuture() {
-		state.compareAndSet(STATE_NONE, STATE_FUTURE_SKIPPED);
+		if(!state.compareAndSet(STATE_NONE, STATE_FUTURE_SKIPPED)) {
+			return;
+		}
 		synchronized (this) {
 			notifyAll();
 		}
